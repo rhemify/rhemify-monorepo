@@ -1,0 +1,24 @@
+{
+  "name": "@rhemify-monorepo/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@rhemify-monorepo/db": "workspace:*",
+    "@rhemify-monorepo/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@rhemify-monorepo/config": "workspace:*",
+    "typescript": "^5"
+  }
+}

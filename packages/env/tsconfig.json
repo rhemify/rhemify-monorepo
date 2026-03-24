@@ -1,0 +1,3 @@
+{
+  "extends": "@rhemify-monorepo/config/tsconfig.base.json"
+}

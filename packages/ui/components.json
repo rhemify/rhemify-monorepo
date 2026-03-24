@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-lyra",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@rhemify-monorepo/ui/components",
+    "utils": "@rhemify-monorepo/ui/lib/utils",
+    "hooks": "@rhemify-monorepo/ui/hooks",
+    "lib": "@rhemify-monorepo/ui/lib",
+    "ui": "@rhemify-monorepo/ui/components"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
+}
