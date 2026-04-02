@@ -1,34 +1,29 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"context"
 	"time"
 
 	"github.com/rhemify/server/internal/config"
-	"github.com/rhemify/server/internal/database"
+	cx "github.com/rhemify/server/internal/convex"
 	"github.com/rhemify/server/internal/router"
 )
 
 func main() {
 	cfg := config.Load()
 
-	db, err := database.Connect(cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+	if cfg.ConvexURL == "" {
+		log.Fatal("CONVEX_URL is required")
 	}
-	defer db.Close()
 
-	if err := database.RunMigrations(cfg.DatabaseURL); err != nil {
-		log.Fatalf("failed to run migrations: %v", err)
-	}
-	log.Println("migrations applied successfully")
+	client := cx.NewClient(cfg.ConvexURL, cfg.ConvexDeployKey)
 
-	r := router.Setup(db, cfg)
+	r := router.Setup(client, cfg)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

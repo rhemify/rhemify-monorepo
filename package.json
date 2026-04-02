@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@rhemify-monorepo/env": "workspace:*",
+    "convex": "^1.34.1",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },

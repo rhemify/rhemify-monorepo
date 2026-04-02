@@ -3,12 +3,12 @@ package router
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rhemify/server/internal/config"
+	cx "github.com/rhemify/server/internal/convex"
 	"github.com/rhemify/server/internal/handler"
 )
 
-func Setup(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
+func Setup(convex *cx.Client, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -18,10 +18,10 @@ func Setup(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 		AllowCredentials: true,
 	}))
 
-	health := handler.NewHealthHandler(db)
-	fleet := handler.NewFleetHandler(db)
-	events := handler.NewEventsHandler(db)
-	traces := handler.NewTracesHandler(db)
+	health := handler.NewHealthHandler(convex)
+	fleet := handler.NewFleetHandler(convex)
+	events := handler.NewEventsHandler(convex)
+	traces := handler.NewTracesHandler(convex)
 
 	api := r.Group("/api")
 	{

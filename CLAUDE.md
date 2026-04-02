@@ -28,26 +28,25 @@ bun run db:studio        # Open Drizzle Studio UI
 cd apps/web && bunx shadcn@latest add <component>
 ```
 
-### Go Backend Server (apps/server)
+### Convex (Database + Real-time Backend)
+
+```bash
+bunx convex dev              # Start Convex dev server (watches convex/ dir)
+bunx convex deploy           # Deploy to production
+```
+
+Schema defined in `convex/schema.ts`. Query/mutation functions in `convex/*.ts`. Frontend reads from Convex directly (real-time sync). No SQL migrations — Convex handles schema changes automatically.
+
+### Go Intelligence Server (apps/server)
 
 ```bash
 cd apps/server
 
-# Run the server (auto-runs migrations on startup)
+# Run the server
 go run ./cmd/server
 
 # Build binary
 go build -o bin/server ./cmd/server
-./bin/server
-
-# Migrations only
-go run ./cmd/migrate up         # Apply all pending migrations
-go run ./cmd/migrate down       # Roll back 1 migration
-go run ./cmd/migrate version    # Show current version
-go run ./cmd/migrate force N    # Force set version (fix dirty state)
-
-# Create new migration
-make migrate-create name=add_something
 
 # Hot reload dev (requires: go install github.com/air-verse/air@latest)
 make dev
@@ -56,7 +55,9 @@ make dev
 go mod tidy
 ```
 
-**Environment**: Copy `.env.example` → `.env`. Requires `DATABASE_URL` (PostgreSQL), `PORT` (default 8080), `CORS_ORIGIN` (default http://localhost:3001).
+**Environment**: Copy `.env.example` → `.env`. Requires `CONVEX_URL` (deployment URL), `CONVEX_DEPLOY_KEY` (for server-to-server auth), `PORT` (default 8080), `CORS_ORIGIN` (default http://localhost:3001).
+
+**Role**: Intelligence processing engine — reads from Convex via HTTP API, runs rules engine (anomaly detection, vendor health, route optimization), writes intelligence actions back. Not a CRUD API for the frontend.
 
 ## Architecture
 
@@ -107,3 +108,11 @@ Zod-validated env vars via `@t3-oss/env-core`. Server vars: `DATABASE_URL`, `BET
 - **Naming**: Brand is "Rhemify". Product terms: Fleet, Agent, Department, Policy, Deploy, Freeze, Kill switch.
 - **Vite plugin order**: `tailwindcss()` → `tanstackStart()` → `viteReact()` — ordering matters.
 - **Do NOT** enable `verbatimModuleSyntax` in tsconfig.
+
+<!-- convex-ai-start -->
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+<!-- convex-ai-end -->
