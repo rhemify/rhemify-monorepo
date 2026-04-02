@@ -28,6 +28,36 @@ bun run db:studio        # Open Drizzle Studio UI
 cd apps/web && bunx shadcn@latest add <component>
 ```
 
+### Go Backend Server (apps/server)
+
+```bash
+cd apps/server
+
+# Run the server (auto-runs migrations on startup)
+go run ./cmd/server
+
+# Build binary
+go build -o bin/server ./cmd/server
+./bin/server
+
+# Migrations only
+go run ./cmd/migrate up         # Apply all pending migrations
+go run ./cmd/migrate down       # Roll back 1 migration
+go run ./cmd/migrate version    # Show current version
+go run ./cmd/migrate force N    # Force set version (fix dirty state)
+
+# Create new migration
+make migrate-create name=add_something
+
+# Hot reload dev (requires: go install github.com/air-verse/air@latest)
+make dev
+
+# Resolve dependencies
+go mod tidy
+```
+
+**Environment**: Copy `.env.example` → `.env`. Requires `DATABASE_URL` (PostgreSQL), `PORT` (default 8080), `CORS_ORIGIN` (default http://localhost:3001).
+
 ## Architecture
 
 Turborepo monorepo with Bun workspaces. Single fullstack app (`apps/web`) with shared packages.
