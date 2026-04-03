@@ -2,6 +2,7 @@ import { Toaster } from "@rhemify-monorepo/ui/components/sonner";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
+import { ConvexClientProvider } from "@/lib/convex";
 
 import appCss from "../index.css?url";
 
@@ -46,11 +47,13 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <Outlet />
-          </ThemeProvider>
-        </QueryClientProvider>
+        <ConvexClientProvider>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider>
+              <Outlet />
+            </ThemeProvider>
+          </QueryClientProvider>
+        </ConvexClientProvider>
         <Toaster richColors />
         <Scripts />
       </body>

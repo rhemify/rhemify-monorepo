@@ -2,6 +2,59 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // Fleet management tables
+
+  fleets: defineTable({
+    email: v.string(),
+    company_name: v.string(),
+    role: v.string(), // solo-founder | small-team | enterprise
+    active_departments: v.array(v.string()),
+    monthly_spend_cap: v.float64(),
+    is_deployed: v.boolean(),
+  }).index("by_email", ["email"]),
+
+  agents: defineTable({
+    fleet_id: v.id("fleets"),
+    agent_key: v.string(), // e.g. "ceo-001"
+    name: v.string(),
+    department_id: v.string(), // resolves to Department template client-side
+    status: v.string(), // running | paused | frozen
+    spent_today: v.float64(),
+    daily_limit: v.float64(),
+    tasks_completed: v.float64(),
+    primary_standard: v.string(), // mpp | x402 | l402 | ap2
+    skills: v.array(v.string()),
+    allowed_domains: v.array(v.string()),
+    allowed_standards: v.array(v.string()),
+  })
+    .index("by_fleet", ["fleet_id"])
+    .index("by_agent_key", ["agent_key"]),
+
+  policies: defineTable({
+    agent_id: v.id("agents"),
+    daily_limit: v.float64(),
+    max_per_transaction: v.float64(),
+    approval_threshold: v.float64(),
+    allowed_standards: v.array(v.string()),
+    domain_allowlist: v.array(v.string()),
+  }).index("by_agent", ["agent_id"]),
+
+  transactions: defineTable({
+    fleet_id: v.id("fleets"),
+    agent_id: v.id("agents"),
+    agent_name: v.string(),
+    vendor: v.string(),
+    domain: v.string(),
+    amount: v.float64(),
+    standard: v.string(), // mpp | x402 | l402 | ap2
+    status: v.string(), // completed | blocked | pending
+    blocked_reason: v.optional(v.string()),
+  })
+    .index("by_fleet", ["fleet_id"])
+    .index("by_agent", ["agent_id"]),
+
+  // Intelligence layer tables
+
   // Append-only: every payment attempt (success, rejected, failed)
   payment_events: defineTable({
     agent_id: v.string(),

@@ -1,17 +1,16 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { fleetService } from '@/lib/services'
-import { queryKeys } from './query-keys'
+import { useMutation } from "convex/react";
+import { api } from "@convex/_generated/api";
+import { useFleetId } from "@/lib/convex";
 
 export function useKillSwitch() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: () => {
-      fleetService.killSwitch()
-      return Promise.resolve()
+  const fleetId = useFleetId();
+  const killSwitch = useMutation(api.agents.killSwitch);
+
+  return {
+    mutate: () => {
+      if (fleetId) {
+        killSwitch({ fleet_id: fleetId });
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.agents.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.fleetStats })
-    },
-  })
+  };
 }

@@ -1,18 +1,33 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { fleetService } from '@/lib/services'
-import { queryKeys } from './query-keys'
+import { useMutation } from "convex/react";
+import { api } from "@convex/_generated/api";
+import { useFleetId, useSetFleetId } from "@/lib/convex";
 
 export function useDeployFleet() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (departmentIds: string[]) => {
-      fleetService.deployFleet(departmentIds)
-      return Promise.resolve()
+  const fleetId = useFleetId();
+  const setFleetId = useSetFleetId();
+  const createFleet = useMutation(api.fleets.create);
+  const deployAgents = useMutation(api.agents.deploy);
+
+  return {
+    mutateAsync: async (departmentIds: string[]) => {
+      let currentFleetId = fleetId;
+
+      // Create fleet if not exists
+      if (!currentFleetId) {
+        currentFleetId = await createFleet({
+          email: "demo@rhemify.com",
+          company_name: "Demo Co",
+          role: "solo-founder",
+          active_departments: departmentIds,
+          monthly_spend_cap: 100,
+        });
+        setFleetId(currentFleetId);
+      }
+
+      await deployAgents({
+        fleet_id: currentFleetId,
+        department_ids: departmentIds,
+      });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.agents.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.fleetStats })
-      queryClient.invalidateQueries({ queryKey: queryKeys.session })
-    },
-  })
+  };
 }

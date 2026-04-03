@@ -4,6 +4,7 @@ import { useSession, useDeployFleet } from '@/lib/hooks'
 import { useTheme } from '@/lib/theme/theme-provider'
 import { DeployStep } from '@/components/onboarding/deploy-step'
 import { simulationEngine } from '@/router'
+import { useFleetId } from '@/lib/convex'
 
 export const Route = createFileRoute('/_onboarding/deploy')({
   component: DeployScreen,
@@ -23,6 +24,7 @@ function DeployScreen() {
   const { data: session } = useSession()
   const deployFleet = useDeployFleet()
   const { setTheme } = useTheme()
+  const fleetId = useFleetId()
 
   const [currentStep, setCurrentStep] = useState(0)
   const [complete, setComplete] = useState(false)
@@ -59,8 +61,13 @@ function DeployScreen() {
     hasFinished.current = true
 
     const departments = session?.activeDepartments ?? []
-    deployFleet.mutate(departments)
-    simulationEngine.start()
+    deployFleet.mutateAsync(departments).then(() => {
+      // fleetId is set by the deploy hook via context
+      const id = localStorage.getItem('rhemify_fleet_id')
+      if (id) {
+        simulationEngine.start(id as typeof fleetId & string)
+      }
+    })
 
     setShowSuccess(true)
     const timer = setTimeout(() => {
