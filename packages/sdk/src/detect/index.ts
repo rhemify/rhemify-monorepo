@@ -51,12 +51,14 @@ export async function detectProtocol(
   url: string,
   options?: DetectOptions,
 ): Promise<DetectionResult> {
-  // Check cache by domain
+  // Check cache by URL origin + pathname (not just domain — different
+  // paths on the same host can return different payment protocols)
   const cacheTtl = options?.cacheTtlMs ?? DEFAULT_DETECTION_CACHE_TTL;
   let cacheKey: string | null = null;
   if (cacheTtl > 0) {
     try {
-      cacheKey = new URL(url).hostname;
+      const parsed = new URL(url);
+      cacheKey = parsed.origin + parsed.pathname;
     } catch {
       // Invalid URL — skip cache
     }
