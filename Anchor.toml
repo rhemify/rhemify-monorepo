@@ -1,0 +1,21 @@
+[toolchain]
+anchor_version = "1.0.0"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+rhemos_anchor = "RhemTrceAnch1111111111111111111111111111111"
+
+[programs.localnet]
+rhemos_anchor = "AnNz2XESvXbyt2uNnFaZD3Wr6qZpmHC4iuHzmcxMoPRg"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "npm test"
+
+[hooks]

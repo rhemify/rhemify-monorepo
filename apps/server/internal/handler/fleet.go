@@ -33,7 +33,10 @@ func (h *FleetHandler) GetStats(c *gin.Context) {
 	}
 
 	var stats interface{}
-	json.Unmarshal(result, &stats)
+	if err := json.Unmarshal(result, &stats); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, stats)
 }
 
@@ -54,7 +57,10 @@ func (h *FleetHandler) ListAgents(c *gin.Context) {
 	}
 
 	var agents interface{}
-	json.Unmarshal(result, &agents)
+	if err := json.Unmarshal(result, &agents); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, agents)
 }
 
@@ -71,6 +77,9 @@ func (h *FleetHandler) GetAgent(c *gin.Context) {
 	}
 
 	var agent interface{}
-	json.Unmarshal(result, &agent)
+	if err := json.Unmarshal(result, &agent); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, agent)
 }

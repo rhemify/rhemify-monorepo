@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // GET /api/events — paginated, filterable
@@ -37,6 +37,26 @@ export const list = query({
       data,
       has_more: hasMore,
     };
+  },
+});
+
+// POST /api/ingest/payment — insert a payment event (called by Go server)
+export const insert = mutation({
+  args: {
+    agent_id: v.string(),
+    fleet_id: v.string(),
+    standard: v.string(),
+    amount: v.float64(),
+    token: v.string(),
+    chain: v.string(),
+    domain: v.string(),
+    outcome: v.string(),
+    instrument_type: v.string(),
+    trace_id: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const id = await ctx.db.insert("payment_events", args);
+    return id;
   },
 });
 

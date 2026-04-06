@@ -1,0 +1,16 @@
+{
+  "status": 402,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "amount": "100000",
+    "currency": "USDC",
+    "recipient": "DirectRecipientAddr",
+    "description": "Stock quote API",
+    "methodDetails": {
+      "network": "solana-mainnet",
+      "decimals": 6
+    }
+  }
+}

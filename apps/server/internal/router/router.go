@@ -3,9 +3,11 @@ package router
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/rhemify/server/internal/anchor"
 	"github.com/rhemify/server/internal/config"
 	cx "github.com/rhemify/server/internal/convex"
 	"github.com/rhemify/server/internal/handler"
+	"github.com/rhemify/server/internal/middleware"
 )
 
 func Setup(convex *cx.Client, cfg *config.Config) *gin.Engine {
@@ -18,23 +20,52 @@ func Setup(convex *cx.Client, cfg *config.Config) *gin.Engine {
 		AllowCredentials: true,
 	}))
 
+	batcher := anchor.NewBatchManager(convex)
+
 	health := handler.NewHealthHandler(convex)
 	fleet := handler.NewFleetHandler(convex)
 	events := handler.NewEventsHandler(convex)
 	traces := handler.NewTracesHandler(convex)
+	ingest := handler.NewIngestHandler(convex, batcher)
+	policy := handler.NewPolicyHandler(convex)
+	anchorHandler := handler.NewAnchorHandler(convex)
+	vendor := handler.NewVendorHandler(convex)
 
 	api := r.Group("/api")
 	{
+		// Public endpoints (no auth)
 		api.GET("/health", health.Check)
 
+		// Dashboard endpoints (read-only, no auth for now)
 		api.GET("/fleet/stats", fleet.GetStats)
 		api.GET("/fleet/agents", fleet.ListAgents)
 		api.GET("/fleet/agents/:id", fleet.GetAgent)
-
 		api.GET("/events", events.ListEvents)
 		api.GET("/events/:id", events.GetEvent)
-
 		api.GET("/traces/:id", traces.GetTrace)
+
+		// SDK endpoints (require fleet API key)
+		sdk := api.Group("")
+		sdk.Use(middleware.FleetAPIKeyAuth())
+		{
+			// Ingest
+			sdk.POST("/ingest/payment", ingest.IngestPayment)
+
+			// Policy
+			sdk.GET("/policy/:agentId", policy.GetPolicy)
+			sdk.POST("/policy/:agentId", policy.SetPolicy)
+
+			// Vendor
+			sdk.GET("/vendor/:domain", vendor.GetVendorStatus)
+
+			// Fleet status (SDK version — uses API key context)
+			sdk.GET("/fleet/status", fleet.GetStats)
+
+			// Anchor
+			sdk.PATCH("/traces/:id/anchor", anchorHandler.UpdateTraceAnchor)
+			sdk.GET("/anchor/verify/:traceId", anchorHandler.VerifyTrace)
+			sdk.GET("/anchor/:fleetId/:date", anchorHandler.GetDailyRoot)
+		}
 	}
 
 	return r

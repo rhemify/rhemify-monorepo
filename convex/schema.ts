@@ -77,6 +77,7 @@ export default defineSchema({
   // Append-only: full reasoning context for each payment decision
   payment_traces: defineTable({
     payment_event_id: v.id("payment_events"),
+    trace_id: v.string(), // SDK-generated trace ID (trc_...)
     agent_task_context: v.string(),
     trigger_402_raw: v.string(),
     alternatives_evaluated: v.any(), // JSON array
@@ -84,7 +85,13 @@ export default defineSchema({
     instrument_selection_log: v.any(), // JSON object
     confidence: v.string(), // high | medium | low
     replay_snapshot: v.any(), // JSON object
-  }).index("by_payment_event", ["payment_event_id"]),
+    trace_hash: v.string(), // SHA-256 of canonical trace fields
+    anchor_tx_hash: v.optional(v.string()), // Layer 1: Solana Memo tx signature
+    merkle_proof: v.optional(v.any()), // Layer 2: sibling hashes for Merkle verification
+  })
+    .index("by_payment_event", ["payment_event_id"])
+    .index("by_trace_id", ["trace_id"])
+    .index("by_trace_hash", ["trace_hash"]),
 
   // Agent-to-service spending graph
   payment_edges: defineTable({
@@ -164,4 +171,16 @@ export default defineSchema({
     .index("by_action_type", ["action_type"])
     .index("by_agent", ["agent_id"])
     .index("by_outcome", ["outcome"]),
+
+  // Daily Merkle root batches (Layer 2 trace anchoring)
+  anchor_batches: defineTable({
+    fleet_id: v.string(),
+    date: v.string(), // "YYYY-MM-DD" UTC
+    merkle_root: v.string(), // hex
+    trace_count: v.float64(),
+    pda_address: v.optional(v.string()), // base58 Solana PDA
+    tx_hash: v.optional(v.string()), // Solana tx signature
+    status: v.string(), // pending | anchored | failed
+    tree_data: v.optional(v.any()), // Full Merkle tree for proof generation
+  }).index("by_fleet_date", ["fleet_id", "date"]),
 });
