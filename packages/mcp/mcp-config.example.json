@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "rhemos": {
+      "command": "node",
+      "args": ["packages/mcp/dist/index.js"],
+      "env": {
+        "RHEMOS_SERVER_URL": "http://localhost:8080",
+        "RHEMOS_FLEET_API_KEY": "your-fleet-api-key",
+        "RHEMOS_AGENT_ID": "agent-1",
+        "RHEMOS_FLEET_ID": "fleet-1",
+        "RHEMOS_SOLANA_PRIVATE_KEY": "",
+        "RHEMOS_SOLANA_RPC_URL": "https://api.devnet.solana.com",
+        "RHEMOS_EVM_PRIVATE_KEY": ""
+      }
+    }
+  }
+}
