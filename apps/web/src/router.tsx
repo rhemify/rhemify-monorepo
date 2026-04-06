@@ -16,7 +16,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export const simulationEngine = new SimulationEngine(queryClient);
+export const simulationEngine = new SimulationEngine();
 
 export const getRouter = () => {
   const router = createTanStackRouter({

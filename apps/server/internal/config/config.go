@@ -7,18 +7,20 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	Port        string
-	CORSOrigin  string
+	Port              string
+	CORSOrigin        string
+	ConvexURL         string
+	ConvexDeployKey   string
 }
 
 func Load() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/rhemify?sslmode=disable"),
-		Port:        getEnv("PORT", "8080"),
-		CORSOrigin:  getEnv("CORS_ORIGIN", "http://localhost:3001"),
+		Port:            getEnv("PORT", "8080"),
+		CORSOrigin:      getEnv("CORS_ORIGIN", "http://localhost:3001"),
+		ConvexURL:       getEnv("CONVEX_URL", ""),
+		ConvexDeployKey: getEnv("CONVEX_DEPLOY_KEY", ""),
 	}
 }
 

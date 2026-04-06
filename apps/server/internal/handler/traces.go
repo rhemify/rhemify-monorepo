@@ -1,23 +1,34 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
+	cx "github.com/rhemify/server/internal/convex"
 )
 
 type TracesHandler struct {
-	db *pgxpool.Pool
+	convex *cx.Client
 }
 
-func NewTracesHandler(db *pgxpool.Pool) *TracesHandler {
-	return &TracesHandler{db: db}
+func NewTracesHandler(convex *cx.Client) *TracesHandler {
+	return &TracesHandler{convex: convex}
 }
 
 // GET /api/traces/:id
 func (h *TracesHandler) GetTrace(c *gin.Context) {
-	_ = c.Param("id")
-	// TODO: query payment_trace by id
-	c.JSON(http.StatusOK, gin.H{"message": "not implemented"})
+	traceID := c.Param("id")
+
+	result, err := h.convex.Query("traces:get", map[string]string{
+		"id": traceID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var trace interface{}
+	json.Unmarshal(result, &trace)
+	c.JSON(http.StatusOK, trace)
 }

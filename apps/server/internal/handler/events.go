@@ -1,30 +1,63 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
+	cx "github.com/rhemify/server/internal/convex"
 )
 
 type EventsHandler struct {
-	db *pgxpool.Pool
+	convex *cx.Client
 }
 
-func NewEventsHandler(db *pgxpool.Pool) *EventsHandler {
-	return &EventsHandler{db: db}
+func NewEventsHandler(convex *cx.Client) *EventsHandler {
+	return &EventsHandler{convex: convex}
 }
 
-// GET /api/events — paginated, filterable by agent_id, outcome, standard, domain
+// GET /api/events — paginated, filterable
 func (h *EventsHandler) ListEvents(c *gin.Context) {
-	// TODO: implement with pagination + filters from query params
-	// ?page=1&per_page=50&agent_id=&outcome=&standard=&domain=
-	c.JSON(http.StatusOK, gin.H{"message": "not implemented"})
+	fleetID := c.Query("fleet_id")
+	if fleetID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "fleet_id is required"})
+		return
+	}
+
+	args := map[string]interface{}{
+		"fleet_id": fleetID,
+	}
+	if agentID := c.Query("agent_id"); agentID != "" {
+		args["agent_id"] = agentID
+	}
+	if outcome := c.Query("outcome"); outcome != "" {
+		args["outcome"] = outcome
+	}
+
+	result, err := h.convex.Query("events:list", args)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var events interface{}
+	json.Unmarshal(result, &events)
+	c.JSON(http.StatusOK, events)
 }
 
 // GET /api/events/:id — single event with linked trace
 func (h *EventsHandler) GetEvent(c *gin.Context) {
-	_ = c.Param("id")
-	// TODO: query payment_event joined with payment_trace
-	c.JSON(http.StatusOK, gin.H{"message": "not implemented"})
+	eventID := c.Param("id")
+
+	result, err := h.convex.Query("events:get", map[string]string{
+		"id": eventID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var event interface{}
+	json.Unmarshal(result, &event)
+	c.JSON(http.StatusOK, event)
 }

@@ -1,25 +1,54 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fleetService } from '@/lib/services'
-import { queryKeys } from './query-keys'
-import type { Policy } from '@/lib/types'
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@convex/_generated/api";
+import type { Policy } from "@/lib/types";
+import type { PaymentStandard } from "@/lib/types";
+import type { Id } from "@convex/_generated/dataModel";
 
 export function usePolicies(agentId: string) {
-  return useQuery({
-    queryKey: queryKeys.policies.byAgent(agentId),
-    queryFn: () => fleetService.getPolicy(agentId),
-  })
+  const data = useQuery(api.policies.getByAgent, {
+    agent_id: agentId as Id<"agents">,
+  });
+
+  const mapped: Policy | undefined = data
+    ? {
+        agentId: data.agent_id,
+        dailyLimit: data.daily_limit,
+        maxPerTransaction: data.max_per_transaction,
+        approvalThreshold: data.approval_threshold,
+        allowedStandards: data.allowed_standards as PaymentStandard[],
+        domainAllowlist: data.domain_allowlist,
+      }
+    : undefined;
+
+  return { data: mapped, isLoading: data === undefined };
 }
 
 export function useUpdatePolicy() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ agentId, updates }: { agentId: string; updates: Partial<Policy> }) => {
-      fleetService.updatePolicy(agentId, updates)
-      return Promise.resolve()
+  const updatePolicy = useMutation(api.policies.update);
+
+  return {
+    mutate: ({
+      agentId,
+      updates,
+    }: {
+      agentId: string;
+      updates: Partial<Policy>;
+    }) => {
+      const args: Record<string, unknown> = {
+        agent_id: agentId as Id<"agents">,
+      };
+      if (updates.dailyLimit !== undefined)
+        args.daily_limit = updates.dailyLimit;
+      if (updates.maxPerTransaction !== undefined)
+        args.max_per_transaction = updates.maxPerTransaction;
+      if (updates.approvalThreshold !== undefined)
+        args.approval_threshold = updates.approvalThreshold;
+      if (updates.allowedStandards !== undefined)
+        args.allowed_standards = updates.allowedStandards;
+      if (updates.domainAllowlist !== undefined)
+        args.domain_allowlist = updates.domainAllowlist;
+
+      return updatePolicy(args as Parameters<typeof updatePolicy>[0]);
     },
-    onSuccess: (_, { agentId }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.policies.byAgent(agentId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentId) })
-    },
-  })
+  };
 }
