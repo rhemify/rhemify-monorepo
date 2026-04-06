@@ -1,5 +1,8 @@
 import type {
   MppSession,
+  PaymentEvent,
+  PaymentTrace,
+  PolicyDecisionEvent,
   RhemosConfig,
   SessionCloseResult,
   SessionOptions,
@@ -303,43 +306,67 @@ function emitSessionTrace(
   const traceRecord = trace.finalize();
   const domain = extractDomain(snapshot.url);
 
+  const event: PaymentEvent = {
+    id: `evt_${traceRecord.id.replace("trc_", "")}`,
+    timestamp: snapshot.startedAt,
+    agent_id: snapshot.agentId,
+    fleet_id: snapshot.fleetId,
+    standard: "mpp",
+    standard_version: "",
+    amount: Number(snapshot.detection.priceRaw) / 1_000_000,
+    token: "USDC",
+    chain_from: "solana-mainnet",
+    chain_to: "solana-mainnet",
+    domain,
+    outcome: snapshot.executionSuccess ? "success" : "failed",
+    parent_event_id: null,
+    delegation_depth: 0,
+    instrument_type: "squads",
+    trace_id: traceRecord.id,
+  };
+
+  const paymentTrace: PaymentTrace = {
+    id: traceRecord.id,
+    payment_event_id: event.id,
+    agent_task_description: snapshot.taskContext ?? "",
+    agent_task_step: snapshot.taskStep ?? null,
+    trigger_402_raw: "",
+    standard_detected: "mpp",
+    standard_confidence: "high",
+    alternatives_evaluated: [],
+    policy_rules_fired: snapshot.policyDecision.rulesFired,
+    instrument_selection_log: "MPP session voucher",
+    bridge_scoring: null,
+    economic_rationality_check: null,
+    task_outcome: null,
+    task_outcome_linked_at: null,
+    replay_snapshot: {
+      policy_state: { dailyLimit: 0, maxPerTransaction: 0, approvalThreshold: 0, allowedStandards: [], domainAllowlist: [] },
+      detection: snapshot.detection,
+      all_paths: [],
+      policy_decision: snapshot.policyDecision,
+    },
+    trace_hash: traceRecord.traceHash,
+    anchor_tx_hash: null,
+    merkle_proof: null,
+  };
+
+  const policyDecisions: PolicyDecisionEvent[] =
+    snapshot.policyDecision.rulesFired.map((r, i) => ({
+      id: `pdec_${traceRecord.id.replace("trc_", "")}_${i}`,
+      payment_event_id: event.id,
+      agent_id: snapshot.agentId,
+      rule_triggered: r.rule,
+      decision: r.decision,
+      threshold: r.threshold,
+      actual_value: r.actual,
+      domain,
+      standard: "mpp" as const,
+      human_approval_required: r.decision === "flag",
+    }));
+
   transport
-    .ingestPayment({
-      event: {
-        agent_id: snapshot.agentId,
-        fleet_id: snapshot.fleetId,
-        standard: "mpp",
-        amount: Number(snapshot.detection.priceRaw) / 1_000_000,
-        token: "USDC",
-        chain: "solana-mainnet",
-        domain,
-        outcome: snapshot.executionSuccess ? "success" : "failed",
-        instrument_type: "squads",
-        trace_id: traceRecord.id,
-      },
-      trace: {
-        id: traceRecord.id,
-        agent_task_context: snapshot.taskContext ?? "",
-        trigger_402_raw: "",
-        alternatives_evaluated: [],
-        policy_rules_fired: snapshot.policyDecision.rulesFired,
-        instrument_selection_log: "MPP session voucher",
-        confidence: "high",
-        replay_snapshot: {
-          policyDecision: snapshot.policyDecision,
-          detection: snapshot.detection,
-        },
-        trace_hash: traceRecord.traceHash,
-      },
-      policyDecisions: snapshot.policyDecision.rulesFired.map((r) => ({
-        rule_triggered: r.rule,
-        decision: r.decision,
-        threshold: r.threshold,
-        actual_value: r.actual,
-        domain,
-        standard: "mpp",
-      })),
-    })
+    .ingestPayment({ event, trace: paymentTrace, policyDecisions })
     .catch(() => {});
 
   // Anchor the trace

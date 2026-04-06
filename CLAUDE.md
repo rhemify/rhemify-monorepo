@@ -69,7 +69,33 @@ Turborepo monorepo with Bun workspaces. Single fullstack app (`apps/web`) with s
 apps/web → packages/auth → packages/db → packages/env → packages/config
          → packages/ui  → packages/config
          → packages/env
+         → packages/sdk (types only — shared contracts)
+
+apps/server (Go) ← packages/sdk (PaymentEvent, PaymentTrace, PolicyDecisionEvent contracts)
+
+packages/sdk → apps/server (HTTP, fleet API key auth)
+             → Solana (Memo anchoring, Anchor program PDA)
 ```
+
+### packages/sdk — Rhemos Payment Runtime
+
+The core payment SDK. Powers `rhemos.pay(url)` — 6-stage pipeline: detect → policy → resolve → execute → trace → emit.
+
+**Shared Intelligence Layer Contracts** (`packages/sdk/src/types.ts`):
+- `PaymentEvent` — the facts of what happened (every field from `docs/intelligence-layer-spec.md`)
+- `PaymentTrace` — the reasoning behind each decision (alternatives, policy rules, replay snapshot)
+- `PolicyDecisionEvent` — every rule evaluation with `human_approval_required`
+
+These are the canonical interfaces between Sean's payment runtime and Zhe Hong's intelligence layer. Both the SDK emit pipeline and the Go server ingest must match these shapes. Spec: `docs/intelligence-layer-spec.md`.
+
+**Key modules:**
+- `src/detect/` — Protocol detection chain (x402, MPP, L402, AP2, ACP), 60s domain cache
+- `src/policy/` — 6 rules, 30s server-side cache
+- `src/resolve/` — 7 instruments scored by cost/latency/risk
+- `src/execute/` — Adapters with cascade fallback (x402-solana, x402-evm, mpp-charge, mpp-session)
+- `src/session/` — Governed MPP streaming sessions
+- `src/anchor/` — Solana Memo anchoring (Layer 1) + Merkle tree (Layer 2)
+- `src/trace/` — Decision trace collection + SHA-256 hashing
 
 ### apps/web — TanStack Start (SSR React)
 

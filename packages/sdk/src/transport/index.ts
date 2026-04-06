@@ -1,9 +1,16 @@
-import type { FleetStatus, PolicyConfig, PolicyContext } from "../types.js";
+import type {
+  FleetStatus,
+  PaymentEvent,
+  PaymentTrace,
+  PolicyConfig,
+  PolicyContext,
+  PolicyDecisionEvent,
+} from "../types.js";
 
 export interface IngestPayload {
-  event: Record<string, unknown>;
-  trace: Record<string, unknown>;
-  policyDecisions: Record<string, unknown>[];
+  event: PaymentEvent;
+  trace: PaymentTrace;
+  policyDecisions: PolicyDecisionEvent[];
 }
 
 export interface IngestResult {

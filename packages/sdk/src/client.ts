@@ -2,8 +2,11 @@ import type {
   FleetStatus,
   MppSession,
   PayOptions,
+  PaymentEvent,
+  PaymentTrace,
   PayResult,
   PolicyConfig,
+  PolicyDecisionEvent,
   ProbeOptions,
   ProbeResult,
   Rhemos,
@@ -57,51 +60,75 @@ export function createRhemos(config: RhemosConfig): Rhemos {
     const traceRecord = trace.finalize();
     const domain = extractDomain(snapshot.url);
 
-    // Fire-and-await — but don't let failure block the caller
+    const event: PaymentEvent = {
+      id: `evt_${traceRecord.id.replace("trc_", "")}`,
+      timestamp: snapshot.startedAt,
+      agent_id: snapshot.agentId,
+      fleet_id: snapshot.fleetId,
+      standard: snapshot.detection.protocol,
+      standard_version: "",
+      amount: Number(snapshot.detection.priceRaw) / 1_000_000,
+      token: snapshot.detection.currency,
+      chain_from: snapshot.detection.network,
+      chain_to: snapshot.detection.network,
+      domain,
+      outcome: snapshot.executionSuccess
+        ? "success"
+        : snapshot.policyDecision.action === "block"
+          ? "rejected"
+          : "failed",
+      parent_event_id: null,
+      delegation_depth: 0,
+      instrument_type: snapshot.chosenPath?.instrument ?? "none",
+      trace_id: traceRecord.id,
+    };
+
+    const paymentTrace: PaymentTrace = {
+      id: traceRecord.id,
+      payment_event_id: event.id,
+      agent_task_description: snapshot.taskContext ?? "",
+      agent_task_step: snapshot.taskStep ?? null,
+      trigger_402_raw: JSON.stringify(snapshot.detection.raw),
+      standard_detected: snapshot.detection.protocol,
+      standard_confidence: snapshot.detection.confidence,
+      alternatives_evaluated: snapshot.allPaths,
+      policy_rules_fired: snapshot.policyDecision.rulesFired,
+      instrument_selection_log: snapshot.chosenPath
+        ? `${snapshot.chosenPath.instrument} selected: score ${snapshot.chosenPath.score}`
+        : "No path available",
+      bridge_scoring: null,
+      economic_rationality_check: null,
+      task_outcome: null,
+      task_outcome_linked_at: null,
+      replay_snapshot: {
+        policy_state: snapshot.policyDecision.rulesFired.length > 0
+          ? { dailyLimit: 0, maxPerTransaction: 0, approvalThreshold: 0, allowedStandards: [], domainAllowlist: [] }
+          : { dailyLimit: 0, maxPerTransaction: 0, approvalThreshold: 0, allowedStandards: [], domainAllowlist: [] },
+        detection: snapshot.detection,
+        all_paths: snapshot.allPaths,
+        policy_decision: snapshot.policyDecision,
+      },
+      trace_hash: traceRecord.traceHash,
+      anchor_tx_hash: null,
+      merkle_proof: null,
+    };
+
+    const policyDecisions: PolicyDecisionEvent[] =
+      snapshot.policyDecision.rulesFired.map((r, i) => ({
+        id: `pdec_${traceRecord.id.replace("trc_", "")}_${i}`,
+        payment_event_id: event.id,
+        agent_id: snapshot.agentId,
+        rule_triggered: r.rule,
+        decision: r.decision,
+        threshold: r.threshold,
+        actual_value: r.actual,
+        domain,
+        standard: snapshot.detection.protocol,
+        human_approval_required: r.decision === "flag",
+      }));
+
     transport
-      .ingestPayment({
-        event: {
-          agent_id: snapshot.agentId,
-          fleet_id: snapshot.fleetId,
-          standard: snapshot.detection.protocol,
-          amount: Number(snapshot.detection.priceRaw) / 1_000_000,
-          token: snapshot.detection.currency,
-          chain: snapshot.detection.network,
-          domain,
-          outcome: snapshot.executionSuccess
-            ? "success"
-            : snapshot.policyDecision.action === "block"
-              ? "rejected"
-              : "failed",
-          instrument_type: snapshot.chosenPath?.instrument ?? "none",
-          trace_id: traceRecord.id,
-        },
-        trace: {
-          id: traceRecord.id,
-          agent_task_context: snapshot.taskContext ?? "",
-          trigger_402_raw: JSON.stringify(snapshot.detection.raw),
-          alternatives_evaluated: snapshot.allPaths,
-          policy_rules_fired: snapshot.policyDecision.rulesFired,
-          instrument_selection_log: snapshot.chosenPath
-            ? `${snapshot.chosenPath.instrument} selected: score ${snapshot.chosenPath.score}`
-            : "No path available",
-          confidence: snapshot.detection.confidence,
-          replay_snapshot: {
-            policyDecision: snapshot.policyDecision,
-            allPaths: snapshot.allPaths,
-            detection: snapshot.detection,
-          },
-          trace_hash: traceRecord.traceHash,
-        },
-        policyDecisions: snapshot.policyDecision.rulesFired.map((r) => ({
-          rule_triggered: r.rule,
-          decision: r.decision,
-          threshold: r.threshold,
-          actual_value: r.actual,
-          domain,
-          standard: snapshot.detection.protocol,
-        })),
-      })
+      .ingestPayment({ event, trace: paymentTrace, policyDecisions })
       .catch((err) => {
         config.onError?.(
           err instanceof Error ? err : new Error(String(err)),
