@@ -169,9 +169,10 @@ export const update = mutation({
 });
 
 // Insert a policy decision record (called by Go server after ingest)
+// The Go handler always passes payment_event_id from the events:insert result.
 export const insertDecision = mutation({
   args: {
-    payment_event_id: v.optional(v.id("payment_events")),
+    payment_event_id: v.id("payment_events"),
     agent_id: v.optional(v.string()),
     rule_triggered: v.string(),
     decision: v.string(),
@@ -181,19 +182,9 @@ export const insertDecision = mutation({
     standard: v.string(),
   },
   handler: async (ctx, args) => {
-    // Find matching event by agent+domain if payment_event_id not provided
-    let eventId = args.payment_event_id;
-    if (!eventId && args.agent_id) {
-      const recentEvents = await ctx.db
-        .query("payment_events")
-        .withIndex("by_agent", (q) => q.eq("agent_id", args.agent_id!))
-        .order("desc")
-        .take(1);
-      eventId = recentEvents[0]?._id;
-    }
+    const eventId = args.payment_event_id;
 
     if (!eventId) {
-      // Skip inserting if we can't link to an event
       return null;
     }
 

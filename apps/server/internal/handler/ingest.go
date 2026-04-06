@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,6 +39,13 @@ func (h *IngestHandler) IngestPayment(c *gin.Context) {
 		return
 	}
 
+	// Unmarshal the Convex document ID (json.RawMessage contains quoted string)
+	var eventID string
+	if err := json.Unmarshal(eventResult, &eventID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse event ID: " + err.Error()})
+		return
+	}
+
 	// Insert payment trace
 	_, err = h.convex.Mutation("traces:insert", payload.Trace)
 	if err != nil {
@@ -45,8 +53,9 @@ func (h *IngestHandler) IngestPayment(c *gin.Context) {
 		return
 	}
 
-	// Insert policy decisions
+	// Insert policy decisions — pass the eventID to avoid cross-linking under concurrent load
 	for _, decision := range payload.PolicyDecisions {
+		decision["payment_event_id"] = eventID
 		h.convex.Mutation("policies:insertDecision", decision)
 	}
 
@@ -58,7 +67,7 @@ func (h *IngestHandler) IngestPayment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"eventId": string(eventResult),
+		"eventId": eventID,
 		"traceId": payload.Trace["id"],
 	})
 }
