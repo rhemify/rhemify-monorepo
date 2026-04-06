@@ -1,0 +1,18 @@
+{
+  "status": 402,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "accepts": [
+      {
+        "scheme": "exact",
+        "network": "solana-mainnet",
+        "maxAmountRequired": "500000",
+        "resource": "https://api.example.com/data",
+        "payTo": "So1anaRecipientAddr111111111111111111111",
+        "extra": { "name": "USDC" }
+      }
+    ]
+  }
+}

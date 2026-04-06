@@ -1,0 +1,14 @@
+{
+  "status": 402,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": [
+    {
+      "scheme": "exact",
+      "network": "base-sepolia",
+      "maxAmountRequired": "250000",
+      "payTo": "0xTestAddr"
+    }
+  ]
+}

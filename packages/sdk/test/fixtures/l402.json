@@ -1,0 +1,8 @@
+{
+  "status": 402,
+  "headers": {
+    "www-authenticate": "L402 macaroon=\"AGIAJEemVQUTEyNCg\", invoice=\"lnbc10u1p3\"",
+    "content-type": "application/json"
+  },
+  "body": null
+}

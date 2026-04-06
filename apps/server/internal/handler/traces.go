@@ -29,6 +29,9 @@ func (h *TracesHandler) GetTrace(c *gin.Context) {
 	}
 
 	var trace interface{}
-	json.Unmarshal(result, &trace)
+	if err := json.Unmarshal(result, &trace); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse trace: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, trace)
 }

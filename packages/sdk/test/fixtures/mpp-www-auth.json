@@ -1,0 +1,8 @@
+{
+  "status": 402,
+  "headers": {
+    "www-authenticate": "Payment scheme=\"solana\" amount=\"10000\" currency=\"USDC\" recipient=\"So1anaRecipient\" network=\"solana-mainnet\"",
+    "content-type": "application/json"
+  },
+  "body": null
+}
