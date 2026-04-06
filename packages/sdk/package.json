@@ -21,6 +21,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "dependencies": {
+    "@rhemify-monorepo/types": "workspace:*"
+  },
   "devDependencies": {
     "@rhemify-monorepo/config": "workspace:*",
     "@types/node": "^22.13.14",

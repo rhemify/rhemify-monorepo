@@ -99,84 +99,17 @@ export interface PaymentExecutor {
 }
 
 // --- Shared Intelligence Layer Contracts ---
-// These are the canonical interfaces between the payment runtime (SDK)
-// and the intelligence layer (Go server). Both sides must match these shapes.
-// Spec: docs/intelligence-layer-spec.md
-
-/** Every call to rhemos.pay() emits a PaymentEvent — the facts of what happened. */
-export interface PaymentEvent {
-  id: string;
-  timestamp: string;
-  agent_id: string;
-  fleet_id: string;
-  standard: PaymentProtocol;
-  standard_version: string;
-  amount: number;
-  token: string;
-  chain_from: string;
-  chain_to: string;
-  domain: string;
-  outcome: "success" | "rejected" | "failed";
-  parent_event_id: string | null;
-  delegation_depth: number;
-  instrument_type: string;
-  trace_id: string;
-}
-
-/** The reasoning behind each payment decision. Append-only, never modified. */
-export interface PaymentTrace {
-  id: string;
-  payment_event_id: string;
-  agent_task_description: string;
-  agent_task_step: number | null;
-  trigger_402_raw: string;
-  standard_detected: PaymentProtocol;
-  standard_confidence: "high" | "medium" | "low";
-  alternatives_evaluated: ScoredPath[];
-  policy_rules_fired: PolicyDecisionRecord[];
-  instrument_selection_log: string;
-  bridge_scoring: BridgeScoring | null;
-  economic_rationality_check: EconomicRationalityCheck | null;
-  task_outcome: "success" | "failure" | "pending" | null;
-  task_outcome_linked_at: string | null;
-  replay_snapshot: ReplaySnapshot;
-  trace_hash: string;
-  anchor_tx_hash: string | null;
-  merkle_proof: string[] | null;
-}
-
-export interface BridgeScoring {
-  [provider: string]: { cost: number; time: number };
-}
-
-export interface EconomicRationalityCheck {
-  bridge_cost_pct: number;
-  threshold: number;
-  passed: boolean;
-}
-
-export interface ReplaySnapshot {
-  policy_state: PolicyConfig;
-  vendor_registry_snapshot?: Record<string, unknown>;
-  agent_context?: string;
-  detection: DetectionResult;
-  all_paths: ScoredPath[];
-  policy_decision: PolicyDecision;
-}
-
-/** Every policy rule evaluation, whether it passed or blocked. */
-export interface PolicyDecisionEvent {
-  id: string;
-  payment_event_id: string;
-  agent_id: string;
-  rule_triggered: string;
-  decision: "allow" | "flag" | "block";
-  threshold: string;
-  actual_value: string;
-  domain: string;
-  standard: PaymentProtocol;
-  human_approval_required: boolean;
-}
+// Re-exported from @rhemify-monorepo/types (packages/types).
+// That package is the single source of truth for the contract between
+// the payment runtime (SDK) and the intelligence layer (Go server).
+export type {
+  PaymentEvent,
+  PaymentTrace,
+  PolicyDecisionEvent,
+  BridgeScoring,
+  EconomicRationalityCheck,
+  ReplaySnapshot,
+} from "@rhemify-monorepo/types";
 
 // --- Trace (SDK-internal, produced by Trace.finalize()) ---
 

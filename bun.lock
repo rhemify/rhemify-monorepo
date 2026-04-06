@@ -109,6 +109,9 @@
     "packages/sdk": {
       "name": "@rhemify-monorepo/sdk",
       "version": "0.0.1",
+      "dependencies": {
+        "@rhemify-monorepo/types": "workspace:*",
+      },
       "devDependencies": {
         "@rhemify-monorepo/config": "workspace:*",
         "@types/node": "^22.13.14",
@@ -117,25 +120,31 @@
         "vitest": "^3.0.0",
       },
       "peerDependencies": {
-        "@coral-xyz/anchor": ">=0.30.0",
+        "@solana/codecs": ">=2.0.0",
         "@solana/kit": ">=6.5.0",
         "@solana/mpp": ">=0.2.0",
-        "bs58": ">=5.0.0",
         "mppx": ">=0.3.15",
         "viem": ">=2.0.0",
         "x402-fetch": ">=0.1.0",
         "x402-solana": ">=0.1.0",
       },
       "optionalPeers": [
-        "@coral-xyz/anchor",
+        "@solana/codecs",
         "@solana/kit",
         "@solana/mpp",
-        "bs58",
         "mppx",
         "viem",
         "x402-fetch",
         "x402-solana",
       ],
+    },
+    "packages/types": {
+      "name": "@rhemify-monorepo/types",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@rhemify-monorepo/config": "workspace:*",
+        "typescript": "^5",
+      },
     },
     "packages/ui": {
       "name": "@rhemify-monorepo/ui",
@@ -478,6 +487,8 @@
     "@rhemify-monorepo/env": ["@rhemify-monorepo/env@workspace:packages/env"],
 
     "@rhemify-monorepo/sdk": ["@rhemify-monorepo/sdk@workspace:packages/sdk"],
+
+    "@rhemify-monorepo/types": ["@rhemify-monorepo/types@workspace:packages/types"],
 
     "@rhemify-monorepo/ui": ["@rhemify-monorepo/ui@workspace:packages/ui"],
 
