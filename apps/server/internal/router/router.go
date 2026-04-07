@@ -8,9 +8,16 @@ import (
 	cx "github.com/rhemify/server/internal/convex"
 	"github.com/rhemify/server/internal/handler"
 	"github.com/rhemify/server/internal/middleware"
+	"github.com/rhemify/server/internal/signer"
 )
 
-func Setup(convex *cx.Client, cfg *config.Config) *gin.Engine {
+// Deps holds optional dependencies for new dWallet features.
+type Deps struct {
+	Cosigner *signer.Cosigner
+	Pipeline *signer.SigningPipeline
+}
+
+func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -65,6 +72,24 @@ func Setup(convex *cx.Client, cfg *config.Config) *gin.Engine {
 			sdk.PATCH("/traces/:id/anchor", anchorHandler.UpdateTraceAnchor)
 			sdk.GET("/anchor/verify/:traceId", anchorHandler.VerifyTrace)
 			sdk.GET("/anchor/:fleetId/:date", anchorHandler.GetDailyRoot)
+
+			// dWallet + Signing (requires cosigner and pipeline)
+			if len(deps) > 0 && deps[0] != nil {
+				d := deps[0]
+				if d.Cosigner != nil {
+					wallets := handler.NewWalletHandler(convex, d.Cosigner)
+					sdk.POST("/wallets/create-fleet", wallets.CreateFleet)
+					sdk.POST("/wallets/create-agent", wallets.CreateAgentWallet)
+					sdk.POST("/wallets/freeze", wallets.FreezeAgent)
+					sdk.GET("/wallets/:fleetId", wallets.ListWallets)
+					sdk.GET("/wallets/:fleetId/:agentKey", wallets.GetAgentWallet)
+				}
+				if d.Pipeline != nil {
+					signing := handler.NewSigningHandler(convex, d.Pipeline)
+					sdk.POST("/signing/request", signing.CreateSigningRequest)
+					sdk.GET("/signing/:id", signing.GetSigningRequest)
+				}
+			}
 		}
 	}
 
