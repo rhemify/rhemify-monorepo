@@ -9,7 +9,7 @@
 const MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 
 export interface MemoPayload {
-  /** Always "rhemos-trace" */
+  /** Always "rhemify-trace" */
   op: string;
   /** Trace ID (trc_...) */
   id: string;
@@ -43,7 +43,7 @@ export async function sendMemoTransaction(
   options: SendMemoOptions,
 ): Promise<string> {
   const payload: MemoPayload = {
-    op: "rhemos-trace",
+    op: "rhemify-trace",
     id: options.traceId,
     hash: options.traceHash,
     fleet: options.fleetId,
@@ -122,7 +122,7 @@ export function buildMemoPayload(
   timestamp: number,
 ): MemoPayload {
   return {
-    op: "rhemos-trace",
+    op: "rhemify-trace",
     id: traceId,
     hash: traceHash,
     fleet: fleetId,

@@ -1,16 +1,16 @@
 {
   "mcpServers": {
-    "rhemos": {
+    "rhemify": {
       "command": "node",
       "args": ["packages/mcp/dist/index.js"],
       "env": {
-        "RHEMOS_SERVER_URL": "http://localhost:8080",
-        "RHEMOS_FLEET_API_KEY": "your-fleet-api-key",
-        "RHEMOS_AGENT_ID": "agent-1",
-        "RHEMOS_FLEET_ID": "fleet-1",
-        "RHEMOS_SOLANA_PRIVATE_KEY": "",
-        "RHEMOS_SOLANA_RPC_URL": "https://api.devnet.solana.com",
-        "RHEMOS_EVM_PRIVATE_KEY": ""
+        "RHEMIFY_SERVER_URL": "http://localhost:8080",
+        "RHEMIFY_FLEET_API_KEY": "your-fleet-api-key",
+        "RHEMIFY_AGENT_ID": "agent-1",
+        "RHEMIFY_FLEET_ID": "fleet-1",
+        "RHEMIFY_SOLANA_PRIVATE_KEY": "",
+        "RHEMIFY_SOLANA_RPC_URL": "https://api.devnet.solana.com",
+        "RHEMIFY_EVM_PRIVATE_KEY": ""
       }
     }
   }

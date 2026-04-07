@@ -10,8 +10,8 @@ import type {
   PolicyDecisionEvent,
   ProbeOptions,
   ProbeResult,
-  Rhemos,
-  RhemosConfig,
+  Rhemify,
+  RhemifyConfig,
   SessionOptions,
 } from "./types.js";
 import {
@@ -29,7 +29,7 @@ import { Trace } from "./trace/index.js";
 import { AnchorQueue } from "./anchor/queue.js";
 import { createGovernedSession } from "./session/index.js";
 
-export function createRhemos(config: RhemosConfig): Rhemos {
+export function createRhemify(config: RhemifyConfig): Rhemify {
   const transport = new GoServerTransport(config.serverUrl, config.fleetApiKey);
   const policyEngine = new PolicyEngine(
     transport,

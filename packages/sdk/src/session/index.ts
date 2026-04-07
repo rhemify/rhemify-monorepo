@@ -3,7 +3,7 @@ import type {
   PaymentEvent,
   PaymentTrace,
   PolicyDecisionEvent,
-  RhemosConfig,
+  RhemifyConfig,
   SessionCloseResult,
   SessionOptions,
 } from "../types.js";
@@ -25,7 +25,7 @@ import { AnchorQueue } from "../anchor/queue.js";
  */
 export async function createGovernedSession(
   options: SessionOptions | undefined,
-  config: RhemosConfig,
+  config: RhemifyConfig,
   transport: GoServerTransport,
   policyEngine: PolicyEngine,
   anchorQueue: AnchorQueue | null,
@@ -234,7 +234,7 @@ export async function createGovernedSession(
 // --- Helpers ---
 
 async function openMppSession(
-  config: RhemosConfig,
+  config: RhemifyConfig,
   maxDepositUsd: number,
   ttlSeconds: number,
   autoTopup?: boolean,

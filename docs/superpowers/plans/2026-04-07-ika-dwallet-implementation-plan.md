@@ -42,7 +42,7 @@
 
 #### Task 2: Add new config fields for Solana + co-signer
 
-**Description:** Extend `config.Config` with Solana RPC URL, co-signer private key, and rhemos-dwallet program ID. Load from env vars.
+**Description:** Extend `config.Config` with Solana RPC URL, co-signer private key, and rhemify-dwallet program ID. Load from env vars.
 
 **Acceptance criteria:**
 - [ ] `Config` struct has `SolanaRPCURL`, `CosignerPrivateKey`, `DWalletProgramID` fields
@@ -145,9 +145,9 @@
 
 ---
 
-#### Task 6: Implement Anchor instruction builder for rhemos-dwallet
+#### Task 6: Implement Anchor instruction builder for rhemify-dwallet
 
-**Description:** Build the 4 instruction data encoders for `rhemos-dwallet`: `initialize_fleet_vault`, `register_agent_wallet`, `approve_signing`, `freeze_agent`. Uses Borsh encoding with Anchor 8-byte discriminators.
+**Description:** Build the 4 instruction data encoders for `rhemify-dwallet`: `initialize_fleet_vault`, `register_agent_wallet`, `approve_signing`, `freeze_agent`. Uses Borsh encoding with Anchor 8-byte discriminators.
 
 **Acceptance criteria:**
 - [ ] `internal/solana/instructions.go` with builder functions for each instruction
@@ -409,37 +409,37 @@
 
 ---
 
-### Phase 6: Anchor Program — rhemos-dwallet
+### Phase 6: Anchor Program — rhemify-dwallet
 
-#### Task 15: Scaffold rhemos-dwallet Anchor program
+#### Task 15: Scaffold rhemify-dwallet Anchor program
 
 **Description:** Create the new Anchor program with account state structs and 4 instruction stubs.
 
 **Acceptance criteria:**
-- [ ] `programs/rhemos-dwallet/` with Anchor project structure
+- [ ] `programs/rhemify-dwallet/` with Anchor project structure
 - [ ] Account structs: `FleetVault`, `AgentWallet`, `SigningApproval` matching spec Section 3 (plaintext u64 fields)
 - [ ] 4 instruction stubs that compile but have no logic
 - [ ] PDA seeds match spec: `[b"fleet-vault", fleet_id]`, `[b"agent-wallet", fleet_id, agent_key]`, `[b"signing-approval", agent_wallet, nonce]`
 - [ ] `anchor build` succeeds
 
 **Verification:**
-- [ ] `cd programs/rhemos-dwallet && anchor build` succeeds
+- [ ] `cd programs/rhemify-dwallet && anchor build` succeeds
 - [ ] Program ID generated
 
 **Dependencies:** None (independent of Go work)
 
 **Files likely touched:**
-- `programs/rhemos-dwallet/Cargo.toml` (new)
-- `programs/rhemos-dwallet/Anchor.toml` (new)
-- `programs/rhemos-dwallet/src/lib.rs` (new)
-- `programs/rhemos-dwallet/src/state/` (new)
-- `programs/rhemos-dwallet/src/instructions/` (new)
+- `programs/rhemify-dwallet/Cargo.toml` (new)
+- `programs/rhemify-dwallet/Anchor.toml` (new)
+- `programs/rhemify-dwallet/src/lib.rs` (new)
+- `programs/rhemify-dwallet/src/state/` (new)
+- `programs/rhemify-dwallet/src/instructions/` (new)
 
 **Estimated scope:** M
 
 ---
 
-#### Task 16: Implement rhemos-dwallet instruction logic
+#### Task 16: Implement rhemify-dwallet instruction logic
 
 **Description:** Fill in the 4 instructions with actual logic: initialization, registration, approval with policy checks, and freeze.
 
@@ -459,14 +459,14 @@
 **Dependencies:** Task 15
 
 **Files likely touched:**
-- `programs/rhemos-dwallet/src/instructions/*.rs`
-- `programs/rhemos-dwallet/tests/` (new)
+- `programs/rhemify-dwallet/src/instructions/*.rs`
+- `programs/rhemify-dwallet/tests/` (new)
 
 **Estimated scope:** L (break into sub-tasks if needed)
 
 ---
 
-#### Task 17: Deploy rhemos-dwallet to devnet + update Go server program ID
+#### Task 17: Deploy rhemify-dwallet to devnet + update Go server program ID
 
 **Description:** Deploy the program to Solana devnet. Update Go server config and PDA derivation with the actual program ID.
 
@@ -483,7 +483,7 @@
 **Dependencies:** Task 16, Task 7
 
 **Files likely touched:**
-- `programs/rhemos-dwallet/Anchor.toml`
+- `programs/rhemify-dwallet/Anchor.toml`
 - `apps/server/.env.example`
 - `apps/server/internal/config/config.go`
 
@@ -492,7 +492,7 @@
 ---
 
 ### Checkpoint: Phase 6
-- [ ] rhemos-dwallet deployed to devnet
+- [ ] rhemify-dwallet deployed to devnet
 - [ ] Go server can submit all 4 instruction types
 - [ ] Policy checks work on-chain (over-limit tx rejected)
 
@@ -622,13 +622,13 @@
 | Ika SDK not available for Go | High | MonitorIkaStage will be a stub in Phase 1. TypeScript SDK wrapper or mock for demo. |
 | Anchor discriminator encoding mismatch | Medium | Task 6 includes unit tests comparing against known-good encoded bytes from Anchor tests. |
 | Convex schema migration breaks existing data | Medium | New tables only, no destructive changes to existing tables. Only additive field on agents. |
-| rhemos-dwallet program too large for single deploy | Low | Program is 4 instructions with simple logic. Well within Solana's limits. |
+| rhemify-dwallet program too large for single deploy | Low | Program is 4 instructions with simple logic. Well within Solana's limits. |
 
 ## Open Questions
 
 1. **Ika SDK access**: Do we have the `@ika.xyz/sdk` npm package installed? Need to verify DKG flow before Task 21.
 2. **Base Sepolia RPC**: Which provider? Need an Alchemy/Infura key for BaseAdapter.
-3. **Devnet SOL**: Need funded wallets for deploying rhemos-dwallet and submitting test txs.
+3. **Devnet SOL**: Need funded wallets for deploying rhemify-dwallet and submitting test txs.
 
 ## Parallelization Opportunities
 

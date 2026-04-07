@@ -1,12 +1,12 @@
 [package]
-name = "rhemos-dwallet"
+name = "rhemify-anchor"
 version = "0.1.0"
-description = "Solana program for dWallet fleet vaults, agent wallets, and signing approvals"
+description = "Minimal Solana program for anchoring Rhemify trace Merkle roots onchain"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "rhemos_dwallet"
+name = "rhemify_anchor"
 
 [features]
 default = []

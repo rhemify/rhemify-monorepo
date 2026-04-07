@@ -7,7 +7,7 @@ Accepted
 2026-04-07
 
 ## Context
-The Go intelligence server needs to build, sign, and submit Solana transactions for the rhemos-dwallet Anchor program. We need a Go Solana SDK that provides:
+The Go intelligence server needs to build, sign, and submit Solana transactions for the rhemify-dwallet Anchor program. We need a Go Solana SDK that provides:
 - RPC client for devnet/mainnet
 - Transaction building and signing
 - PublicKey/PrivateKey types and PDA derivation

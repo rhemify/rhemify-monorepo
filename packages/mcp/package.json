@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "bin": {
-    "rhemos-mcp": "./dist/index.js"
+    "rhemify-mcp": "./dist/index.js"
   },
   "scripts": {
     "build": "tsup",

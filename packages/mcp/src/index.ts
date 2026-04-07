@@ -1,24 +1,24 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { createRhemos } from "@rhemify-monorepo/sdk";
-import type { Rhemos, MppSession } from "@rhemify-monorepo/sdk";
+import { createRhemify } from "@rhemify-monorepo/sdk";
+import type { Rhemify, MppSession } from "@rhemify-monorepo/sdk";
 
 // Config from environment
-const SERVER_URL = process.env.RHEMOS_SERVER_URL ?? "http://localhost:8080";
-const FLEET_API_KEY = process.env.RHEMOS_FLEET_API_KEY ?? "";
-const AGENT_ID = process.env.RHEMOS_AGENT_ID ?? "agent-1";
-const FLEET_ID = process.env.RHEMOS_FLEET_ID ?? "fleet-1";
-const SOLANA_PRIVATE_KEY = process.env.RHEMOS_SOLANA_PRIVATE_KEY ?? "";
-const EVM_PRIVATE_KEY = process.env.RHEMOS_EVM_PRIVATE_KEY ?? "";
-const SOLANA_RPC_URL = process.env.RHEMOS_SOLANA_RPC_URL ?? "";
+const SERVER_URL = process.env.RHEMIFY_SERVER_URL ?? "http://localhost:8080";
+const FLEET_API_KEY = process.env.RHEMIFY_FLEET_API_KEY ?? "";
+const AGENT_ID = process.env.RHEMIFY_AGENT_ID ?? "agent-1";
+const FLEET_ID = process.env.RHEMIFY_FLEET_ID ?? "fleet-1";
+const SOLANA_PRIVATE_KEY = process.env.RHEMIFY_SOLANA_PRIVATE_KEY ?? "";
+const EVM_PRIVATE_KEY = process.env.RHEMIFY_EVM_PRIVATE_KEY ?? "";
+const SOLANA_RPC_URL = process.env.RHEMIFY_SOLANA_RPC_URL ?? "";
 
-let rhemos: Rhemos;
+let rhemify: Rhemify;
 let activeSession: MppSession | null = null;
 
-function getRhemos(): Rhemos {
-  if (!rhemos) {
-    rhemos = createRhemos({
+function getRhemify(): Rhemify {
+  if (!rhemify) {
+    rhemify = createRhemify({
       serverUrl: SERVER_URL,
       fleetApiKey: FLEET_API_KEY,
       agentId: AGENT_ID,
@@ -34,19 +34,19 @@ function getRhemos(): Rhemos {
       },
     });
   }
-  return rhemos;
+  return rhemify;
 }
 
 const server = new McpServer({
-  name: "rhemos",
+  name: "rhemify",
   version: "0.1.0",
 });
 
-// --- Tool: rhemos.pay ---
+// --- Tool: rhemify.pay ---
 server.registerTool(
-  "rhemos_pay",
+  "rhemify_pay",
   {
-    title: "Rhemos Pay",
+    title: "Rhemify Pay",
     description:
       "Pay for a resource at a URL. Detects the payment standard (x402, MPP, L402), " +
       "enforces fleet policy, resolves the optimal payment path, executes payment, " +
@@ -83,7 +83,7 @@ server.registerTool(
   },
   async (args) => {
     try {
-      const result = await getRhemos().pay(args.url, {
+      const result = await getRhemify().pay(args.url, {
         method: args.method,
         body: args.body ? JSON.parse(args.body) : undefined,
         maxBudget: args.maxBudget,
@@ -131,11 +131,11 @@ server.registerTool(
   },
 );
 
-// --- Tool: rhemos.probe ---
+// --- Tool: rhemify.probe ---
 server.registerTool(
-  "rhemos_probe",
+  "rhemify_probe",
   {
-    title: "Rhemos Probe",
+    title: "Rhemify Probe",
     description:
       "Detect the payment protocol and check if a payment would be allowed by policy, " +
       "without executing. Returns detection result, policy evaluation, estimated paths and costs.",
@@ -149,7 +149,7 @@ server.registerTool(
   },
   async (args) => {
     try {
-      const result = await getRhemos().probe(args.url, {
+      const result = await getRhemify().probe(args.url, {
         method: args.method,
       });
 
@@ -194,15 +194,15 @@ server.registerTool(
   },
 );
 
-// --- Tool: rhemos.session ---
+// --- Tool: rhemify.session ---
 server.registerTool(
-  "rhemos_session",
+  "rhemify_session",
   {
-    title: "Rhemos Session",
+    title: "Rhemify Session",
     description:
       "Open an MPP streaming session for repeated payments to the same vendor. " +
-      "Returns a session ID. Use rhemos_session_fetch to make requests within the session, " +
-      "and rhemos_session_close to settle and close.",
+      "Returns a session ID. Use rhemify_session_fetch to make requests within the session, " +
+      "and rhemify_session_close to settle and close.",
     inputSchema: {
       action: z
         .enum(["open", "fetch", "close", "status"])
@@ -236,7 +236,7 @@ server.registerTool(
               isError: true,
             };
           }
-          activeSession = await getRhemos().session({
+          activeSession = await getRhemify().session({
             maxDeposit: args.maxDeposit,
             taskContext: args.taskContext,
           });
@@ -354,18 +354,18 @@ server.registerTool(
   },
 );
 
-// --- Tool: rhemos.status ---
+// --- Tool: rhemify.status ---
 server.registerTool(
-  "rhemos_status",
+  "rhemify_status",
   {
-    title: "Rhemos Status",
+    title: "Rhemify Status",
     description:
       "Get the current fleet status: agent spend today, daily limit, active agents, blocked domains.",
     inputSchema: {},
   },
   async () => {
     try {
-      const status = await getRhemos().status();
+      const status = await getRhemify().status();
       return {
         content: [
           {
@@ -388,11 +388,11 @@ server.registerTool(
   },
 );
 
-// --- Tool: rhemos.set_policy ---
+// --- Tool: rhemify.set_policy ---
 server.registerTool(
-  "rhemos_set_policy",
+  "rhemify_set_policy",
   {
-    title: "Rhemos Set Policy",
+    title: "Rhemify Set Policy",
     description:
       "Update the agent's payment policy. Changes take effect on the next payment.",
     inputSchema: {
@@ -420,7 +420,7 @@ server.registerTool(
   },
   async (args) => {
     try {
-      await getRhemos().setPolicy(args);
+      await getRhemify().setPolicy(args);
       return {
         content: [
           {
@@ -447,10 +447,10 @@ server.registerTool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Rhemos MCP Server running on stdio");
+  console.error("Rhemify MCP Server running on stdio");
 }
 
 main().catch((err) => {
-  console.error("Failed to start Rhemos MCP server:", err);
+  console.error("Failed to start Rhemify MCP server:", err);
   process.exit(1);
 });

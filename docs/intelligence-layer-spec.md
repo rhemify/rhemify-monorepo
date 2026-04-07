@@ -1,4 +1,4 @@
-# Rhemos Intelligence Layer — Design Spec
+# Rhemify Intelligence Layer — Design Spec
 
 ## Scope
 
@@ -12,7 +12,7 @@ See `docs/intelligence-layer-diagram.md` for the full Mermaid diagrams of system
 
 ## Core Principles
 
-1. **Instrument from transaction one.** Missing early data cannot be recovered. Every payment emits a full event + trace from the first call to `rhemos.pay()`.
+1. **Instrument from transaction one.** Missing early data cannot be recovered. Every payment emits a full event + trace from the first call to `rhemify.pay()`.
 
 2. **Capture WHY, not just WHAT.** Payment events record what happened. Decision traces record why it happened — agent context, alternatives evaluated, policy rules fired, confidence signals.
 
@@ -28,7 +28,7 @@ See `docs/intelligence-layer-diagram.md` for the full Mermaid diagrams of system
 
 ### What Gets Recorded
 
-Every call to `rhemos.pay()` emits three categories of data, regardless of outcome:
+Every call to `rhemify.pay()` emits three categories of data, regardless of outcome:
 
 **Payment Event** — the facts of what happened.
 
@@ -37,7 +37,7 @@ Every call to `rhemos.pay()` emits three categories of data, regardless of outco
 | id | Generated UUID | `evt_a1b2c3` |
 | timestamp | System clock (ISO 8601) | `2026-04-15T14:32:01Z` |
 | agent_id | From fleet registry | `agent-7` |
-| fleet_id | From fleet registry | `fleet-rhemos-prod` |
+| fleet_id | From fleet registry | `fleet-rhemify-prod` |
 | standard | Standard Detector | `x402` |
 | standard_version | From 402 headers | `1.0.0` |
 | amount | From PaymentIntent | `0.50` |
@@ -187,7 +187,7 @@ THRESHOLD: success_rate < 50% (default), min_sample = 10 (default)
 ACTION:    Add vendor domain to fleet blocked_domains list
 SEVERITY:  AUTO-ACT
 EVIDENCE:  {domain, success_rate, event_count, last_10_outcomes}
-REVERSIBLE: Yes — operator can unblock from dashboard or via rhemos.set_policy
+REVERSIBLE: Yes — operator can unblock from dashboard or via rhemify.set_policy
 ```
 
 **Rule VH-2: Flag Slow Vendor**
@@ -398,7 +398,7 @@ Every action the rules engine takes is recorded in the `intelligence_actions` ta
 
 Auto-actions are the only actions that modify system behavior without operator approval. They require guardrails:
 
-1. **Operator must opt in.** Auto-actions are disabled by default. Operator enables them per rule category via `rhemos.set_policy({ intelligence: { auto_block_vendors: true, auto_route: true } })`.
+1. **Operator must opt in.** Auto-actions are disabled by default. Operator enables them per rule category via `rhemify.set_policy({ intelligence: { auto_block_vendors: true, auto_route: true } })`.
 
 2. **Minimum sample size.** No auto-action fires with fewer than the minimum sample size (default 10 events for vendor health, 10 transactions for route optimization). This prevents overreacting to small samples.
 
@@ -550,10 +550,10 @@ This allows the agent to gracefully handle the rejection and try a different app
 
 ## 8. Configuration
 
-All intelligence rules are configurable via `rhemos.set_policy()` under the `intelligence` key:
+All intelligence rules are configurable via `rhemify.set_policy()` under the `intelligence` key:
 
 ```typescript
-rhemos.set_policy({
+rhemify.set_policy({
   intelligence: {
     // Master switch
     enabled: true,

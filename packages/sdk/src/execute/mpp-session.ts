@@ -7,7 +7,7 @@ import type { PaymentExecutor } from "./types.js";
  * Uses @solana/mpp session method for cumulative voucher signing.
  *
  * Note: This executor is used for individual requests within a session.
- * The session lifecycle (open/close/topup) is managed by the Rhemos
+ * The session lifecycle (open/close/topup) is managed by the Rhemify
  * session() wrapper in client.ts.
  *
  * For now this is a stub — session execution requires a pre-opened
@@ -36,7 +36,7 @@ export const mppSessionExecutor: PaymentExecutor = {
     // Session execution is managed by the session() wrapper
     // This executor should not be called directly in pay()
     throw new ExecutionError(
-      "MPP session executor should not be called directly. Use rhemos.session() instead.",
+      "MPP session executor should not be called directly. Use rhemify.session() instead.",
     );
   },
 };

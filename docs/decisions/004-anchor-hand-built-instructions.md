@@ -7,7 +7,7 @@ Accepted
 2026-04-07
 
 ## Context
-The Go server needs to build Solana transactions that call the `rhemos-dwallet` Anchor program's 4 instructions:
+The Go server needs to build Solana transactions that call the `rhemify-dwallet` Anchor program's 4 instructions:
 - `initialize_fleet_vault`
 - `register_agent_wallet`
 - `approve_signing`

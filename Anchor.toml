@@ -6,12 +6,12 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-rhemos_anchor = "RhemTrceAnch1111111111111111111111111111111"
-rhemos_dwallet = "GcGz6uD7FxF6rSjCAU1xBV4ZW1E9EFDa4JA5yPKv1cdL"
+rhemify_anchor = "RhemTrceAnch1111111111111111111111111111111"
+rhemify_dwallet = "GcGz6uD7FxF6rSjCAU1xBV4ZW1E9EFDa4JA5yPKv1cdL"
 
 [programs.localnet]
-rhemos_anchor = "AnNz2XESvXbyt2uNnFaZD3Wr6qZpmHC4iuHzmcxMoPRg"
-rhemos_dwallet = "GcGz6uD7FxF6rSjCAU1xBV4ZW1E9EFDa4JA5yPKv1cdL"
+rhemify_anchor = "AnNz2XESvXbyt2uNnFaZD3Wr6qZpmHC4iuHzmcxMoPRg"
+rhemify_dwallet = "GcGz6uD7FxF6rSjCAU1xBV4ZW1E9EFDa4JA5yPKv1cdL"
 
 [provider]
 cluster = "localnet"

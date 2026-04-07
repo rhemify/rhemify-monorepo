@@ -19,7 +19,7 @@ export type PaymentProtocol =
 
 // --- Payment Event ---
 
-/** Every call to rhemos.pay() emits a PaymentEvent — the facts of what happened. */
+/** Every call to rhemify.pay() emits a PaymentEvent — the facts of what happened. */
 export interface PaymentEvent {
   id: string;
   timestamp: string;

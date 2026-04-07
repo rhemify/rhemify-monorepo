@@ -13,7 +13,7 @@ The original spec considered FHE (Fully Homomorphic Encryption) for on-chain pol
 - For hackathon demo, policy transparency is more valuable than privacy
 
 ## Decision
-Use plaintext `u64` fields for all policy enforcement in the `rhemos-dwallet` Anchor program:
+Use plaintext `u64` fields for all policy enforcement in the `rhemify-dwallet` Anchor program:
 - `max_per_tx: u64` — per-transaction limit
 - `daily_limit: u64` — daily spending cap
 - `daily_spent: u64` — running total, resets on day boundary

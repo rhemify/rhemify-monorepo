@@ -54,8 +54,8 @@ skills-lock.json
 
 # Anchor / Solana build artifacts
 /target/
-/programs/rhemos-anchor/target/
-/programs/rhemos-dwallet/target/
+/programs/rhemify-anchor/target/
+/programs/rhemify-dwallet/target/
 
 # Claude Code worktrees and generated skills
 .claude/worktrees/

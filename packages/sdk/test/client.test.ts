@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
-  createRhemos,
-  RhemosError,
+  createRhemify,
+  RhemifyError,
   DetectionError,
   PolicyBlockedError,
   BudgetExceededError,
@@ -9,9 +9,9 @@ import {
   ExecutionError,
 } from "../src/index.js";
 
-describe("createRhemos", () => {
+describe("createRhemify", () => {
   it("returns an object with pay, probe, session, setPolicy, status", () => {
-    const rhemos = createRhemos({
+    const rhemify = createRhemify({
       serverUrl: "http://localhost:8080",
       fleetApiKey: "test-key",
       agentId: "agent-1",
@@ -19,21 +19,21 @@ describe("createRhemos", () => {
       wallet: { solanaPrivateKey: "fake-key" },
     });
 
-    expect(rhemos).toHaveProperty("pay");
-    expect(rhemos).toHaveProperty("probe");
-    expect(rhemos).toHaveProperty("session");
-    expect(rhemos).toHaveProperty("setPolicy");
-    expect(rhemos).toHaveProperty("status");
-    expect(typeof rhemos.pay).toBe("function");
-    expect(typeof rhemos.probe).toBe("function");
-    expect(typeof rhemos.session).toBe("function");
-    expect(typeof rhemos.setPolicy).toBe("function");
-    expect(typeof rhemos.status).toBe("function");
+    expect(rhemify).toHaveProperty("pay");
+    expect(rhemify).toHaveProperty("probe");
+    expect(rhemify).toHaveProperty("session");
+    expect(rhemify).toHaveProperty("setPolicy");
+    expect(rhemify).toHaveProperty("status");
+    expect(typeof rhemify.pay).toBe("function");
+    expect(typeof rhemify.probe).toBe("function");
+    expect(typeof rhemify.session).toBe("function");
+    expect(typeof rhemify.setPolicy).toBe("function");
+    expect(typeof rhemify.status).toBe("function");
   });
 });
 
 describe("error hierarchy", () => {
-  it("all errors extend RhemosError", () => {
+  it("all errors extend RhemifyError", () => {
     const detection = new DetectionError("fail", "https://x.com");
     const policy = new PolicyBlockedError("blocked", {
       action: "block",
@@ -44,11 +44,11 @@ describe("error hierarchy", () => {
     const wallet = new NoWalletError("solana");
     const execution = new ExecutionError("tx failed", 500);
 
-    expect(detection).toBeInstanceOf(RhemosError);
-    expect(policy).toBeInstanceOf(RhemosError);
-    expect(budget).toBeInstanceOf(RhemosError);
-    expect(wallet).toBeInstanceOf(RhemosError);
-    expect(execution).toBeInstanceOf(RhemosError);
+    expect(detection).toBeInstanceOf(RhemifyError);
+    expect(policy).toBeInstanceOf(RhemifyError);
+    expect(budget).toBeInstanceOf(RhemifyError);
+    expect(wallet).toBeInstanceOf(RhemifyError);
+    expect(execution).toBeInstanceOf(RhemifyError);
   });
 
   it("errors have correct codes", () => {

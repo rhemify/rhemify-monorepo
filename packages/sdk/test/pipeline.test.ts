@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createRhemos } from "../src/index.js";
+import { createRhemify } from "../src/index.js";
 import { PolicyBlockedError, BudgetExceededError, NoWalletError } from "../src/errors.js";
 
 /**
@@ -103,8 +103,8 @@ function mockFetch(policyResp = policyResponse) {
   });
 }
 
-function makeRhemos(overrides?: Record<string, unknown>) {
-  return createRhemos({
+function makeRhemify(overrides?: Record<string, unknown>) {
+  return createRhemify({
     serverUrl: "http://localhost:8080",
     fleetApiKey: "test-fleet-key",
     agentId: "agent-1",
@@ -128,9 +128,9 @@ describe("pay() pipeline integration", () => {
 
   it("runs detect → policy → resolve → dryRun and returns PayResult", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
-    const result = await rhemos.pay("https://api.example.com/paid", {
+    const result = await rhemify.pay("https://api.example.com/paid", {
       dryRun: true,
       taskContext: "Testing the pipeline",
       taskStep: 1,
@@ -151,9 +151,9 @@ describe("pay() pipeline integration", () => {
 
   it("emits trace to Go server on dryRun", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
-    await rhemos.pay("https://api.example.com/paid", { dryRun: true });
+    await rhemify.pay("https://api.example.com/paid", { dryRun: true });
 
     // Wait a tick for the async emit
     await new Promise((r) => setTimeout(r, 10));
@@ -170,39 +170,39 @@ describe("pay() pipeline integration", () => {
 
   it("throws PolicyBlockedError when policy blocks", async () => {
     globalThis.fetch = mockFetch(tightPolicyResponse);
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
     // x402 is not in allowedStandards (only mpp allowed)
     await expect(
-      rhemos.pay("https://api.example.com/paid", { dryRun: true }),
+      rhemify.pay("https://api.example.com/paid", { dryRun: true }),
     ).rejects.toThrow(PolicyBlockedError);
   });
 
   it("throws BudgetExceededError when price exceeds budget", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
     // $0.50 price > $0.10 budget
     await expect(
-      rhemos.pay("https://api.example.com/paid", { maxBudget: "$0.10" }),
+      rhemify.pay("https://api.example.com/paid", { maxBudget: "$0.10" }),
     ).rejects.toThrow(BudgetExceededError);
   });
 
   it("throws NoWalletError when no wallet matches", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos({ wallet: {} }); // No wallet keys
+    const rhemify = makeRhemify({ wallet: {} }); // No wallet keys
 
     await expect(
-      rhemos.pay("https://api.example.com/paid", { dryRun: true }),
+      rhemify.pay("https://api.example.com/paid", { dryRun: true }),
     ).rejects.toThrow(NoWalletError);
   });
 
   it("still emits trace on policy block", async () => {
     globalThis.fetch = mockFetch(tightPolicyResponse);
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
     try {
-      await rhemos.pay("https://api.example.com/paid", { dryRun: true });
+      await rhemify.pay("https://api.example.com/paid", { dryRun: true });
     } catch {
       // expected
     }
@@ -219,9 +219,9 @@ describe("pay() pipeline integration", () => {
   it("sends Authorization header to Go server", async () => {
     const fetchMock = mockFetch();
     globalThis.fetch = fetchMock;
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
-    await rhemos.pay("https://api.example.com/paid", { dryRun: true });
+    await rhemify.pay("https://api.example.com/paid", { dryRun: true });
 
     // Find a Go server call (policy fetch)
     const policyCallIndex = fetchCalls.findIndex((c) =>
@@ -251,9 +251,9 @@ describe("probe() integration", () => {
 
   it("returns canPay=true for allowed payment", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
-    const result = await rhemos.probe("https://api.example.com/paid");
+    const result = await rhemify.probe("https://api.example.com/paid");
 
     expect(result.canPay).toBe(true);
     expect(result.detection.protocol).toBe("x402");
@@ -264,9 +264,9 @@ describe("probe() integration", () => {
 
   it("returns canPay=false when policy blocks", async () => {
     globalThis.fetch = mockFetch(tightPolicyResponse);
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
-    const result = await rhemos.probe("https://api.example.com/paid");
+    const result = await rhemify.probe("https://api.example.com/paid");
 
     expect(result.canPay).toBe(false);
     expect(result.policyDecision.action).toBe("block");
@@ -274,9 +274,9 @@ describe("probe() integration", () => {
 
   it("returns canPay=false when no wallet available", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos({ wallet: {} });
+    const rhemify = makeRhemify({ wallet: {} });
 
-    const result = await rhemos.probe("https://api.example.com/paid");
+    const result = await rhemify.probe("https://api.example.com/paid");
 
     expect(result.canPay).toBe(false);
     expect(result.estimatedCost).toBe("N/A");

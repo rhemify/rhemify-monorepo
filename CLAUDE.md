@@ -77,9 +77,9 @@ packages/sdk → apps/server (HTTP, fleet API key auth)
              → Solana (Memo anchoring, Anchor program PDA)
 ```
 
-### packages/sdk — Rhemos Payment Runtime
+### packages/sdk — Rhemify Payment Runtime
 
-The core payment SDK. Powers `rhemos.pay(url)` — 6-stage pipeline: detect → policy → resolve → execute → trace → emit.
+The core payment SDK. Powers `rhemify.pay(url)` — 6-stage pipeline: detect → policy → resolve → execute → trace → emit.
 
 **Shared Intelligence Layer Contracts** (`packages/sdk/src/types.ts`):
 - `PaymentEvent` — the facts of what happened (every field from `docs/intelligence-layer-spec.md`)
@@ -125,16 +125,16 @@ Brand tokens: `--color-rhm-accent` (#C8F03A), `--color-rhm-success`, `--color-rh
 
 Zod-validated env vars via `@t3-oss/env-core`. Server vars: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`. Client vars use `VITE_` prefix.
 
-## Product Context — Rhemos
+## Product Context — Rhemify
 
-Rhemos is the verifiable payment layer for agentic commerce. **Route. Govern. Verify.**
+Rhemify is the verifiable payment layer for agentic commerce. **Route. Govern. Verify.**
 
 > Here's proof of what happened, WHY it happened, what alternatives were rejected, and what would have happened if you changed the policy — plus we routed the payment in the first place.
 
 ### Core Architecture: The Routing Engine
 
 ```
-Agent calls rhemos.pay(url)
+Agent calls rhemify.pay(url)
   → Standard Detector (x402 / MPP / L402 / AP2 / ACP)
   → Policy Engine (limits, domains, standards, intelligence rules)
   → Path Resolver (AgentCard / OWS / Squads session / Jupiter swap / CCTP bridge)
@@ -163,7 +163,7 @@ Agent calls rhemos.pay(url)
 | `docs/intelligence-layer-spec.md` | Full spec for intelligence layer: event ingestion, rules engine (12 rules across 5 categories), auto-actions, decision replay, configuration, data retention. **Build bible for the backend.** | Backend (Zhe Hong) |
 | `docs/intelligence-layer-diagram.md` | Mermaid diagrams: full system flow, rules engine detail, action lifecycle, single payment sequence. | Everyone |
 | `docs/competitive-analysis.md` | Deep analysis of MCPay, Latinum, CORBITS, Mercantill, Sponge, AgentCash, Observer Protocol. Micropayment criticism response. Ecosystem validation quotes. | Everyone (for pitch context) |
-| `docs/vendor-instrument-analysis.md` | Every external service that integrates with Rhemos: signing (OWS, Privy, Squads), payment instruments (AgentCard, AgentCash, Squads sessions), swaps (Jupiter), bridges (CCTP), RPC (Helius), identity. | Sean, Wei Hup |
+| `docs/vendor-instrument-analysis.md` | Every external service that integrates with Rhemify: signing (OWS, Privy, Squads), payment instruments (AgentCard, AgentCash, Squads sessions), swaps (Jupiter), bridges (CCTP), RPC (Helius), identity. | Sean, Wei Hup |
 
 **Deprecated — do not use as source of truth:**
 
@@ -225,7 +225,7 @@ Priority order for detectStandard():
 - **Fonts**: Inter (body) + DM Mono (technical values: IDs, amounts, timestamps, payment standards).
 - **Linting**: Oxlint (not ESLint). Formatting: Oxfmt (not Prettier).
 - **Path aliases**: `@/*` → `./src/*` in apps/web. `@rhemify-monorepo/ui/*` → packages/ui.
-- **Naming**: Brand is "Rhemify" (company) / "Rhemos" (product). Product terms: Fleet, Agent, Department, Policy, Deploy, Freeze, Kill switch, Trace, Replay.
+- **Naming**: Brand is **Rhemify** everywhere (company and product). No "Rhemos". Product terms: Fleet, Agent, Department, Policy, Deploy, Freeze, Kill switch, Trace, Replay.
 - **Vite plugin order**: `tailwindcss()` → `tanstackStart()` → `viteReact()` — ordering matters.
 - **Do NOT** enable `verbatimModuleSyntax` in tsconfig.
 

@@ -8,7 +8,7 @@ use instructions::*;
 declare_id!("AnNz2XESvXbyt2uNnFaZD3Wr6qZpmHC4iuHzmcxMoPRg");
 
 #[program]
-pub mod rhemos_anchor {
+pub mod rhemify_anchor {
     use super::*;
 
     pub fn write_daily_root(

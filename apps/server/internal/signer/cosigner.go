@@ -14,7 +14,7 @@ type SolanaTransactor interface {
 	SendAndConfirmTx(ctx context.Context, tx *solanago.Transaction) (solanago.Signature, error)
 }
 
-// Cosigner builds, signs, and submits transactions to the rhemos-dwallet program.
+// Cosigner builds, signs, and submits transactions to the rhemify-dwallet program.
 type Cosigner struct {
 	client     SolanaTransactor
 	privateKey solanago.PrivateKey

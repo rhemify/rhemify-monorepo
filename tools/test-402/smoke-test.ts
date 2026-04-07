@@ -8,12 +8,12 @@
  * Usage: bun run tools/test-402/smoke-test.ts
  */
 
-import { createRhemos, PolicyBlockedError, DetectionError } from "../../packages/sdk/src/index.js";
+import { createRhemify, PolicyBlockedError, DetectionError } from "../../packages/sdk/src/index.js";
 
 const TEST_402_URL = process.env.TEST_402_URL ?? "http://localhost:3402";
 const GO_SERVER_URL = process.env.GO_SERVER_URL ?? "http://localhost:8080";
 
-const rhemos = createRhemos({
+const rhemify = createRhemify({
   serverUrl: GO_SERVER_URL,
   fleetApiKey: "test-fleet-key",
   agentId: "agent-smoke-test",
@@ -37,7 +37,7 @@ async function test(name: string, fn: () => Promise<void>) {
 }
 
 async function main() {
-  console.log("\n🧪 Rhemos SDK Smoke Test\n");
+  console.log("\n🧪 Rhemify SDK Smoke Test\n");
   console.log(`  Test 402 server: ${TEST_402_URL}`);
   console.log(`  Go server:       ${GO_SERVER_URL}\n`);
 
@@ -51,7 +51,7 @@ async function main() {
 
   // --- Test 2: Probe x402 endpoint ---
   await test("probe() detects x402 on /stock-data", async () => {
-    const result = await rhemos.probe(`${TEST_402_URL}/stock-data`);
+    const result = await rhemify.probe(`${TEST_402_URL}/stock-data`);
     if (result.detection.protocol !== "x402") {
       throw new Error(`Expected x402, got ${result.detection.protocol}`);
     }
@@ -67,7 +67,7 @@ async function main() {
 
   // --- Test 3: Probe MPP endpoint ---
   await test("probe() detects MPP on /analytics", async () => {
-    const result = await rhemos.probe(`${TEST_402_URL}/analytics`);
+    const result = await rhemify.probe(`${TEST_402_URL}/analytics`);
     if (result.detection.protocol !== "mpp") {
       throw new Error(`Expected mpp, got ${result.detection.protocol}`);
     }
@@ -77,7 +77,7 @@ async function main() {
 
   // --- Test 4: Probe Base endpoint ---
   await test("probe() detects x402 on Base for /weather", async () => {
-    const result = await rhemos.probe(`${TEST_402_URL}/weather`);
+    const result = await rhemify.probe(`${TEST_402_URL}/weather`);
     if (result.detection.protocol !== "x402") {
       throw new Error(`Expected x402, got ${result.detection.protocol}`);
     }
@@ -89,7 +89,7 @@ async function main() {
 
   // --- Test 5: Dry run pay() ---
   await test("pay() dry run on /stock-data", async () => {
-    const result = await rhemos.pay(`${TEST_402_URL}/stock-data`, {
+    const result = await rhemify.pay(`${TEST_402_URL}/stock-data`, {
       dryRun: true,
       taskContext: "Smoke test — researching stock data",
       taskStep: 1,
@@ -111,7 +111,7 @@ async function main() {
   // --- Test 6: Non-402 URL should throw DetectionError ---
   await test("pay() throws DetectionError on non-402", async () => {
     try {
-      await rhemos.pay(`${TEST_402_URL}/health`, { dryRun: true });
+      await rhemify.pay(`${TEST_402_URL}/health`, { dryRun: true });
       throw new Error("Should have thrown");
     } catch (err) {
       if (err instanceof DetectionError) return; // expected
@@ -129,7 +129,7 @@ async function main() {
 
   // --- Test 8: Fleet status via SDK ---
   await test("status() calls Go server (optional)", async () => {
-    const status = await rhemos.status();
+    const status = await rhemify.status();
     console.log(`       Agent: ${status.agentId}`);
   });
 

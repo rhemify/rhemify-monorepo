@@ -8,7 +8,7 @@ use instructions::*;
 declare_id!("GcGz6uD7FxF6rSjCAU1xBV4ZW1E9EFDa4JA5yPKv1cdL");
 
 #[program]
-pub mod rhemos_dwallet {
+pub mod rhemify_dwallet {
     use super::*;
 
     pub fn initialize_fleet_vault(

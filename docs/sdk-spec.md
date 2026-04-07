@@ -1,15 +1,15 @@
-# Spec: Rhemos Payment Runtime SDK (`packages/sdk`)
+# Spec: Rhemify Payment Runtime SDK (`packages/sdk`)
 
 ## Objective
 
-Build the core payment runtime that powers `rhemos.pay(url)` — the single API call that detects payment standards, enforces fleet policy, resolves the optimal payment path, executes payment, and emits a full decision trace.
+Build the core payment runtime that powers `rhemify.pay(url)` — the single API call that detects payment standards, enforces fleet policy, resolves the optimal payment path, executes payment, and emits a full decision trace.
 
 **Who uses this:** Agent runtimes (Claude Code, OpenClaw, Codex) via MCP tools or direct SDK import. The SDK is the engine; the MCP server and CLI are thin wrappers around it.
 
-**Why it matters:** VUP shipped a ~500-line payment pipe (detect → budget check → pay). Rhemos differentiates with a 6-stage pipeline: detect → **policy engine** → **path resolver** → execute → **trace** → **intelligence emit**. The policy engine, traces, and intelligence feed are the moat.
+**Why it matters:** VUP shipped a ~500-line payment pipe (detect → budget check → pay). Rhemify differentiates with a 6-stage pipeline: detect → **policy engine** → **path resolver** → execute → **trace** → **intelligence emit**. The policy engine, traces, and intelligence feed are the moat.
 
 **Success criteria:**
-- [ ] `createRhemos(config)` returns `{ pay, probe, session, setPolicy, status }`
+- [ ] `createRhemify(config)` returns `{ pay, probe, session, setPolicy, status }`
 - [ ] `pay(url)` detects x402 and MPP from real 402 responses and executes payment on Solana
 - [ ] `session()` opens an MPP streaming session via `@solana/mpp` for recurring vendor payments
 - [ ] Policy engine blocks payments that violate daily_limit, max_per_tx, allowed_domains, allowed_standards
@@ -61,10 +61,10 @@ packages/sdk/
 ├── tsconfig.json
 ├── tsup.config.ts
 ├── src/
-│   ├── index.ts              # Public API: createRhemos, types re-exports
+│   ├── index.ts              # Public API: createRhemify, types re-exports
 │   ├── types.ts              # All shared types/interfaces
 │   ├── errors.ts             # Error class hierarchy
-│   ├── client.ts             # createRhemos() factory, orchestrates the pipeline
+│   ├── client.ts             # createRhemify() factory, orchestrates the pipeline
 │   ├── detect/
 │   │   ├── index.ts          # detectProtocol() — runs detector chain
 │   │   ├── types.ts          # ProtocolDetector interface, DetectionResult
@@ -149,7 +149,7 @@ Every `pay(url)` call runs through this pipeline in order. Each stage is a separ
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    rhemos.pay(url)                       │
+│                    rhemify.pay(url)                       │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  1. DETECT ──→ DetectionResult                          │
@@ -207,12 +207,12 @@ SDK                          Go Server                    Convex
 
 ## Public API
 
-### `createRhemos(config: RhemosConfig): Rhemos`
+### `createRhemify(config: RhemifyConfig): Rhemify`
 
 Factory function. Returns the SDK client.
 
 ```typescript
-interface RhemosConfig {
+interface RhemifyConfig {
   // Required
   serverUrl: string;              // Go server URL (e.g. "http://localhost:8080")
   fleetApiKey: string;            // Shared fleet API key (sent as Authorization: Bearer <key>)
@@ -231,10 +231,10 @@ interface RhemosConfig {
   policyCacheTtl?: number;        // Policy cache TTL in ms (default 30_000)
   solanaRpcUrl?: string;          // Solana RPC endpoint (default: Helius mainnet)
   onPayment?: (result: PayResult) => void | Promise<void>;
-  onError?: (error: RhemosError) => void;
+  onError?: (error: RhemifyError) => void;
 }
 
-interface Rhemos {
+interface Rhemify {
   pay: <T = unknown>(url: string, options?: PayOptions) => Promise<PayResult<T>>;
   probe: (url: string, options?: ProbeOptions) => Promise<ProbeResult>;
   session: (options?: SessionOptions) => Promise<MppSession>;
@@ -243,7 +243,7 @@ interface Rhemos {
 }
 ```
 
-### `rhemos.pay(url, options?)`
+### `rhemify.pay(url, options?)`
 
 The core method. Runs the full 6-stage pipeline.
 
@@ -279,7 +279,7 @@ interface PayResult<T = unknown> {
 }
 ```
 
-### `rhemos.probe(url, options?)`
+### `rhemify.probe(url, options?)`
 
 Detect + policy evaluate without paying. Useful for pre-flight checks.
 
@@ -293,7 +293,7 @@ interface ProbeResult {
 }
 ```
 
-### `rhemos.setPolicy(policy)`
+### `rhemify.setPolicy(policy)`
 
 Update this agent's policy via Go server.
 
@@ -312,11 +312,11 @@ interface PolicyConfig {
 }
 ```
 
-### `rhemos.session(options?)`
+### `rhemify.session(options?)`
 
 Open an MPP streaming session for recurring vendor payments. Built on `@solana/mpp` sessions — the agent opens a payment channel with a deposit, then signs cheap cumulative vouchers per request instead of full transactions.
 
-The session is wrapped by the Rhemos pipeline: policy is evaluated on `open()`, every `fetch()` call emits a trace, and the session respects governance (daily limits apply to cumulative session spend).
+The session is wrapped by the Rhemify pipeline: policy is evaluated on `open()`, every `fetch()` call emits a trace, and the session respects governance (daily limits apply to cumulative session spend).
 
 ```typescript
 interface SessionOptions {
@@ -341,9 +341,9 @@ interface SessionCloseResult {
 }
 ```
 
-**Key difference from VUP:** VUP's `session()` returns the raw mppx instance, bypassing their own budget/receipt pipeline. Rhemos wraps the session — every `fetch()` goes through policy evaluation, every request gets a trace, and cumulative spend counts against the agent's daily limit.
+**Key difference from VUP:** VUP's `session()` returns the raw mppx instance, bypassing their own budget/receipt pipeline. Rhemify wraps the session — every `fetch()` goes through policy evaluation, every request gets a trace, and cumulative spend counts against the agent's daily limit.
 
-### `rhemos.status()`
+### `rhemify.status()`
 
 Get fleet status from Go server.
 
@@ -366,8 +366,8 @@ Every decision trace is anchored on-chain for tamper-proof verifiability. This i
 ### How It Works
 
 1. After trace finalization (stage 5), compute `traceHash = SHA-256(canonical JSON of trace fields)`
-2. Derive a PDA: `seeds = ["rhemos-trace", fleetId, traceId]`
-3. Write a small on-chain record via a Rhemos Anchor program:
+2. Derive a PDA: `seeds = ["rhemify-trace", fleetId, traceId]`
+3. Write a small on-chain record via a Rhemify Anchor program:
    ```
    TraceAnchor {
      trace_id: String,
@@ -391,7 +391,7 @@ A minimal Solana program (Anchor framework) with a single instruction: `anchor_t
 
 Anyone with the trace data can:
 1. Recompute the SHA-256 hash from the trace fields
-2. Derive the PDA from `["rhemos-trace", fleetId, traceId]`
+2. Derive the PDA from `["rhemify-trace", fleetId, traceId]`
 3. Read the on-chain account and compare hashes
 4. If they match → trace has not been tampered with since anchoring
 
@@ -488,20 +488,20 @@ interface ExecutionResult {
 ## Error Hierarchy
 
 ```typescript
-class RhemosError extends Error {
+class RhemifyError extends Error {
   constructor(message: string, public code: string) {
     super(message);
-    this.name = "RhemosError";
+    this.name = "RhemifyError";
   }
 }
 
-class DetectionError extends RhemosError {
+class DetectionError extends RhemifyError {
   constructor(message: string, public url: string) {
     super(message, "DETECTION_FAILED");
   }
 }
 
-class PolicyBlockedError extends RhemosError {
+class PolicyBlockedError extends RhemifyError {
   constructor(
     message: string,
     public decision: PolicyDecision,
@@ -510,7 +510,7 @@ class PolicyBlockedError extends RhemosError {
   }
 }
 
-class BudgetExceededError extends RhemosError {
+class BudgetExceededError extends RhemifyError {
   constructor(
     public price: number,
     public budget: number,
@@ -519,13 +519,13 @@ class BudgetExceededError extends RhemosError {
   }
 }
 
-class NoWalletError extends RhemosError {
+class NoWalletError extends RhemifyError {
   constructor(public requiredChain: string) {
     super(`No wallet configured for ${requiredChain}`, "NO_WALLET");
   }
 }
 
-class ExecutionError extends RhemosError {
+class ExecutionError extends RhemifyError {
   constructor(
     message: string,
     public statusCode?: number,
@@ -667,7 +667,7 @@ it("detects x402 on Solana from body.accepts", async () => {
 - **Session (streaming):** `@solana/mpp/client` → `solana.session({ signer, authorizer })` → cumulative voucher signing, no full tx per request
 - **Detection:** MPP endpoints return HTTP 402 with `WWW-Authenticate: Payment` header. The mppx challenge body contains `amount`, `currency`, `recipient`, `methodDetails` (network, decimals, etc.)
 
-**Trace anchoring stack:** `@coral-xyz/anchor` for interacting with the Rhemos Anchor program on Solana. `@solana/kit` for transaction construction and signing.
+**Trace anchoring stack:** `@coral-xyz/anchor` for interacting with the Rhemify Anchor program on Solana. `@solana/kit` for transaction construction and signing.
 
 ---
 
@@ -686,7 +686,7 @@ it("detects x402 on Solana from body.accepts", async () => {
 - [ ] Path resolver: score OWS vs AgentCard (basic)
 - [ ] Trace capture: full pipeline context collection
 - [ ] Trace anchoring: Anchor program + anchorTrace() in SDK
-- [ ] `createRhemos()` factory wiring everything together
+- [ ] `createRhemify()` factory wiring everything together
 
 ### Week 3: Execution
 - [ ] x402 Solana executor via `x402-solana` peer dep
@@ -697,7 +697,7 @@ it("detects x402 on Solana from body.accepts", async () => {
 - [ ] `probe()` method
 
 ### Week 4: Integration
-- [ ] MCP server wrapper (rhemos.pay, rhemos.session, rhemos.status, rhemos.set_policy tools)
+- [ ] MCP server wrapper (rhemify.pay, rhemify.session, rhemify.status, rhemify.set_policy tools)
 - [ ] Wire to dashboard (Go server → Convex → frontend reads)
 - [ ] Real 402 endpoint testing (at least 2 real endpoints)
 - [ ] `session()` method with governance wrapper
@@ -714,7 +714,7 @@ it("detects x402 on Solana from body.accepts", async () => {
 
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
-| 1 | **Go server auth** | Shared fleet API key (`Authorization: Bearer <key>`) | Simplest for hackathon. One key per fleet, passed in `RhemosConfig.fleetApiKey`. |
+| 1 | **Go server auth** | Shared fleet API key (`Authorization: Bearer <key>`) | Simplest for hackathon. One key per fleet, passed in `RhemifyConfig.fleetApiKey`. |
 | 2 | **Policy caching** | Cache 30s, invalidate on `setPolicy()` | Balances freshness vs latency. Config via `policyCacheTtl`. |
 | 3 | **Trace anchoring** | In scope — Solana PDA via Anchor program | Core differentiator. "Verifiable" is in the tagline. Minimal program (~100 lines Rust). |
 | 4 | **x402 execution** | Use `x402-fetch` + `x402-solana` peer deps | Ship fast. Wrap their output to capture trace context. |
