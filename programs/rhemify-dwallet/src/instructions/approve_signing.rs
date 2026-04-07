@@ -82,8 +82,11 @@ pub fn approve_signing(
     }
 
     // Check daily limit
+    let projected_spend = wallet.daily_spent
+        .checked_add(amount)
+        .ok_or(error!(DWalletError::ExceedsDailyLimit))?;
     require!(
-        wallet.daily_spent.checked_add(amount).unwrap_or(u64::MAX) <= wallet.daily_limit,
+        projected_spend <= wallet.daily_limit,
         DWalletError::ExceedsDailyLimit
     );
 

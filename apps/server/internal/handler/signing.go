@@ -43,7 +43,7 @@ type signingRequestPayload struct {
 func (h *SigningHandler) CreateSigningRequest(c *gin.Context) {
 	var req signingRequestPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -141,13 +141,13 @@ func (h *SigningHandler) GetSigningRequest(c *gin.Context) {
 		"request_id": id,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
 	var sigReq interface{}
 	if err := json.Unmarshal(result, &sigReq); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 	c.JSON(http.StatusOK, sigReq)

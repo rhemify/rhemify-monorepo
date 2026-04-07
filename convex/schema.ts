@@ -177,11 +177,11 @@ export default defineSchema({
   dwallet_registry: defineTable({
     fleet_id: v.id("fleets"),
     agent_id: v.optional(v.id("agents")), // null = fleet treasury dWallet
-    dwallet_type: v.string(), // "treasury" | "agent"
+    dwallet_type: v.union(v.literal("treasury"), v.literal("agent")),
     dwallet_id: v.string(), // Ika dWallet identifier
     dwallet_cap_id: v.string(), // ownership cap (Solana account)
     supported_chains: v.array(v.string()), // ["ethereum", "base", "arbitrum"]
-    status: v.string(), // "creating" | "active" | "frozen" | "revoked"
+    status: v.union(v.literal("creating"), v.literal("active"), v.literal("frozen"), v.literal("revoked")),
     created_at: v.float64(),
   })
     .index("by_fleet", ["fleet_id"])
@@ -208,7 +208,7 @@ export default defineSchema({
     target_address: v.string(),
     token: v.string(),
     amount: v.float64(),
-    status: v.string(), // "pending" | "approved" | "rejected" | "signed" | "broadcast" | "confirmed" | "failed"
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"), v.literal("signed"), v.literal("broadcast"), v.literal("confirmed"), v.literal("failed")),
     intelligence_decision: v.optional(v.any()),
     rejection_reason: v.optional(v.string()),
     ika_signature: v.optional(v.string()),
