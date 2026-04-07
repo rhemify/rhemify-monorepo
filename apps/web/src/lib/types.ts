@@ -64,3 +64,48 @@ export type Session = {
   monthlySpendCap: number
   isDeployed: boolean
 }
+
+// dWallet types
+export type DWalletType = 'treasury' | 'agent'
+export type DWalletStatus = 'creating' | 'active' | 'frozen' | 'revoked'
+export type Chain = 'ethereum' | 'base' | 'arbitrum'
+export type SigningRequestStatus = 'pending' | 'approved' | 'rejected' | 'signed' | 'broadcast' | 'confirmed' | 'failed'
+
+export type DWallet = {
+  id: string
+  fleetId: string
+  agentId?: string
+  dwalletType: DWalletType
+  dwalletId: string
+  dwalletCapId: string
+  supportedChains: Chain[]
+  status: DWalletStatus
+  createdAt: number
+}
+
+export type WalletBalance = {
+  id: string
+  dwalletId: string
+  chain: Chain
+  token: string
+  amount: number
+  lastSyncedAt: number
+}
+
+export type SigningRequest = {
+  id: string
+  agentId?: string
+  fleetId: string
+  dwalletId: string
+  targetChain: Chain
+  targetAddress: string
+  token: string
+  amount: number
+  status: SigningRequestStatus
+  rejectionReason?: string
+  ikaSignature?: string
+  targetTxHash?: string
+  traceId?: string
+  createdAt: number
+  resolvedAt?: number
+}
