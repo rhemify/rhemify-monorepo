@@ -99,8 +99,15 @@ func (h *WalletHandler) CreateAgentWallet(c *gin.Context) {
 		return
 	}
 
+	// Derive SNS identity domain if parent domain is configured
+	snsDomain := ""
+	if req.FleetID != "" && req.AgentKey != "" {
+		snsDomain = req.AgentKey + "." + req.FleetID + ".sol"
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"agent_wallet_pda": agentWallet.String(),
+		"identity_domain":  snsDomain,
 		"status":           "creating",
 		"message":          "agent wallet creation initiated",
 	})

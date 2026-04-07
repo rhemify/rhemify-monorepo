@@ -22,7 +22,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@rhemify-monorepo/types": "workspace:*"
+    "@bonfida/spl-name-service": "^3.0.20",
+    "@rhemify-monorepo/types": "workspace:*",
+    "@solana/web3.js": "^1.98.4"
   },
   "devDependencies": {
     "@rhemify-monorepo/config": "workspace:*",
@@ -41,12 +43,26 @@
     "viem": ">=2.0.0"
   },
   "peerDependenciesMeta": {
-    "x402-fetch": { "optional": true },
-    "x402-solana": { "optional": true },
-    "@solana/mpp": { "optional": true },
-    "mppx": { "optional": true },
-    "@solana/kit": { "optional": true },
-    "@solana/codecs": { "optional": true },
-    "viem": { "optional": true }
+    "x402-fetch": {
+      "optional": true
+    },
+    "x402-solana": {
+      "optional": true
+    },
+    "@solana/mpp": {
+      "optional": true
+    },
+    "mppx": {
+      "optional": true
+    },
+    "@solana/kit": {
+      "optional": true
+    },
+    "@solana/codecs": {
+      "optional": true
+    },
+    "viem": {
+      "optional": true
+    }
   }
 }

@@ -66,8 +66,9 @@ func main() {
 		)
 
 		deps = &router.Deps{
-			Cosigner: cosigner,
-			Pipeline: pipeline,
+			Cosigner:  cosigner,
+			Pipeline:  pipeline,
+			IkaClient: ikaClient,
 		}
 		log.Printf("dWallet co-signer initialized: %s", cosigner.PublicKey())
 

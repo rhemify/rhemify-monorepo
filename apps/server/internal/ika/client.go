@@ -156,6 +156,11 @@ func (c *Client) post(ctx context.Context, path string, body interface{}, result
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
+// GetRaw fetches raw JSON from the sidecar (for proxying responses).
+func (c *Client) GetRaw(ctx context.Context, path string, result *json.RawMessage) error {
+	return c.get(ctx, path, result)
+}
+
 func (c *Client) get(ctx context.Context, path string, result interface{}) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+path, nil)
 	if err != nil {

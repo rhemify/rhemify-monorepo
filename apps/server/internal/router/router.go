@@ -7,14 +7,16 @@ import (
 	"github.com/rhemify/server/internal/config"
 	cx "github.com/rhemify/server/internal/convex"
 	"github.com/rhemify/server/internal/handler"
+	"github.com/rhemify/server/internal/ika"
 	"github.com/rhemify/server/internal/middleware"
 	"github.com/rhemify/server/internal/signer"
 )
 
 // Deps holds optional dependencies for new dWallet features.
 type Deps struct {
-	Cosigner *signer.Cosigner
-	Pipeline *signer.SigningPipeline
+	Cosigner  *signer.Cosigner
+	Pipeline  *signer.SigningPipeline
+	IkaClient *ika.Client
 }
 
 func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
@@ -50,6 +52,13 @@ func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 		api.GET("/events", events.ListEvents)
 		api.GET("/events/:id", events.GetEvent)
 		api.GET("/traces/:id", traces.GetTrace)
+
+		// SNS Identity (public — anyone can resolve a .sol domain)
+		if len(deps) > 0 && deps[0] != nil && deps[0].IkaClient != nil {
+			identity := handler.NewIdentityHandler(deps[0].IkaClient)
+			api.GET("/identity/resolve/:domain", identity.ResolveDomain)
+			api.GET("/identity/subdomains/:domain", identity.ListAgentSubdomains)
+		}
 
 		// SDK endpoints (require fleet API key)
 		sdk := api.Group("")

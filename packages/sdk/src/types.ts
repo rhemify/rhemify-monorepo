@@ -132,7 +132,7 @@ export interface WalletConfig {
   evmPrivateKey?: string;
 }
 
-export interface RhemosConfig {
+export interface RhemifyConfig {
   serverUrl: string;
   fleetApiKey: string;
   agentId: string;
@@ -152,6 +152,15 @@ export interface RhemosConfig {
   };
   onPayment?: (result: PayResult) => void | Promise<void>;
   onError?: (error: Error) => void;
+  onStageComplete?: (event: StageCompleteEvent) => void;
+}
+
+export type PipelineStage = "detect" | "policy" | "resolve" | "execute" | "trace" | "anchor";
+
+export interface StageCompleteEvent {
+  stage: PipelineStage;
+  timestamp: number;
+  data: Record<string, unknown>;
 }
 
 // --- Public API ---
@@ -216,7 +225,7 @@ export interface FleetStatus {
   blockedDomains: string[];
 }
 
-export interface Rhemos {
+export interface Rhemify {
   pay: <T = unknown>(
     url: string,
     options?: PayOptions,

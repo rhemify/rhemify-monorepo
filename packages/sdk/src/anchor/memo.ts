@@ -107,7 +107,6 @@ export async function sendMemoTransaction(
     );
 
   // Encode signature to base58
-  // @ts-expect-error -- optional peer dep
   const { getBase58Decoder } = await import("@solana/codecs");
   return getBase58Decoder().decode(signature);
 }

@@ -110,6 +110,93 @@ app.get('/signature/:id', async (c) => {
   }
 })
 
+// SNS Identity: Resolve .sol domain to owner
+app.get('/identity/resolve/:domain', async (c) => {
+  try {
+    const { resolve } = await import('@bonfida/spl-name-service')
+    const { Connection, clusterApiUrl } = await import('@solana/web3.js')
+    const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'))
+
+    const domain = c.req.param('domain').replace(/\.sol$/, '')
+    const owner = await resolve(connection, domain)
+
+    const parts = domain.split('.')
+    const isSubdomain = parts.length >= 2
+
+    return c.json({
+      domain: domain + '.sol',
+      parentDomain: isSubdomain ? parts.slice(1).join('.') + '.sol' : domain + '.sol',
+      agentKey: isSubdomain ? parts[0] : null,
+      owner: owner.toBase58(),
+    })
+  } catch (err: any) {
+    return c.json({ error: 'domain not found' }, 404)
+  }
+})
+
+// SNS Identity: List agent subdomains under a fleet domain
+app.get('/identity/subdomains/:domain', async (c) => {
+  try {
+    const { findSubdomains, resolve, getDomainKeySync } = await import('@bonfida/spl-name-service')
+    const { Connection, clusterApiUrl } = await import('@solana/web3.js')
+    const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'))
+
+    const domain = c.req.param('domain').replace(/\.sol$/, '')
+    const { pubkey } = getDomainKeySync(domain)
+    const subdomains = await findSubdomains(connection, pubkey)
+
+    const agents = []
+    for (const sub of subdomains) {
+      try {
+        const owner = await resolve(connection, `${sub}.${domain}`)
+        agents.push({
+          domain: `${sub}.${domain}.sol`,
+          agentKey: sub,
+          owner: owner.toBase58(),
+        })
+      } catch {
+        // Skip unresolvable subdomains
+      }
+    }
+
+    return c.json({ parentDomain: domain + '.sol', agents })
+  } catch (err: any) {
+    return c.json({ error: 'failed to list subdomains' }, 500)
+  }
+})
+
+// SNS Identity: Register agent subdomain
+app.post('/identity/register', async (c) => {
+  try {
+    const { createSubdomain } = await import('@bonfida/spl-name-service')
+    const { Connection, PublicKey, clusterApiUrl } = await import('@solana/web3.js')
+    const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'))
+
+    const { parent_domain, agent_key, owner_pubkey } = await c.req.json<{
+      parent_domain: string
+      agent_key: string
+      owner_pubkey: string
+    }>()
+
+    if (!parent_domain || !agent_key || !owner_pubkey) {
+      return c.json({ error: 'parent_domain, agent_key, and owner_pubkey required' }, 400)
+    }
+
+    const subdomain = `${agent_key}.${parent_domain}`
+    const owner = new PublicKey(owner_pubkey)
+    const instructions = await createSubdomain(connection, subdomain, owner, 1_000)
+
+    return c.json({
+      subdomain: subdomain + '.sol',
+      instructions_count: instructions.length,
+      status: 'instructions_ready',
+    })
+  } catch (err: any) {
+    console.error('[/identity/register] error:', err)
+    return c.json({ error: 'subdomain registration failed' }, 500)
+  }
+})
+
 // Initialize and start
 async function main() {
   if (!suiSecretKey) {
