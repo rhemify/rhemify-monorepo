@@ -1,14 +1,14 @@
-# Rhemos — Vendor & Instrument Integration Map
+# Rhemify — Vendor & Instrument Integration Map
 
-## Solana-Native Services That Integrate With Rhemos
+## Solana-Native Services That Integrate With Rhemify
 
-Comprehensive map of every external service, protocol, and instrument Rhemos can plug into — organized by role in the stack.
+Comprehensive map of every external service, protocol, and instrument Rhemify can plug into — organized by role in the stack.
 
 ---
 
 ## 1. Signing Layer (Who Holds the Keys)
 
-| Service | What It Does | How It Fits in Rhemos | Phase |
+| Service | What It Does | How It Fits in Rhemify | Phase |
 |---|---|---|---|
 | **OWS (Open Wallet Standard)** | Local-first encrypted vault. BIP-39 seed derives Solana, EVM, Bitcoin, TON, Cosmos addresses. AES-256-GCM. Zero network calls. 21 founding orgs (Circle, Virtuals, Solana Foundation). | Primary signing backend for self-hosted/developer/enterprise deployments. Free, no per-tx cost, key never leaves device. | 1 |
 | **Privy** | Cloud-hosted embedded wallets. Key sharding in TEEs. SOC 2 compliant. Email/SMS/social onboarding. Supports EVM, Solana, Bitcoin. | Cloud signing backend for SaaS/fiat-first customers. Agents get scoped session keys. Revocable per-agent. | 1 |
@@ -19,10 +19,10 @@ Comprehensive map of every external service, protocol, and instrument Rhemos can
 
 ## 2. Payment Instruments (What Agents Pay With)
 
-| Instrument | What It Does | How It Fits in Rhemos | Phase |
+| Instrument | What It Does | How It Fits in Rhemify | Phase |
 |---|---|---|---|
-| **AgentCard** | Virtual Visa cards for agents. Fiat-first. Per-agent cards with spend limits. $0 to start. Real-time tracking. | Fiat payment path. When server accepts MPP Shared Payment Token, Rhemos wraps AgentCard details in MPP PaymentIntent. Agent never handles card numbers. | 1 |
-| **AgentCash** | Curated API marketplace. 338+ endpoints. x402 payments. 59k+ installs. Enrichment, social data, email, travel, file uploads. | Vendor discovery layer. Seed 338 endpoints into Rhemos vendor_registry on Day 1. Route through AgentCash when target endpoint is in their registry. | 1 |
+| **AgentCard** | Virtual Visa cards for agents. Fiat-first. Per-agent cards with spend limits. $0 to start. Real-time tracking. | Fiat payment path. When server accepts MPP Shared Payment Token, Rhemify wraps AgentCard details in MPP PaymentIntent. Agent never handles card numbers. | 1 |
+| **AgentCash** | Curated API marketplace. 338+ endpoints. x402 payments. 59k+ installs. Enrichment, social data, email, travel, file uploads. | Vendor discovery layer. Seed 338 endpoints into Rhemify vendor_registry on Day 1. Route through AgentCash when target endpoint is in their registry. | 1 |
 | **USDC (Solana SPL)** | Native stablecoin on Solana. Highest liquidity. | Primary on-chain payment token. Direct transfers for x402/MPP endpoints on Solana. | 1 |
 | **USDC (Base/ETH)** | USDC on EVM chains. | Cross-chain payment token. Bridge from Solana via CCTP when vendor is on EVM. | 1 |
 | **SOL** | Native Solana token. | Gas payments. Some x402 endpoints may accept SOL directly. | 1 |
@@ -33,7 +33,7 @@ Comprehensive map of every external service, protocol, and instrument Rhemos can
 
 ## 3. DeFi / Swap Layer (Token Conversion)
 
-| Service | What It Does | How It Fits in Rhemos | Phase |
+| Service | What It Does | How It Fits in Rhemify | Phase |
 |---|---|---|---|
 | **Jupiter** | Solana's dominant swap aggregator. Swap API, limit orders, DCA. Routes across all Solana DEXes for best price. | Same-chain swap. When agent holds Token A but vendor wants Token B on Solana, Jupiter handles the swap before payment. Path Resolver calls Jupiter quote API to score swap cost. | 1 |
 | **Orca** | Solana DEX. Concentrated liquidity AMM (Whirlpools). | Backup swap path. Jupiter aggregates Orca, but direct Orca integration for specific pools may be cheaper. | 2 |
@@ -43,7 +43,7 @@ Comprehensive map of every external service, protocol, and instrument Rhemos can
 
 ## 4. Bridge Layer (Cross-Chain Movement)
 
-| Service | What It Does | How It Fits in Rhemos | Phase |
+| Service | What It Does | How It Fits in Rhemify | Phase |
 |---|---|---|---|
 | **CCTP (Circle)** | Native USDC burn-and-mint across 20+ chains. Solana ↔ Base, ETH, Arbitrum, etc. No wrapped tokens. Fast transfer = faster-than-finality settlement. No protocol fee (only gas). | Primary bridge. When agent holds Solana USDC but vendor is on Base/ETH, CCTP handles the bridge. ~5s standard, faster with fast transfer. | 1 |
 | **relay.link** | EVM ↔ EVM bridge. 5-20bps fee. Flexible routing. | Secondary bridge for EVM-to-EVM transfers. When vendor is on Arbitrum but agent holds ETH USDC. | 2 |
@@ -53,7 +53,7 @@ Comprehensive map of every external service, protocol, and instrument Rhemos can
 
 ## 5. RPC / Infrastructure Layer (How Agents Talk to Chains)
 
-| Service | What It Does | How It Fits in Rhemos | Phase |
+| Service | What It Does | How It Fits in Rhemify | Phase |
 |---|---|---|---|
 | **Helius** | Solana RPC, webhooks, DAS API, transaction sending (Sender), data streaming (LaserStream). 99.99% success rate. SOC 2. | Primary Solana RPC. Helius Sender for low-latency transaction delivery. Webhooks for on-chain payment confirmation. LaserStream for real-time event monitoring. | 1 |
 | **Triton (Yellowstone gRPC)** | High-performance Solana data streaming. gRPC-based. | Alternative to Helius for high-throughput event streaming. Useful for fleet-scale payment monitoring. | 2 |
@@ -63,35 +63,35 @@ Comprehensive map of every external service, protocol, and instrument Rhemos can
 
 ## 6. Identity / Communication Layer
 
-| Service | What It Does | How It Fits in Rhemos | Phase |
+| Service | What It Does | How It Fits in Rhemify | Phase |
 |---|---|---|---|
 | **Privy (Auth)** | Email/SMS/social login → embedded wallet. Agent gets an identity without seed phrase. | Agent identity for non-technical onboarding. Each agent gets an email-linked identity + wallet in one step. | 1 |
 | **Dialect (Blinks + Alerts)** | Solana Actions/Blinks for one-click transactions. Real-time alerts. 600+ Blinks across protocols. | Operator notifications. Dialect alerts for spend anomalies, vendor blocks, policy breaches. Blinks for one-click approval of queued payments. | 2 |
-| **Solana Name Service (SNS)** | .sol domain names for Solana addresses. | Agent identity. agent-7.rhemos.sol as a human-readable identity for each agent in the fleet. | 3 |
-| **ERC-8004 (Trustless Agents)** | On-chain identity + reputation + validation registries for agents. EVM-based (ERC-721). | Cross-chain agent identity. Read ERC-8004 reputation data to inform Rhemos intelligence layer. Write Rhemos vendor scores back to on-chain registry. | 3 |
+| **Solana Name Service (SNS)** | .sol domain names for Solana addresses. | Agent identity. agent-7.rhemify.sol as a human-readable identity for each agent in the fleet. | 3 |
+| **ERC-8004 (Trustless Agents)** | On-chain identity + reputation + validation registries for agents. EVM-based (ERC-721). | Cross-chain agent identity. Read ERC-8004 reputation data to inform Rhemify intelligence layer. Write Rhemify vendor scores back to on-chain registry. | 3 |
 
 ---
 
 ## 7. Agent Sourcing Layer (Where Agents Come From)
 
-| Service | What It Does | How It Fits in Rhemos | Phase |
+| Service | What It Does | How It Fits in Rhemify | Phase |
 |---|---|---|---|
-| **OpenClaw** | Open-source local-first agent runtime. 250k+ GitHub stars. MCP-native. | Primary agent runtime for demos and self-hosted deployments. Rhemos ships as MCP server config. | 1 |
+| **OpenClaw** | Open-source local-first agent runtime. 250k+ GitHub stars. MCP-native. | Primary agent runtime for demos and self-hosted deployments. Rhemify ships as MCP server config. | 1 |
 | **Claude Code** | Anthropic's CLI agent. MCP tool support. | High developer adoption. Same MCP integration as OpenClaw. | 1 |
 | **Codex / Cursor** | OpenAI and IDE agents. MCP-compatible. | Additional runtime support via MCP. | 1 |
-| **CrewAI** | Multi-agent collaboration framework. | SDK integration. Each crew member = Rhemos agent with own policy. | 2 |
-| **ADGP (Virtuals Protocol)** | Agent marketplace on Base. Tokenized agents. ACP (Agent Commerce Protocol) for agent-to-agent payments. Butler as orchestration layer. | Agent hiring. Operators could browse and deploy Virtuals agents, wrapped with Rhemos fleet governance. ACP becomes another payment standard in Standard Detector. | 3 |
-| **XAAM** | Decentralized agent marketplace. MCP-native. Agents share capabilities. | Alternative agent marketplace. Agents discovered via XAAM can be wrapped with Rhemos policy + intelligence. | 3 |
+| **CrewAI** | Multi-agent collaboration framework. | SDK integration. Each crew member = Rhemify agent with own policy. | 2 |
+| **ADGP (Virtuals Protocol)** | Agent marketplace on Base. Tokenized agents. ACP (Agent Commerce Protocol) for agent-to-agent payments. Butler as orchestration layer. | Agent hiring. Operators could browse and deploy Virtuals agents, wrapped with Rhemify fleet governance. ACP becomes another payment standard in Standard Detector. | 3 |
+| **XAAM** | Decentralized agent marketplace. MCP-native. Agents share capabilities. | Alternative agent marketplace. Agents discovered via XAAM can be wrapped with Rhemify policy + intelligence. | 3 |
 
 ---
 
 ## 8. Data / Observability Layer
 
-| Service | What It Does | How It Fits in Rhemos | Phase |
+| Service | What It Does | How It Fits in Rhemify | Phase |
 |---|---|---|---|
 | **Supabase Realtime** | Real-time WebSocket subscriptions for PostgreSQL. | Live feed for operator dashboard. Payment events → Supabase → WebSocket → dashboard. | 1 |
-| **AgentOps** | Agent observability. Traces agent execution, errors, latency. | Complementary — AgentOps monitors agent behavior, Rhemos monitors agent payments. Could share trace context. | 2 |
-| **Solana FM / Solscan** | Block explorers. Transaction history, account details. | Link from Rhemos payment events to on-chain explorer for transaction verification. | 1 |
+| **AgentOps** | Agent observability. Traces agent execution, errors, latency. | Complementary — AgentOps monitors agent behavior, Rhemify monitors agent payments. Could share trace context. | 2 |
+| **Solana FM / Solscan** | Block explorers. Transaction history, account details. | Link from Rhemify payment events to on-chain explorer for transaction verification. | 1 |
 
 ---
 

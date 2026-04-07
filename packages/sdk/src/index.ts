@@ -1,4 +1,4 @@
-export { createRhemos } from "./client.js";
+export { createRhemify } from "./client.js";
 export { detectProtocol, detectFromResponse } from "./detect/index.js";
 export type { ProtocolDetector } from "./detect/types.js";
 export { PolicyEngine } from "./policy/index.js";
@@ -23,8 +23,8 @@ export type {
 } from "./anchor/index.js";
 
 export type {
-  Rhemos,
-  RhemosConfig,
+  Rhemify,
+  RhemifyConfig,
   PayOptions,
   PayResult,
   ProbeOptions,
@@ -51,10 +51,19 @@ export type {
   PaymentExecutor,
   TraceRecord,
   WalletConfig,
+  PipelineStage,
+  StageCompleteEvent,
 } from "./types.js";
 
 export {
-  RhemosError,
+  resolveIdentity,
+  createAgentSubdomain,
+  findAgentSubdomains,
+} from "./identity/index.js";
+export type { AgentIdentity, IdentityConfig } from "./identity/index.js";
+
+export {
+  RhemifyError,
   DetectionError,
   PolicyBlockedError,
   BudgetExceededError,

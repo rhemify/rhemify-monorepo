@@ -1,8 +1,8 @@
-# Rhemos — Competitive Deep Dive
+# Rhemify — Competitive Deep Dive
 
 ## Colosseum Frontier (April 6 - May 11, 2026)
 
-A thorough analysis of every competitor in the agent payment space: what they built, why they won (or didn't), what's structurally missing, and how Rhemos exploits each gap.
+A thorough analysis of every competitor in the agent payment space: what they built, why they won (or didn't), what's structurally missing, and how Rhemify exploits each gap.
 
 ---
 
@@ -50,9 +50,9 @@ Supports both EVM (Base, Avalanche, IoTeX, Sei) and SVM (Solana). Tokens: USDC, 
 - **No governance.** No per-agent spend limits, no domain allowlists, no approval thresholds. An agent with access to a MCPay wallet can spend without constraint. This is a dealbreaker for enterprise deployment.
 - **Merchant-centric, not operator-centric.** MCPay's value proposition is "monetize your MCP tools." The operator who deployed 50 agents and wants to know where the money went has no dashboard, no audit trail, no controls.
 
-### How Rhemos Beats MCPay
+### How Rhemify Beats MCPay
 
-Rhemos is what an **operator** needs. MCPay is what a **merchant** needs. These are different buyers with different problems. But the operator-side is where the money and the enterprise deals are. Rhemos routes through MCPay-style endpoints (detects x402, pays automatically) but also handles MPP, L402, and more — and captures the full decision context that MCPay throws away.
+Rhemify is what an **operator** needs. MCPay is what a **merchant** needs. These are different buyers with different problems. But the operator-side is where the money and the enterprise deals are. Rhemify routes through MCPay-style endpoints (detects x402, pays automatically) but also handles MPP, L402, and more — and captures the full decision context that MCPay throws away.
 
 ---
 
@@ -85,9 +85,9 @@ Built by a 2-person team (Breakout, Apr 2025). TypeScript + React + Solana + MCP
 - **No intelligence.** No decision traces, no vendor scoring, no payment memory. Process and forget.
 - **6 months old, no accelerator evidence.** Latinum won in April 2025 but doesn't appear in any accelerator cohort. MCPay (which won 5 months later) is already in C4. This suggests Latinum may not have gained post-hackathon traction.
 
-### How Rhemos Beats Latinum
+### How Rhemify Beats Latinum
 
-Rhemos subsumes Latinum's functionality (agents can pay for services autonomously) but adds everything Latinum lacks: multi-standard detection, fleet governance, decision tracing, cross-chain routing, and non-custodial architecture. Latinum is a wallet that pays. Rhemos is a treasury that governs, audits, and learns.
+Rhemify subsumes Latinum's functionality (agents can pay for services autonomously) but adds everything Latinum lacks: multi-standard detection, fleet governance, decision tracing, cross-chain routing, and non-custodial architecture. Latinum is a wallet that pays. Rhemify is a treasury that governs, audits, and learns.
 
 ---
 
@@ -118,9 +118,9 @@ Solo builder (Cypherpunk, Sep 2025). Solana + React + TypeScript + Rust.
 - **No agent intelligence.** The dashboard shows merchant metrics (revenue, transactions). It doesn't show agent-side decision context (why did the agent pay, what alternatives were considered).
 - **Solo maintainer risk.** One person maintaining an open-source project long-term is inherently fragile.
 
-### How Rhemos Beats CORBITS
+### How Rhemify Beats CORBITS
 
-CORBITS and Rhemos aren't direct competitors — CORBITS serves merchants, Rhemos serves operators. But Rhemos's dashboard is the **agent-side equivalent** of what CORBITS built for merchants, and it goes much further: decision traces, policy controls, vendor intelligence, fleet-level analytics. If judges liked CORBITS's dashboard for merchants, they'll love Rhemos's dashboard for operators.
+CORBITS and Rhemify aren't direct competitors — CORBITS serves merchants, Rhemify serves operators. But Rhemify's dashboard is the **agent-side equivalent** of what CORBITS built for merchants, and it goes much further: decision traces, policy controls, vendor intelligence, fleet-level analytics. If judges liked CORBITS's dashboard for merchants, they'll love Rhemify's dashboard for operators.
 
 ---
 
@@ -130,7 +130,7 @@ CORBITS and Rhemos aren't direct competitors — CORBITS serves merchants, Rhemo
 
 Mercantill is "enterprise banking infrastructure for AI agents." Built on Squads Grid (Solana multi-sig), it provides audit trails, team controls, and spending safeguards for enterprise AI agent deployment.
 
-Problem tags from the project: "lack of oversight for AI payments, security risks in autonomous agents, enterprise compliance hurdles, uncontrolled agent spending." These are **exactly the same problems Rhemos solves.**
+Problem tags from the project: "lack of oversight for AI payments, security risks in autonomous agents, enterprise compliance hurdles, uncontrolled agent spending." These are **exactly the same problems Rhemify solves.**
 
 Solo builder (Cypherpunk, Sep 2025). Solana + Squads Grid + Rust + Anchor.
 
@@ -147,16 +147,16 @@ Solo builder (Cypherpunk, Sep 2025). Solana + Squads Grid + Rust + Anchor.
 ### Why They're Vulnerable
 
 - **On-chain multi-sig is heavy.** Squads multi-sig requires multiple signers to approve transactions. This adds latency, cost, and complexity to every payment. For micropayments ($0.01 API calls), the governance overhead exceeds the payment value.
-- **Audit logs, not decision traces.** Mercantill logs WHAT happened (amount, destination, timestamp). It does NOT capture WHY it happened (agent task context, alternatives evaluated, policy rules fired, confidence signals). The difference: Mercantill can tell you "agent spent $50 at Bloomberg." Rhemos can tell you "agent spent $50 at Bloomberg because it was executing step 3 of a market research task, the x402 endpoint was detected with high confidence, AgentCard was rejected due to insufficient balance, and the daily limit still had $450 remaining."
+- **Audit logs, not decision traces.** Mercantill logs WHAT happened (amount, destination, timestamp). It does NOT capture WHY it happened (agent task context, alternatives evaluated, policy rules fired, confidence signals). The difference: Mercantill can tell you "agent spent $50 at Bloomberg." Rhemify can tell you "agent spent $50 at Bloomberg because it was executing step 3 of a market research task, the x402 endpoint was detected with high confidence, AgentCard was rejected due to insufficient balance, and the daily limit still had $450 remaining."
 - **No standard detection.** Mercantill doesn't know about x402, MPP, or L402. It's a governance layer for spending, but it doesn't understand payment standards.
 - **No replay.** You can audit the log but you can't reconstruct the decision moment and ask "what if I had changed the policy?"
 - **No MCP native.** Mercantill isn't an MCP tool. Agents can't call it from Claude Code or OpenClaw directly.
 
-### How Rhemos Beats Mercantill
+### How Rhemify Beats Mercantill
 
-Mercantill is the closest competitor in positioning ("enterprise governance for agent payments") but Rhemos is a generation ahead in execution:
+Mercantill is the closest competitor in positioning ("enterprise governance for agent payments") but Rhemify is a generation ahead in execution:
 
-| Dimension | Mercantill | Rhemos |
+| Dimension | Mercantill | Rhemify |
 |---|---|---|
 | Governance mechanism | On-chain multi-sig (heavy, per-tx cost) | Client-side policy engine (lightweight, zero on-chain cost) |
 | Audit capability | Transaction logs | Decision traces with full reasoning context |
@@ -166,7 +166,7 @@ Mercantill is the closest competitor in positioning ("enterprise governance for 
 | Non-custodial | Multi-sig (shared custody) | OWS/Privy (zero custody) |
 | Vendor intelligence | None | Auto-built from transaction data |
 
-The story to judges: "Mercantill proved the market exists. Rhemos is what Mercantill should have been."
+The story to judges: "Mercantill proved the market exists. Rhemify is what Mercantill should have been."
 
 ---
 
@@ -174,7 +174,7 @@ The story to judges: "Mercantill proved the market exists. Rhemos is what Mercan
 
 ### What They Built
 
-Sponge is a YC W26 company building a custodial wallet + merchant gateway for agent payments. They appear twice in the YC W26 batch as the named representative of "payments for agents" (per Rhemos PRD). Key characteristics based on available data:
+Sponge is a YC W26 company building a custodial wallet + merchant gateway for agent payments. They appear twice in the YC W26 batch as the named representative of "payments for agents" (per Rhemify PRD). Key characteristics based on available data:
 
 - **Custodial model** — Sponge holds funds on behalf of agents
 - **x402 support** — detected in ecosystem references
@@ -200,13 +200,13 @@ Sponge is a YC W26 company building a custodial wallet + merchant gateway for ag
 - **No intelligence layer.** Sponge processes transactions and forgets. No decision traces, no vendor scoring, no reasoning about WHY payments happened.
 - **No fleet governance.** No per-agent spending limits, no domain allowlists, no approval thresholds. The operator has no controls.
 - **Single standard.** x402 only. As MPP, L402, AP2, and ACP gain traction, Sponge needs to add adapters or lose coverage.
-- **Walled garden dynamic.** As your PRD notes: "AgentCash's walled garden is a ceiling — agents can only pay registered vendors. Rhemos's structural advantage is the open internet: any server returning a 402 gets paid." The same logic applies to Sponge's merchant network.
+- **Walled garden dynamic.** As your PRD notes: "AgentCash's walled garden is a ceiling — agents can only pay registered vendors. Rhemify's structural advantage is the open internet: any server returning a 402 gets paid." The same logic applies to Sponge's merchant network.
 
-### How Rhemos Beats Sponge
+### How Rhemify Beats Sponge
 
-**Don't compete on distribution — compete on depth.** Sponge will likely win the "first payment tool a developer tries" race through YC distribution. Rhemos wins the "payment tool an enterprise deploys in production" race through governance, intelligence, and non-custodial architecture.
+**Don't compete on distribution — compete on depth.** Sponge will likely win the "first payment tool a developer tries" race through YC distribution. Rhemify wins the "payment tool an enterprise deploys in production" race through governance, intelligence, and non-custodial architecture.
 
-The positioning: Sponge is the Venmo of agent payments (easy, custodial, consumer-grade). Rhemos is the Treasury Prime of agent payments (governed, auditable, enterprise-grade). Both can coexist, but the enterprise market is where the revenue is.
+The positioning: Sponge is the Venmo of agent payments (easy, custodial, consumer-grade). Rhemify is the Treasury Prime of agent payments (governed, auditable, enterprise-grade). Both can coexist, but the enterprise market is where the revenue is.
 
 ---
 
@@ -222,7 +222,7 @@ Payment model: x402 protocol for micropayments. Agents pay per-call for data, to
 
 ### Why They're Successful
 
-1. **Zero-friction onboarding.** `npx agentcash onboard` + $25 free credit is the best developer acquisition in the space. 59k+ installs prove it works. Rhemos's PRD explicitly says to copy this mechanic.
+1. **Zero-friction onboarding.** `npx agentcash onboard` + $25 free credit is the best developer acquisition in the space. 59k+ installs prove it works. Rhemify's PRD explicitly says to copy this mechanic.
 
 2. **Curated endpoint breadth.** 338 endpoints across enrichment, social data, email, travel, file uploads. This is a pre-built vendor network that saves developers from integrating each API individually.
 
@@ -236,11 +236,11 @@ Payment model: x402 protocol for micropayments. Agents pay per-call for data, to
 - **x402 only.** Same single-standard limitation.
 - **No governance.** No per-agent controls, no fleet management, no approval workflows.
 - **No intelligence.** No decision traces, no vendor scoring beyond what's curated.
-- **Complementary, not competing.** AgentCash is a vendor discovery layer. Rhemos is a payment orchestration runtime. They compose naturally — Rhemos can route through AgentCash endpoints while adding policy enforcement and decision tracing.
+- **Complementary, not competing.** AgentCash is a vendor discovery layer. Rhemify is a payment orchestration runtime. They compose naturally — Rhemify can route through AgentCash endpoints while adding policy enforcement and decision tracing.
 
-### How Rhemos Integrates (Not Competes With) AgentCash
+### How Rhemify Integrates (Not Competes With) AgentCash
 
-Per the PRD, Rhemos should **integrate AgentCash as a vendor discovery layer**: seed AgentCash's 338 endpoints into the Rhemos vendor_registry on Day 1. Copy the `npx agentcash onboard` mechanic for `npx rhemos onboard`. But don't build a competing curated marketplace — that's AgentCash's walled garden. Rhemos's advantage is the open internet.
+Per the PRD, Rhemify should **integrate AgentCash as a vendor discovery layer**: seed AgentCash's 338 endpoints into the Rhemify vendor_registry on Day 1. Copy the `npx agentcash onboard` mechanic for `npx rhemify onboard`. But don't build a competing curated marketplace — that's AgentCash's walled garden. Rhemify's advantage is the open internet.
 
 ---
 
@@ -262,9 +262,9 @@ Agent-Cred is payment infrastructure using a hotkey/coldkey architecture for sec
 
 4. **No narrative beyond security.** "Secure autonomous transactions" is a feature, not a product story. Judges need to see a vision for where this goes.
 
-### Lesson for Rhemos
+### Lesson for Rhemify
 
-Agent-Cred's hotkey/coldkey pattern is technically sound but insufficient as a standalone product. Rhemos's OWS integration (AES-256-GCM encrypted vault, key isolation, zero network calls for signing) achieves the same security goal but within a larger orchestration context. **Don't pitch key management as a feature — pitch the system it enables.**
+Agent-Cred's hotkey/coldkey pattern is technically sound but insufficient as a standalone product. Rhemify's OWS integration (AES-256-GCM encrypted vault, key isolation, zero network calls for signing) achieves the same security goal but within a larger orchestration context. **Don't pitch key management as a feature — pitch the system it enables.**
 
 ---
 
@@ -276,7 +276,7 @@ Analyzing all 8 projects, the winning patterns are clear:
 
 Every winner rode a wave. Latinum (Apr 2025) caught the "MCP is the future" wave. MCPay (Sep 2025) caught the "x402 is the standard" wave. CORBITS caught the same wave with a merchant twist. Mercantill caught the "enterprise needs governance" undercurrent.
 
-**For Rhemos:** The current wave is "agent payments need intelligence, not just plumbing." Galaxy Research (Jan 2026), a16z (Dec 2025, Feb 2026), and Pantera (Nov 2025) all point toward governance and decision tracing as unsolved. Colosseum's own RFP (Sep 2025) calls out treasury governance explicitly.
+**For Rhemify:** The current wave is "agent payments need intelligence, not just plumbing." Galaxy Research (Jan 2026), a16z (Dec 2025, Feb 2026), and Pantera (Nov 2025) all point toward governance and decision tracing as unsolved. Colosseum's own RFP (Sep 2025) calls out treasury governance explicitly.
 
 ### Pattern 2: Demo Simplicity
 
@@ -285,25 +285,25 @@ Winners have a demo that judges understand in under 60 seconds:
 - Latinum: "Agent has a wallet. Agent pays for services. Balance decreases." (30 seconds)
 - CORBITS: "Here's your real-time revenue dashboard for x402 payments." (30 seconds)
 
-**For Rhemos:** The demo needs the same instant legibility. Lead with "Agent makes a payment. Dashboard shows WHY it happened. Operator replays the decision." The flight recorder metaphor is the 30-second hook.
+**For Rhemify:** The demo needs the same instant legibility. Lead with "Agent makes a payment. Dashboard shows WHY it happened. Operator replays the decision." The flight recorder metaphor is the 30-second hook.
 
 ### Pattern 3: Solo Builders Ship Focused Products
 
 MCPay (1 person), CORBITS (1 person), Mercantill (1 person) all won prizes. Solo builders win by being laser-focused on one clear value proposition.
 
-**For Rhemos:** With a 3-person team, Rhemos has more firepower but also more scope risk. The workstream doc guards against this — each person owns a vertical slice, and the demo acts are priority-ordered so you can cut scope without losing the narrative.
+**For Rhemify:** With a 3-person team, Rhemify has more firepower but also more scope risk. The workstream doc guards against this — each person owns a vertical slice, and the demo acts are priority-ordered so you can cut scope without losing the narrative.
 
 ### Pattern 4: Open-Source + Ecosystem Positioning
 
 MCPay and CORBITS are both open-source and position themselves as ecosystem infrastructure (not proprietary products). Judges at Colosseum strongly favor projects that grow the Solana ecosystem.
 
-**For Rhemos:** Open-source the SDK and MCP server. Position Rhemos as infrastructure that makes the entire agent payment ecosystem more governable and intelligent — not as a replacement for MCPay or Sponge, but as the layer that makes them production-ready.
+**For Rhemify:** Open-source the SDK and MCP server. Position Rhemify as infrastructure that makes the entire agent payment ecosystem more governable and intelligent — not as a replacement for MCPay or Sponge, but as the layer that makes them production-ready.
 
 ### Pattern 5: Prize Track Selection Matters
 
 MCPay won Stablecoins (1st, $25k). Latinum won AI (1st, $25k). CORBITS won Infrastructure (2nd, $20k). Mercantill won Stablecoins (4th, $10k). The Infrastructure and Stablecoins tracks reward payment infrastructure. The AI track rewards agent capabilities.
 
-**For Rhemos:** Submit to **Infrastructure** (primary) and **Stablecoins** (secondary). The intelligence layer differentiates from past Infrastructure winners (CORBITS, Lazor Kit). The multi-standard + cross-chain routing differentiates from past Stablecoins winners (MCPay, Mercantill).
+**For Rhemify:** Submit to **Infrastructure** (primary) and **Stablecoins** (secondary). The intelligence layer differentiates from past Infrastructure winners (CORBITS, Lazor Kit). The multi-standard + cross-chain routing differentiates from past Stablecoins winners (MCPay, Mercantill).
 
 ---
 
@@ -311,7 +311,7 @@ MCPay won Stablecoins (1st, $25k). Latinum won AI (1st, $25k). CORBITS won Infra
 
 After analyzing all 8 competitors + 2 external companies, the gap map is definitive:
 
-| Capability | MCPay | Latinum | CORBITS | Mercantill | Sponge | AgentCash | Rhemos |
+| Capability | MCPay | Latinum | CORBITS | Mercantill | Sponge | AgentCash | Rhemify |
 |---|---|---|---|---|---|---|---|
 | Agent can make payments | Yes (x402) | Yes (wallet) | No (merchant) | No (governance) | Yes (custodial) | Yes (curated) | **Yes (universal)** |
 | Multi-standard routing | No | No | No | No | No | No | **Yes** |
@@ -323,7 +323,7 @@ After analyzing all 8 competitors + 2 external companies, the gap map is definit
 | MCP-native | Yes | Yes | No | No | Yes | IDE integrations | **Yes** |
 | Compounds with data | No | No | No | No | No | No | **Yes** |
 
-**Every competitor solves one piece. Nobody solves the whole puzzle. Rhemos is the first product that combines payment execution, multi-standard routing, fleet governance, decision intelligence, and non-custodial architecture in a single runtime.**
+**Every competitor solves one piece. Nobody solves the whole puzzle. Rhemify is the first product that combines payment execution, multi-standard routing, fleet governance, decision intelligence, and non-custodial architecture in a single runtime.**
 
 ---
 
@@ -335,11 +335,11 @@ MCPay owns "monetize MCP tools via x402." Latinum owns "agent wallet for autonom
 
 ### 2. Own the Next Layer
 
-Every winning project is a payment pipe. Rhemos is the control plane. The pitch: "MCPay and Latinum solved how agents pay. Rhemos solves how operators govern, audit, and learn from what agents pay."
+Every winning project is a payment pipe. Rhemify is the control plane. The pitch: "MCPay and Latinum solved how agents pay. Rhemify solves how operators govern, audit, and learn from what agents pay."
 
 ### 3. Cite the Winners as Validation
 
-"MCPay proved agents will pay for MCP tools. Latinum proved agents need autonomous budgets. Mercantill proved enterprises need governance. Rhemos is what happens when you put all three together — and add intelligence."
+"MCPay proved agents will pay for MCP tools. Latinum proved agents need autonomous budgets. Mercantill proved enterprises need governance. Rhemify is what happens when you put all three together — and add intelligence."
 
 ### 4. The Demo Must Show What No One Else Can
 
@@ -347,7 +347,7 @@ The decision trace replay is the single feature that no competitor — hackathon
 
 ### 5. The Intelligence Layer Is the Moat
 
-Features can be copied. Multi-standard routing can be copied. Policy engines can be copied. But the intelligence layer — the compounding data from every payment (vendor scores, payment graphs, decision patterns) — cannot be bootstrapped by a competitor who starts later. Every month of transaction data makes Rhemos harder to displace. This is the moat that scales.
+Features can be copied. Multi-standard routing can be copied. Policy engines can be copied. But the intelligence layer — the compounding data from every payment (vendor scores, payment graphs, decision patterns) — cannot be bootstrapped by a competitor who starts later. Every month of transaction data makes Rhemify harder to displace. This is the moat that scales.
 
 ---
 
@@ -371,7 +371,7 @@ Robbie Petersen (Dragonfly) crystallized this: *"The agentic economy will be eno
 - MPP sessions (batched payments) exist specifically to reduce microtx spam
 - Not every API call needs to be a payment event
 
-### Where They're Wrong — Rhemos's Market
+### Where They're Wrong — Rhemify's Market
 
 The real use case isn't "pay per call." It's "pay for access to things you DON'T have a subscription to."
 
@@ -384,7 +384,7 @@ Agent's typical day:
 
 The subscription model breaks when: agent discovers a new data source, needs a one-off call, pays across organizations, or the vendor only offers pay-per-use. This long tail across millions of agents is still massive.
 
-### How Rhemos Addresses This
+### How Rhemify Addresses This
 
 **We're not micropayment maximalists. We're routing realists.**
 
@@ -396,11 +396,11 @@ The subscription model breaks when: agent discovers a new data source, needs a o
 
 4. **Path Resolver scores ALL options** — Single tx, Squads session, credit balance, AgentCard, swap, bridge. Whatever is cheapest wins. Not ideological about micropayments — pragmatic about cost.
 
-The pitch: *"95% of agent API calls will be covered by subscriptions. We agree. But the other 5% — the new vendor, the one-off data pull, the cross-org payment — that's where agents hit 402. Rhemos routes the payments that subscriptions can't cover. And when our intelligence layer sees an agent paying the same vendor 50 times, we recommend switching to a subscription. We're smart enough to tell you when to stop using us."*
+The pitch: *"95% of agent API calls will be covered by subscriptions. We agree. But the other 5% — the new vendor, the one-off data pull, the cross-org payment — that's where agents hit 402. Rhemify routes the payments that subscriptions can't cover. And when our intelligence layer sees an agent paying the same vendor 50 times, we recommend switching to a subscription. We're smart enough to tell you when to stop using us."*
 
 ### Ecosystem Validation
 
 - **@shafu0x**: "Users don't care if you are using x402, MPP, A2A, ACP... THEY JUST WANT IT TO WORK"
-- **Jay Yu (@0xfishylosopher)**: "The most interesting layers to build: (1) wallet orchestration — multi-standard, multi-address, multi-chain, (2) multi-standard discovery and curation, (3) authorization and identity schemes for agents" — describes exactly what Rhemos builds
+- **Jay Yu (@0xfishylosopher)**: "The most interesting layers to build: (1) wallet orchestration — multi-standard, multi-address, multi-chain, (2) multi-standard discovery and curation, (3) authorization and identity schemes for agents" — describes exactly what Rhemify builds
 - **0xpratik**: Confirms Squads Smart Accounts are mentioned as MPP session payment type — the batched settlement solution already exists in the spec
-- **Artemis Market Map**: 138 companies in the agentic commerce stack, nobody connects agents to payment infrastructure — Rhemos is the routing layer in the middle
+- **Artemis Market Map**: 138 companies in the agentic commerce stack, nobody connects agents to payment infrastructure — Rhemify is the routing layer in the middle

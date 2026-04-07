@@ -5,12 +5,13 @@ import type {
   PaymentEvent,
   PaymentTrace,
   PayResult,
+  PipelineStage,
   PolicyConfig,
   PolicyDecisionEvent,
   ProbeOptions,
   ProbeResult,
-  Rhemos,
-  RhemosConfig,
+  Rhemify,
+  RhemifyConfig,
   SessionOptions,
 } from "./types.js";
 import {
@@ -28,7 +29,7 @@ import { Trace } from "./trace/index.js";
 import { AnchorQueue } from "./anchor/queue.js";
 import { createGovernedSession } from "./session/index.js";
 
-export function createRhemos(config: RhemosConfig): Rhemos {
+export function createRhemify(config: RhemifyConfig): Rhemify {
   const transport = new GoServerTransport(config.serverUrl, config.fleetApiKey);
   const policyEngine = new PolicyEngine(
     transport,
@@ -146,6 +147,14 @@ export function createRhemos(config: RhemosConfig): Rhemos {
     }
   }
 
+  function emitStage(stage: PipelineStage, data: Record<string, unknown>): void {
+    try {
+      config.onStageComplete?.({ stage, timestamp: Date.now(), data });
+    } catch {
+      // Never let callback errors break the pipeline
+    }
+  }
+
   async function pay<T = unknown>(
     url: string,
     options?: PayOptions,
@@ -167,6 +176,7 @@ export function createRhemos(config: RhemosConfig): Rhemos {
       timeout: config.timeout,
     });
     trace.recordDetection(detection);
+    emitStage("detect", { protocol: detection.protocol, confidence: detection.confidence, network: detection.network });
 
     if (detection.protocol === "unknown") {
       throw new DetectionError(
@@ -188,6 +198,7 @@ export function createRhemos(config: RhemosConfig): Rhemos {
     const domain = extractDomain(url);
     const policyDecision = await policyEngine.evaluate(detection, domain);
     trace.recordPolicyDecision(policyDecision);
+    emitStage("policy", { action: policyDecision.action, reason: policyDecision.reason ?? null, rulesCount: policyDecision.rulesFired.length });
 
     if (policyDecision.action === "block") {
       trace.recordExecution(false, undefined, policyDecision.reason);
@@ -203,6 +214,7 @@ export function createRhemos(config: RhemosConfig): Rhemos {
     const allPaths = pathResolver.resolve(detection, config.wallet);
     const chosenPath = allPaths.find((p) => p.available) ?? null;
     trace.recordPathSelection(allPaths, chosenPath);
+    emitStage("resolve", { pathsEvaluated: allPaths.length, chosen: chosenPath?.instrument ?? null, estimatedCost: chosenPath?.estimatedCost ?? null });
 
     if (!chosenPath) {
       trace.recordExecution(false, undefined, "No available payment path");
@@ -235,12 +247,16 @@ export function createRhemos(config: RhemosConfig): Rhemos {
         options ?? {},
       );
 
+      emitStage("execute", { success: true, txHash: execResult.txHash ?? null });
+
       // --- Stage 5: TRACE ---
       trace.recordExecution(true, execResult.txHash);
       const traceRecord = trace.finalize();
+      emitStage("trace", { traceId: traceRecord.id, traceHash: traceRecord.traceHash });
 
       // --- Stage 6: EMIT ---
       emitTrace(trace);
+      emitStage("anchor", { traceId: traceRecord.id, anchorEnabled: !!anchorQueue });
 
       // Notify callback
       const result: PayResult<T> = {

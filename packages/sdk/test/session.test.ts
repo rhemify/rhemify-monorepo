@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createRhemos } from "../src/index.js";
+import { createRhemify } from "../src/index.js";
 import { PolicyBlockedError, ExecutionError } from "../src/errors.js";
 
 // Track fetch calls
@@ -63,8 +63,8 @@ function mockFetch(policyResp = policyResponse) {
   });
 }
 
-function makeRhemos(overrides?: Record<string, unknown>) {
-  return createRhemos({
+function makeRhemify(overrides?: Record<string, unknown>) {
+  return createRhemify({
     serverUrl: "http://localhost:8080",
     fleetApiKey: "test-fleet-key",
     agentId: "agent-1",
@@ -88,9 +88,9 @@ describe("session() governance wrapper", () => {
 
   it("opens a session and returns MppSession interface", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
-    const session = await rhemos.session({
+    const session = await rhemify.session({
       maxDeposit: "$5.00",
       taskContext: "Test session",
     });
@@ -107,8 +107,8 @@ describe("session() governance wrapper", () => {
 
   it("tracks cumulative spend across fetch calls", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
-    const session = await rhemos.session({ maxDeposit: "$1.00" });
+    const rhemify = makeRhemify();
+    const session = await rhemify.session({ maxDeposit: "$1.00" });
 
     await session.fetch("https://api.vendor.com/data");
     expect(session.spent()).toBeGreaterThan(0);
@@ -122,8 +122,8 @@ describe("session() governance wrapper", () => {
 
   it("emits a trace for each fetch call", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
-    const session = await rhemos.session({ maxDeposit: "$1.00" });
+    const rhemify = makeRhemify();
+    const session = await rhemify.session({ maxDeposit: "$1.00" });
 
     await session.fetch("https://api.vendor.com/data");
 
@@ -136,8 +136,8 @@ describe("session() governance wrapper", () => {
 
   it("close() returns session summary with traceIds", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
-    const session = await rhemos.session({ maxDeposit: "$1.00" });
+    const rhemify = makeRhemify();
+    const session = await rhemify.session({ maxDeposit: "$1.00" });
 
     await session.fetch("https://api.vendor.com/data");
     await session.fetch("https://api.vendor.com/data2");
@@ -152,8 +152,8 @@ describe("session() governance wrapper", () => {
 
   it("fetch throws after session is closed", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
-    const session = await rhemos.session({ maxDeposit: "$1.00" });
+    const rhemify = makeRhemify();
+    const session = await rhemify.session({ maxDeposit: "$1.00" });
 
     await session.close();
 
@@ -164,11 +164,11 @@ describe("session() governance wrapper", () => {
 
   it("throws PolicyBlockedError when policy blocks the session deposit", async () => {
     globalThis.fetch = mockFetch(tightPolicyResponse);
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
     // MPP not in allowedStandards (only x402 allowed)
     await expect(
-      rhemos.session({ maxDeposit: "$5.00" }),
+      rhemify.session({ maxDeposit: "$5.00" }),
     ).rejects.toThrow(PolicyBlockedError);
   });
 
@@ -186,27 +186,27 @@ describe("session() governance wrapper", () => {
     };
 
     globalThis.fetch = mockFetch(nearLimitPolicy);
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
     // $5 deposit but only $0.50 remaining in daily limit
     await expect(
-      rhemos.session({ maxDeposit: "$5.00" }),
+      rhemify.session({ maxDeposit: "$5.00" }),
     ).rejects.toThrow(PolicyBlockedError);
   });
 
   it("throws on invalid deposit amount", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
+    const rhemify = makeRhemify();
 
     await expect(
-      rhemos.session({ maxDeposit: "not-a-number" }),
+      rhemify.session({ maxDeposit: "not-a-number" }),
     ).rejects.toThrow("Invalid deposit");
   });
 
   it("close emits a session-close trace", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
-    const session = await rhemos.session({ maxDeposit: "$1.00" });
+    const rhemify = makeRhemify();
+    const session = await rhemify.session({ maxDeposit: "$1.00" });
 
     await session.fetch("https://api.vendor.com/data");
     await session.close();
@@ -221,8 +221,8 @@ describe("session() governance wrapper", () => {
 
   it("spent and remaining update correctly", async () => {
     globalThis.fetch = mockFetch();
-    const rhemos = makeRhemos();
-    const session = await rhemos.session({ maxDeposit: "$1.00" });
+    const rhemify = makeRhemify();
+    const session = await rhemify.session({ maxDeposit: "$1.00" });
 
     expect(session.spent()).toBe(0);
     expect(session.remaining()).toBe(1);

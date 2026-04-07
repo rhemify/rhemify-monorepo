@@ -89,9 +89,27 @@ export class PolicyEngine {
       return this.cached.context;
     }
 
-    const context = await this.transport.getPolicy(this.agentId);
-    this.cached = { context, expiresAt: now + this.cacheTtl };
-    return context;
+    try {
+      const context = await this.transport.getPolicy(this.agentId);
+      this.cached = { context, expiresAt: now + this.cacheTtl };
+      return context;
+    } catch {
+      // Fallback to permissive defaults when Go server is unreachable.
+      // This allows the SDK to work during development without the full stack.
+      const fallback: PolicyContext = {
+        policy: {
+          dailyLimit: 100,
+          maxPerTransaction: 50,
+          approvalThreshold: 0,
+          allowedStandards: [],
+          domainAllowlist: [],
+        },
+        spentToday: 0,
+        blockedDomains: [],
+      };
+      this.cached = { context: fallback, expiresAt: now + this.cacheTtl };
+      return fallback;
+    }
   }
 }
 

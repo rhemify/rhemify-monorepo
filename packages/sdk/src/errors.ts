@@ -1,16 +1,16 @@
 import type { PolicyDecision } from "./types.js";
 
-export class RhemosError extends Error {
+export class RhemifyError extends Error {
   constructor(
     message: string,
     public code: string,
   ) {
     super(message);
-    this.name = "RhemosError";
+    this.name = "RhemifyError";
   }
 }
 
-export class DetectionError extends RhemosError {
+export class DetectionError extends RhemifyError {
   constructor(
     message: string,
     public url: string,
@@ -20,7 +20,7 @@ export class DetectionError extends RhemosError {
   }
 }
 
-export class PolicyBlockedError extends RhemosError {
+export class PolicyBlockedError extends RhemifyError {
   constructor(
     message: string,
     public decision: PolicyDecision,
@@ -30,7 +30,7 @@ export class PolicyBlockedError extends RhemosError {
   }
 }
 
-export class BudgetExceededError extends RhemosError {
+export class BudgetExceededError extends RhemifyError {
   constructor(
     public price: number,
     public budget: number,
@@ -40,14 +40,14 @@ export class BudgetExceededError extends RhemosError {
   }
 }
 
-export class NoWalletError extends RhemosError {
+export class NoWalletError extends RhemifyError {
   constructor(public requiredChain: string) {
     super(`No wallet configured for ${requiredChain}`, "NO_WALLET");
     this.name = "NoWalletError";
   }
 }
 
-export class ExecutionError extends RhemosError {
+export class ExecutionError extends RhemifyError {
   constructor(
     message: string,
     public statusCode?: number,

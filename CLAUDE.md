@@ -77,9 +77,9 @@ packages/sdk → apps/server (HTTP, fleet API key auth)
              → Solana (Memo anchoring, Anchor program PDA)
 ```
 
-### packages/sdk — Rhemos Payment Runtime
+### packages/sdk — Rhemify Payment Runtime
 
-The core payment SDK. Powers `rhemos.pay(url)` — 6-stage pipeline: detect → policy → resolve → execute → trace → emit.
+The core payment SDK. Powers `rhemify.pay(url)` — 6-stage pipeline: detect → policy → resolve → execute → trace → emit.
 
 **Shared Intelligence Layer Contracts** (`packages/sdk/src/types.ts`):
 - `PaymentEvent` — the facts of what happened (every field from `docs/intelligence-layer-spec.md`)
@@ -125,16 +125,16 @@ Brand tokens: `--color-rhm-accent` (#C8F03A), `--color-rhm-success`, `--color-rh
 
 Zod-validated env vars via `@t3-oss/env-core`. Server vars: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`. Client vars use `VITE_` prefix.
 
-## Product Context — Rhemos
+## Product Context — Rhemify
 
-Rhemos is the verifiable payment layer for agentic commerce. **Route. Govern. Verify.**
+Rhemify is the verifiable payment layer for agentic commerce. **Route. Govern. Verify.**
 
 > Here's proof of what happened, WHY it happened, what alternatives were rejected, and what would have happened if you changed the policy — plus we routed the payment in the first place.
 
 ### Core Architecture: The Routing Engine
 
 ```
-Agent calls rhemos.pay(url)
+Agent calls rhemify.pay(url)
   → Standard Detector (x402 / MPP / L402 / AP2 / ACP)
   → Policy Engine (limits, domains, standards, intelligence rules)
   → Path Resolver (AgentCard / OWS / Squads session / Jupiter swap / CCTP bridge)
@@ -142,6 +142,16 @@ Agent calls rhemos.pay(url)
   → Decision Trace (full reasoning, hash anchored on Solana PDA)
   → Intelligence Layer (vendor scores, anomaly detection, replay)
 ```
+
+### Architecture Decision Records (in `docs/decisions/`)
+
+| ADR | Decision |
+|-----|----------|
+| [001](docs/decisions/001-solana-go-local-dependency.md) | solana-go as local module via `replace` directive |
+| [002](docs/decisions/002-ika-typescript-sidecar.md) | Ika integration via TypeScript sidecar (no Go SDK available) |
+| [003](docs/decisions/003-signing-pipeline-architecture.md) | 7-stage signing pipeline with chain-of-responsibility |
+| [004](docs/decisions/004-anchor-hand-built-instructions.md) | Hand-built Anchor instructions with Borsh encoding |
+| [005](docs/decisions/005-plaintext-policy-enforcement.md) | Plaintext on-chain policy enforcement (FHE deferred) |
 
 ### Reference Docs (in `docs/`)
 
@@ -153,7 +163,7 @@ Agent calls rhemos.pay(url)
 | `docs/intelligence-layer-spec.md` | Full spec for intelligence layer: event ingestion, rules engine (12 rules across 5 categories), auto-actions, decision replay, configuration, data retention. **Build bible for the backend.** | Backend (Zhe Hong) |
 | `docs/intelligence-layer-diagram.md` | Mermaid diagrams: full system flow, rules engine detail, action lifecycle, single payment sequence. | Everyone |
 | `docs/competitive-analysis.md` | Deep analysis of MCPay, Latinum, CORBITS, Mercantill, Sponge, AgentCash, Observer Protocol. Micropayment criticism response. Ecosystem validation quotes. | Everyone (for pitch context) |
-| `docs/vendor-instrument-analysis.md` | Every external service that integrates with Rhemos: signing (OWS, Privy, Squads), payment instruments (AgentCard, AgentCash, Squads sessions), swaps (Jupiter), bridges (CCTP), RPC (Helius), identity. | Sean, Wei Hup |
+| `docs/vendor-instrument-analysis.md` | Every external service that integrates with Rhemify: signing (OWS, Privy, Squads), payment instruments (AgentCard, AgentCash, Squads sessions), swaps (Jupiter), bridges (CCTP), RPC (Helius), identity. | Sean, Wei Hup |
 
 **Deprecated — do not use as source of truth:**
 
@@ -215,9 +225,34 @@ Priority order for detectStandard():
 - **Fonts**: Inter (body) + DM Mono (technical values: IDs, amounts, timestamps, payment standards).
 - **Linting**: Oxlint (not ESLint). Formatting: Oxfmt (not Prettier).
 - **Path aliases**: `@/*` → `./src/*` in apps/web. `@rhemify-monorepo/ui/*` → packages/ui.
-- **Naming**: Brand is "Rhemify" (company) / "Rhemos" (product). Product terms: Fleet, Agent, Department, Policy, Deploy, Freeze, Kill switch, Trace, Replay.
+- **Naming**: Brand is **Rhemify** everywhere (company and product). No "Rhemos". Product terms: Fleet, Agent, Department, Policy, Deploy, Freeze, Kill switch, Trace, Replay.
 - **Vite plugin order**: `tailwindcss()` → `tanstackStart()` → `viteReact()` — ordering matters.
 - **Do NOT** enable `verbatimModuleSyntax` in tsconfig.
+
+## Security Conventions
+
+These rules apply to ALL code in this repo. Violations found in audit — do not repeat.
+
+### Secrets & Keys
+- **Never use `Must*` panic functions** for parsing keys from env vars (`MustPrivateKeyFromBase58`, `MustPublicKeyFromBase58`). Use the error-returning variants and `log.Fatalf` with a clean message.
+- **Never log private keys, secret keys, or tokens.** Log the derived public key/address only.
+- **Never expose raw error messages** from internal systems (Convex, Solana RPC, Ika) to HTTP clients. Return generic errors (`"internal error"`) and log details server-side.
+
+### HTTP Services
+- **Every internal HTTP service must have auth.** Sidecar services (like `apps/ika-sidecar`) use a shared `Bearer` token from env vars (`IKA_SIDECAR_SECRET`). Never expose signing/DKG endpoints without auth.
+- **Cap concurrent goroutines** for async pipeline execution. Use a semaphore (`chan struct{}`) to prevent unbounded goroutine creation from HTTP requests.
+- **Validate state transitions** at the persistence layer (Convex mutations), not just in application code. The canonical transition map must be enforced where data is written.
+
+### Solana / Anchor Programs
+- **Always use `checked_add`/`checked_sub` with `.ok_or(error!(...))?`** — never `.unwrap()` on arithmetic in Anchor programs. Silent panics become DoS vectors.
+- **Use correct error variants** in Anchor constraints. The `@ ErrorVariant` in `constraint = ...` must describe the actual failure (e.g., `UnauthorizedCoSigner`, not `AgentFrozen`).
+
+### Convex
+- **Validate enum fields** in Convex mutations. Use `v.union(v.literal("a"), v.literal("b"))` instead of `v.string()` for status/type fields.
+- **Convex `v.id("table")` expects a real Convex document ID**, not an arbitrary string. Validate existence before passing client-supplied IDs to mutations.
+
+### EVM / Chain Adapters
+- **Use `math/big.Int` for wei/balance parsing**, not `uint64`. ETH balances overflow `uint64` above ~18.44 ETH.
 
 <!-- convex-ai-start -->
 This project uses [Convex](https://convex.dev) as its backend.

@@ -1,4 +1,4 @@
-# Rhemos — Team Workstreams
+# Rhemify — Team Workstreams
 
 ## Colosseum Frontier (April 6 - May 11, 2026)
 
@@ -30,7 +30,7 @@ HACKATHON WEEK 2 (Apr 13-19) — Core Engine
   Designer: Decision trace viewer, policy editor, connect to mock API
 
 HACKATHON WEEK 3 (Apr 20-26) — Integration
-  Sean:     MCP server → live backend, npx rhemos onboard, real 402 endpoints
+  Sean:     MCP server → live backend, npx rhemify onboard, real 402 endpoints
   Fullstack: WebSocket live feed, decision replay engine, end-to-end data flow
   Designer: Switch mock → real API, WebSocket live feed, replay UI, agent detail page
 
@@ -139,7 +139,7 @@ WebSocket at `/api/events/stream`. Pushes `PaymentEvent` JSON on every new event
 
 **Owner:** Designer | **Consumer:** Sean + Fullstack Dev | **Deadline:** Apr 5 (before hackathon starts)
 
-Extends existing Rhemify brand tokens. Defines Rhemos-specific palette, typography rules, component patterns. Published as CSS variables in `packages/ui/globals.css`. Everyone follows these for any UI surface including CLI output colors and formatting.
+Extends existing Rhemify brand tokens. Defines Rhemify-specific palette, typography rules, component patterns. Published as CSS variables in `packages/ui/globals.css`. Everyone follows these for any UI surface including CLI output colors and formatting.
 
 ---
 
@@ -147,7 +147,7 @@ Extends existing Rhemify brand tokens. Defines Rhemos-specific palette, typograp
 
 ### Scope
 
-Everything in the core `pay(resource)` path — from the moment an agent calls `rhemos.pay(url)` to the payment executing and the event being emitted. You ship first to unblock the other two.
+Everything in the core `pay(resource)` path — from the moment an agent calls `rhemify.pay(url)` to the payment executing and the event being emitted. You ship first to unblock the other two.
 
 ### Out of Scope
 
@@ -171,7 +171,7 @@ Dashboard UI, backend API server, database queries, replay logic. You emit event
 |---|---|
 | Payment event schema defined | Schema doc reviewed by fullstack dev, typed interfaces exported from shared package |
 | Decision trace format defined | Trace interface covers all fields from PRD section 7.3.1, reviewed by team |
-| MCP server scaffold | `rhemos.pay`, `rhemos.status`, `rhemos.set_policy`, `rhemos.check_policy` registered as MCP tools. Server starts and responds to tool calls with stubs. |
+| MCP server scaffold | `rhemify.pay`, `rhemify.status`, `rhemify.set_policy`, `rhemify.check_policy` registered as MCP tools. Server starts and responds to tool calls with stubs. |
 
 **Hackathon Week 1 (Apr 6-12): Standard Detection + Policy**
 
@@ -197,9 +197,9 @@ Dashboard UI, backend API server, database queries, replay logic. You emit event
 | Deliverable | Acceptance Criteria |
 |---|---|
 | MCP server connected to live backend | Events flow from runtime → fullstack dev's Go backend → database. Traces queryable via API. |
-| `npx rhemos onboard` | CLI provisions OWS vault OR AgentCard, registers fleet with 3 agents, fires test `pay()` to a known 402 endpoint, prints dashboard URL. Total time < 2 minutes. |
-| @rhemos/sdk package | `pay(resource)` exported as framework-agnostic TypeScript function. Works standalone or via MCP. |
-| Real 402 endpoints | At least 2 real APIs returning 402 that agents can pay through Rhemos. Not mocks. |
+| `npx rhemify onboard` | CLI provisions OWS vault OR AgentCard, registers fleet with 3 agents, fires test `pay()` to a known 402 endpoint, prints dashboard URL. Total time < 2 minutes. |
+| @rhemify/sdk package | `pay(resource)` exported as framework-agnostic TypeScript function. Works standalone or via MCP. |
+| Real 402 endpoints | At least 2 real APIs returning 402 that agents can pay through Rhemify. Not mocks. |
 
 **Hackathon Week 4 (Apr 27 - May 3): Polish + Differentiation**
 
@@ -208,7 +208,7 @@ Dashboard UI, backend API server, database queries, replay logic. You emit event
 | Multi-standard demo flow | Single agent hits 3 different 402 endpoints (x402, MPP, L402). All detected and paid automatically. All traces captured. |
 | L402 support | Lightning payment via L402 standard working end-to-end (LND/CLN client or hosted node). |
 | Cross-chain: CCTP bridge | Solana USDC → Base USDC via CCTP. Bridge scoring logged in trace. |
-| Kill switch | `rhemos.set_policy({ kill_switch: true })` pauses all fleet payments immediately. Dashboard reflects frozen state. |
+| Kill switch | `rhemify.set_policy({ kill_switch: true })` pauses all fleet payments immediately. Dashboard reflects frozen state. |
 | Edge case hardening | Graceful handling of: unknown standard, insufficient balance, network timeout, bridge failure. All produce structured errors and traces. |
 
 **Hackathon Week 5 (May 4-11): Demo**
@@ -216,7 +216,7 @@ Dashboard UI, backend API server, database queries, replay logic. You emit event
 | Deliverable | Acceptance Criteria |
 |---|---|
 | Demo script rehearsed | Acts 1-2 from positioning doc work end-to-end without manual intervention. |
-| `npx rhemos onboard` works on clean machine | Tested on fresh environment. Under 2 minutes. |
+| `npx rhemify onboard` works on clean machine | Tested on fresh environment. Under 2 minutes. |
 
 ---
 
@@ -224,7 +224,7 @@ Dashboard UI, backend API server, database queries, replay logic. You emit event
 
 ### Scope
 
-Everything downstream of a payment event — store, index, query, replay. Plus the Go backend API that serves the dashboard and the real-time feed. You make Rhemos's intelligence visible and queryable.
+Everything downstream of a payment event — store, index, query, replay. Plus the Go backend API that serves the dashboard and the real-time feed. You make Rhemify's intelligence visible and queryable.
 
 ### Out of Scope
 
@@ -295,7 +295,7 @@ Payment execution, standard detection, policy enforcement (these are Sean's runt
 
 ### Scope
 
-Everything the judge sees on screen. The dashboard is the visual proof that Rhemos is production-grade, not a terminal demo. You also own brand identity, the landing page, onboarding UX, and presentation materials.
+Everything the judge sees on screen. The dashboard is the visual proof that Rhemify is production-grade, not a terminal demo. You also own brand identity, the landing page, onboarding UX, and presentation materials.
 
 ### Out of Scope
 
@@ -305,7 +305,7 @@ Backend API implementation, payment runtime logic, database schema. You consume 
 
 - TanStack Start (existing monorepo app framework)
 - Tailwind CSS 4 + Shadcn/ui (existing component library)
-- Rhemify brand tokens (extend for Rhemos)
+- Rhemify brand tokens (extend for Rhemify)
 - Figma (wireframes + design system)
 - Framer Motion or similar (dashboard animations)
 
@@ -324,10 +324,10 @@ Backend API implementation, payment runtime logic, database schema. You consume 
 
 | Deliverable | Acceptance Criteria |
 |---|---|
-| Rhemos design tokens | Color palette, typography scale, spacing, component patterns defined. Published as CSS variables in `packages/ui/globals.css`. Reviewed by team. |
+| Rhemify design tokens | Color palette, typography scale, spacing, component patterns defined. Published as CSS variables in `packages/ui/globals.css`. Reviewed by team. |
 | Dashboard wireframes | All views wireframed in Figma: fleet overview, agent detail, event feed, decision trace viewer, policy editor. Reviewed by team. |
 | Component inventory | List of all UI components needed. Map to existing Shadcn components vs custom builds. Estimate effort per component. |
-| Onboarding UX design | Terminal output design for `npx rhemos onboard`. Success states, error states, progress indicators. Mockup of what the CLI prints at each step. |
+| Onboarding UX design | Terminal output design for `npx rhemify onboard`. Success states, error states, progress indicators. Mockup of what the CLI prints at each step. |
 
 **Hackathon Week 1 (Apr 6-12): Dashboard Scaffold**
 
@@ -361,7 +361,7 @@ Backend API implementation, payment runtime logic, database schema. You consume 
 |---|---|
 | Vendor intelligence view | Table: domain, success rate (color-coded), avg latency, standards supported (badges), total spend, last seen. Sortable by reliability. |
 | Kill switch UI | Big red button in fleet overview header. Confirms before activating. Dashboard enters "FROZEN" state with visual indicator on all agent rows. |
-| Landing page | rhemos.com — hero section with one-liner, "how it works" (3-step), competitive positioning visual, CTA to docs/onboard. Matches Rhemos brand. |
+| Landing page | rhemify.com — hero section with one-liner, "how it works" (3-step), competitive positioning visual, CTA to docs/onboard. Matches Rhemify brand. |
 | Responsive polish | Dashboard works at 1280px+ (demo will be on a laptop screen). No broken layouts. |
 | Loading + empty states | Skeleton loaders for all data views. Empty states with helpful messaging ("No events yet — run your first payment"). |
 
@@ -369,7 +369,7 @@ Backend API implementation, payment runtime logic, database schema. You consume 
 
 | Deliverable | Acceptance Criteria |
 |---|---|
-| Presentation slides | 7-slide deck following narrative arc from positioning doc. Consistent with Rhemos brand. |
+| Presentation slides | 7-slide deck following narrative arc from positioning doc. Consistent with Rhemify brand. |
 | Demo video assets | If submission requires a video: screen recording setup, script reviewed, transitions planned. |
 | Visual QA pass | Every dashboard view screenshot-reviewed. No placeholder text, no broken styles, no console errors visible. |
 
@@ -383,7 +383,7 @@ Each act from the [positioning doc](./hackathon-positioning.md) mapped to workst
 
 | Task | Owner | Status |
 |---|---|---|
-| `npx rhemos onboard` provisions wallet + fleet | Sean | |
+| `npx rhemify onboard` provisions wallet + fleet | Sean | |
 | Test `pay()` fires to real 402 endpoint | Sean | |
 | Payment event stored in database | Fullstack Dev | |
 | Dashboard shows first transaction in live feed | Designer | |

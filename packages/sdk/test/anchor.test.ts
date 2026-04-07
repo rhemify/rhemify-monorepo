@@ -12,7 +12,7 @@ describe("buildMemoPayload", () => {
       1712400000,
     );
 
-    expect(payload.op).toBe("rhemos-trace");
+    expect(payload.op).toBe("rhemify-trace");
     expect(payload.id).toBe("trc_abc123");
     expect(payload.hash).toBe("sha256hexhash");
     expect(payload.fleet).toBe("fleet-1");

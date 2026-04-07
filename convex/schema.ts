@@ -26,6 +26,7 @@ export default defineSchema({
     skills: v.array(v.string()),
     allowed_domains: v.array(v.string()),
     allowed_standards: v.array(v.string()),
+    dwallet_id: v.optional(v.string()), // Ika dWallet linked to this agent
   })
     .index("by_fleet", ["fleet_id"])
     .index("by_agent_key", ["agent_key"]),
@@ -171,6 +172,55 @@ export default defineSchema({
     .index("by_action_type", ["action_type"])
     .index("by_agent", ["agent_id"])
     .index("by_outcome", ["outcome"]),
+
+  // dWallet registry — fleet treasury and agent wallets
+  dwallet_registry: defineTable({
+    fleet_id: v.id("fleets"),
+    agent_id: v.optional(v.id("agents")), // null = fleet treasury dWallet
+    dwallet_type: v.union(v.literal("treasury"), v.literal("agent")),
+    dwallet_id: v.string(), // Ika dWallet identifier
+    dwallet_cap_id: v.string(), // ownership cap (Solana account)
+    supported_chains: v.array(v.string()), // ["ethereum", "base", "arbitrum"]
+    status: v.union(v.literal("creating"), v.literal("active"), v.literal("frozen"), v.literal("revoked")),
+    created_at: v.float64(),
+  })
+    .index("by_fleet", ["fleet_id"])
+    .index("by_agent", ["agent_id"])
+    .index("by_dwallet", ["dwallet_id"]),
+
+  // Cross-chain wallet balances synced by Go server
+  wallet_balances: defineTable({
+    dwallet_id: v.string(),
+    chain: v.string(), // "ethereum" | "base" | "arbitrum"
+    token: v.string(), // "ETH" | "USDC" | etc.
+    amount: v.float64(),
+    last_synced_at: v.float64(),
+  })
+    .index("by_dwallet", ["dwallet_id"])
+    .index("by_dwallet_chain", ["dwallet_id", "chain"]),
+
+  // Signing requests — agent payment approval pipeline
+  signing_requests: defineTable({
+    agent_id: v.optional(v.id("agents")),
+    fleet_id: v.id("fleets"),
+    dwallet_id: v.string(),
+    target_chain: v.string(), // "base" | "arbitrum" | "ethereum"
+    target_address: v.string(),
+    token: v.string(),
+    amount: v.float64(),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"), v.literal("signed"), v.literal("broadcast"), v.literal("confirmed"), v.literal("failed")),
+    intelligence_decision: v.optional(v.any()),
+    rejection_reason: v.optional(v.string()),
+    ika_signature: v.optional(v.string()),
+    target_tx_hash: v.optional(v.string()),
+    trace_id: v.optional(v.string()),
+    created_at: v.float64(),
+    resolved_at: v.optional(v.float64()),
+  })
+    .index("by_agent", ["agent_id"])
+    .index("by_fleet", ["fleet_id"])
+    .index("by_status", ["status"])
+    .index("by_dwallet", ["dwallet_id"]),
 
   // Daily Merkle root batches (Layer 2 trace anchoring)
   anchor_batches: defineTable({
