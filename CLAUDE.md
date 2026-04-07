@@ -143,6 +143,16 @@ Agent calls rhemos.pay(url)
   → Intelligence Layer (vendor scores, anomaly detection, replay)
 ```
 
+### Architecture Decision Records (in `docs/decisions/`)
+
+| ADR | Decision |
+|-----|----------|
+| [001](docs/decisions/001-solana-go-local-dependency.md) | solana-go as local module via `replace` directive |
+| [002](docs/decisions/002-ika-typescript-sidecar.md) | Ika integration via TypeScript sidecar (no Go SDK available) |
+| [003](docs/decisions/003-signing-pipeline-architecture.md) | 7-stage signing pipeline with chain-of-responsibility |
+| [004](docs/decisions/004-anchor-hand-built-instructions.md) | Hand-built Anchor instructions with Borsh encoding |
+| [005](docs/decisions/005-plaintext-policy-enforcement.md) | Plaintext on-chain policy enforcement (FHE deferred) |
+
 ### Reference Docs (in `docs/`)
 
 **For development — read these:**
@@ -218,6 +228,31 @@ Priority order for detectStandard():
 - **Naming**: Brand is "Rhemify" (company) / "Rhemos" (product). Product terms: Fleet, Agent, Department, Policy, Deploy, Freeze, Kill switch, Trace, Replay.
 - **Vite plugin order**: `tailwindcss()` → `tanstackStart()` → `viteReact()` — ordering matters.
 - **Do NOT** enable `verbatimModuleSyntax` in tsconfig.
+
+## Security Conventions
+
+These rules apply to ALL code in this repo. Violations found in audit — do not repeat.
+
+### Secrets & Keys
+- **Never use `Must*` panic functions** for parsing keys from env vars (`MustPrivateKeyFromBase58`, `MustPublicKeyFromBase58`). Use the error-returning variants and `log.Fatalf` with a clean message.
+- **Never log private keys, secret keys, or tokens.** Log the derived public key/address only.
+- **Never expose raw error messages** from internal systems (Convex, Solana RPC, Ika) to HTTP clients. Return generic errors (`"internal error"`) and log details server-side.
+
+### HTTP Services
+- **Every internal HTTP service must have auth.** Sidecar services (like `apps/ika-sidecar`) use a shared `Bearer` token from env vars (`IKA_SIDECAR_SECRET`). Never expose signing/DKG endpoints without auth.
+- **Cap concurrent goroutines** for async pipeline execution. Use a semaphore (`chan struct{}`) to prevent unbounded goroutine creation from HTTP requests.
+- **Validate state transitions** at the persistence layer (Convex mutations), not just in application code. The canonical transition map must be enforced where data is written.
+
+### Solana / Anchor Programs
+- **Always use `checked_add`/`checked_sub` with `.ok_or(error!(...))?`** — never `.unwrap()` on arithmetic in Anchor programs. Silent panics become DoS vectors.
+- **Use correct error variants** in Anchor constraints. The `@ ErrorVariant` in `constraint = ...` must describe the actual failure (e.g., `UnauthorizedCoSigner`, not `AgentFrozen`).
+
+### Convex
+- **Validate enum fields** in Convex mutations. Use `v.union(v.literal("a"), v.literal("b"))` instead of `v.string()` for status/type fields.
+- **Convex `v.id("table")` expects a real Convex document ID**, not an arbitrary string. Validate existence before passing client-supplied IDs to mutations.
+
+### EVM / Chain Adapters
+- **Use `math/big.Int` for wei/balance parsing**, not `uint64`. ETH balances overflow `uint64` above ~18.44 ETH.
 
 <!-- convex-ai-start -->
 This project uses [Convex](https://convex.dev) as its backend.
