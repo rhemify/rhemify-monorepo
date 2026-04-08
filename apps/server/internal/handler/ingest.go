@@ -7,15 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rhemify/server/internal/anchor"
 	cx "github.com/rhemify/server/internal/convex"
+	"github.com/rhemify/server/internal/engine"
 )
 
 type IngestHandler struct {
 	convex  *cx.Client
 	batcher *anchor.BatchManager
+	engine  *engine.Engine
 }
 
-func NewIngestHandler(convex *cx.Client, batcher *anchor.BatchManager) *IngestHandler {
-	return &IngestHandler{convex: convex, batcher: batcher}
+func NewIngestHandler(convex *cx.Client, batcher *anchor.BatchManager, eng *engine.Engine) *IngestHandler {
+	return &IngestHandler{convex: convex, batcher: batcher, engine: eng}
 }
 
 type IngestPayload struct {
@@ -32,34 +34,58 @@ func (h *IngestHandler) IngestPayment(c *gin.Context) {
 		return
 	}
 
-	// Insert payment event
+	// 1. Insert payment event
 	eventResult, err := h.convex.Mutation("events:insert", payload.Event)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to insert event: " + err.Error()})
 		return
 	}
-
-	// Unmarshal the Convex document ID (json.RawMessage contains quoted string)
 	var eventID string
 	if err := json.Unmarshal(eventResult, &eventID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse event ID: " + err.Error()})
 		return
 	}
 
-	// Insert payment trace
-	_, err = h.convex.Mutation("traces:insert", payload.Trace)
-	if err != nil {
+	// 2. Insert payment trace
+	if _, err = h.convex.Mutation("traces:insert", payload.Trace); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to insert trace: " + err.Error()})
 		return
 	}
 
-	// Insert policy decisions — pass the eventID to avoid cross-linking under concurrent load
+	// 3. Insert policy decisions (best-effort, pass eventID to avoid cross-linking)
 	for _, decision := range payload.PolicyDecisions {
 		decision["payment_event_id"] = eventID
 		h.convex.Mutation("policies:insertDecision", decision)
 	}
 
-	// Notify batch manager (triggers Merkle batching if thresholds met)
+	// 4. Update derived data (best-effort — errors logged, don't block ingest)
+	h.convex.Mutation("vendors:updateStats", map[string]interface{}{
+		"domain":   payload.Event["domain"],
+		"outcome":  payload.Event["outcome"],
+		"standard": payload.Event["standard"],
+	})
+	h.convex.Mutation("aggregates:updateAgent", map[string]interface{}{
+		"agent_id": payload.Event["agent_id"],
+		"fleet_id": payload.Event["fleet_id"],
+		"amount":   payload.Event["amount"],
+		"outcome":  payload.Event["outcome"],
+	})
+	h.convex.Mutation("aggregates:updateFleet", map[string]interface{}{
+		"fleet_id": payload.Event["fleet_id"],
+		"amount":   payload.Event["amount"],
+		"outcome":  payload.Event["outcome"],
+	})
+	h.convex.Mutation("aggregates:upsertEdge", map[string]interface{}{
+		"agent_id": payload.Event["agent_id"],
+		"domain":   payload.Event["domain"],
+		"amount":   payload.Event["amount"],
+		"outcome":  payload.Event["outcome"],
+	})
+
+	// 5. Run intelligence rules engine (best-effort — errors logged inside engine)
+	h.engine.Evaluate(payload.Event, payload.Trace)
+
+	// 6. Trigger Merkle batching
 	fleetID, _ := payload.Event["fleet_id"].(string)
 	traceHash, _ := payload.Trace["trace_hash"].(string)
 	if fleetID != "" && traceHash != "" {

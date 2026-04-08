@@ -6,6 +6,7 @@ import (
 	"github.com/rhemify/server/internal/anchor"
 	"github.com/rhemify/server/internal/config"
 	cx "github.com/rhemify/server/internal/convex"
+	"github.com/rhemify/server/internal/engine"
 	"github.com/rhemify/server/internal/handler"
 	"github.com/rhemify/server/internal/ika"
 	"github.com/rhemify/server/internal/middleware"
@@ -30,12 +31,13 @@ func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 	}))
 
 	batcher := anchor.NewBatchManager(convex)
+	eng := engine.New(convex)
 
 	health := handler.NewHealthHandler(convex)
 	fleet := handler.NewFleetHandler(convex)
 	events := handler.NewEventsHandler(convex)
 	traces := handler.NewTracesHandler(convex)
-	ingest := handler.NewIngestHandler(convex, batcher)
+	ingest := handler.NewIngestHandler(convex, batcher, eng)
 	policy := handler.NewPolicyHandler(convex)
 	anchorHandler := handler.NewAnchorHandler(convex)
 	vendor := handler.NewVendorHandler(convex)
@@ -64,20 +66,11 @@ func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 		sdk := api.Group("")
 		sdk.Use(middleware.FleetAPIKeyAuth())
 		{
-			// Ingest
 			sdk.POST("/ingest/payment", ingest.IngestPayment)
-
-			// Policy
 			sdk.GET("/policy/:agentId", policy.GetPolicy)
 			sdk.POST("/policy/:agentId", policy.SetPolicy)
-
-			// Vendor
 			sdk.GET("/vendor/:domain", vendor.GetVendorStatus)
-
-			// Fleet status (SDK version — uses API key context)
 			sdk.GET("/fleet/status", fleet.GetStats)
-
-			// Anchor
 			sdk.PATCH("/traces/:id/anchor", anchorHandler.UpdateTraceAnchor)
 			sdk.GET("/anchor/verify/:traceId", anchorHandler.VerifyTrace)
 			sdk.GET("/anchor/:fleetId/:date", anchorHandler.GetDailyRoot)
