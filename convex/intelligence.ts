@@ -1,8 +1,8 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // Records an intelligence action taken by the rules engine.
-export const insertAction = mutation({
+export const insertAction = internalMutation({
   args: {
     action_type: v.string(),
     severity: v.string(),

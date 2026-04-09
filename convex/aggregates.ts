@@ -1,10 +1,10 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 const ALPHA = 0.2; // EMA smoothing factor
 
 // Called after every payment ingest to maintain per-agent spend aggregates.
-export const updateAgent = mutation({
+export const updateAgent = internalMutation({
   args: {
     agent_id: v.string(),
     fleet_id: v.string(),
@@ -72,7 +72,7 @@ export const updateAgent = mutation({
 });
 
 // Called after every payment ingest to maintain per-fleet spend aggregates.
-export const updateFleet = mutation({
+export const updateFleet = internalMutation({
   args: {
     fleet_id: v.string(),
     amount: v.number(),
@@ -138,7 +138,7 @@ export const updateFleet = mutation({
 });
 
 // Upserts the payment_edges graph on every ingest.
-export const upsertEdge = mutation({
+export const upsertEdge = internalMutation({
   args: {
     agent_id: v.string(),
     domain: v.string(),

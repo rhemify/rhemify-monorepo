@@ -1,4 +1,4 @@
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 // GET /api/vendor/:domain — vendor status for SDK policy engine
@@ -26,7 +26,7 @@ export const getByDomain = query({
 });
 
 // Called after every payment ingest to update vendor reliability stats.
-export const updateStats = mutation({
+export const updateStats = internalMutation({
   args: {
     domain: v.string(),
     outcome: v.string(),
@@ -143,7 +143,7 @@ export const getStatsForEngine = query({
 //   1st block in 24h → auto-unblock after 1h
 //   2nd block in 24h → auto-unblock after 6h
 //   3rd+ block in 24h → no auto-unblock (operator review required)
-export const blockVendor = mutation({
+export const blockVendor = internalMutation({
   args: {
     domain: v.string(),
     reason: v.string(),

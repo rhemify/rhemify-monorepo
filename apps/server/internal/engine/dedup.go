@@ -8,29 +8,37 @@ import (
 
 // DedupCache suppresses repeated alerts within a configurable time window.
 // In-memory only — resets on server restart (acceptable: missed dedup, not missed block).
+// Keys are bucketed by time window; expired buckets are evicted on every call.
 type DedupCache struct {
 	mu   sync.Mutex
-	seen map[string]struct{}
+	seen map[string]time.Time // key → expiry timestamp
 }
 
 func NewDedupCache() *DedupCache {
-	return &DedupCache{seen: make(map[string]struct{})}
+	return &DedupCache{seen: make(map[string]time.Time)}
 }
 
 // ShouldSuppress returns true if this (ruleID, subject) pair has already fired
-// within the current window bucket.
+// within the current window. Evicts expired entries on every call.
 func (d *DedupCache) ShouldSuppress(ruleID, subject string, window time.Duration) bool {
-	key := d.key(ruleID, subject, window)
+	key := fmt.Sprintf("%s:%s", ruleID, subject)
+	now := time.Now()
+
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if _, exists := d.seen[key]; exists {
+
+	// Evict expired entries (amortized O(n), keeps map bounded)
+	if len(d.seen) > 100 {
+		for k, expiry := range d.seen {
+			if now.After(expiry) {
+				delete(d.seen, k)
+			}
+		}
+	}
+
+	if expiry, exists := d.seen[key]; exists && now.Before(expiry) {
 		return true
 	}
-	d.seen[key] = struct{}{}
+	d.seen[key] = now.Add(window)
 	return false
-}
-
-func (d *DedupCache) key(ruleID, subject string, window time.Duration) string {
-	bucket := time.Now().Truncate(window).Unix()
-	return fmt.Sprintf("%s:%s:%d", ruleID, subject, bucket)
 }
