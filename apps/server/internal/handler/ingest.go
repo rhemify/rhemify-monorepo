@@ -58,28 +58,14 @@ func (h *IngestHandler) IngestPayment(c *gin.Context) {
 		h.convex.Mutation("policies:insertDecision", decision)
 	}
 
-	// 4. Update derived data (best-effort — errors logged, don't block ingest)
-	h.convex.Mutation("vendors:updateStats", map[string]interface{}{
+	// 4. Update all derived data in one Convex transaction (vendor, agent, fleet, edge)
+	h.convex.Mutation("aggregates:updateAllDerived", map[string]interface{}{
+		"agent_id": payload.Event["agent_id"],
+		"fleet_id": payload.Event["fleet_id"],
 		"domain":   payload.Event["domain"],
+		"amount":   payload.Event["amount"],
 		"outcome":  payload.Event["outcome"],
 		"standard": payload.Event["standard"],
-	})
-	h.convex.Mutation("aggregates:updateAgent", map[string]interface{}{
-		"agent_id": payload.Event["agent_id"],
-		"fleet_id": payload.Event["fleet_id"],
-		"amount":   payload.Event["amount"],
-		"outcome":  payload.Event["outcome"],
-	})
-	h.convex.Mutation("aggregates:updateFleet", map[string]interface{}{
-		"fleet_id": payload.Event["fleet_id"],
-		"amount":   payload.Event["amount"],
-		"outcome":  payload.Event["outcome"],
-	})
-	h.convex.Mutation("aggregates:upsertEdge", map[string]interface{}{
-		"agent_id": payload.Event["agent_id"],
-		"domain":   payload.Event["domain"],
-		"amount":   payload.Event["amount"],
-		"outcome":  payload.Event["outcome"],
 	})
 
 	// 5. Run intelligence rules engine (best-effort — errors logged inside engine)
