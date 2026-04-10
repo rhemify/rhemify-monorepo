@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -59,17 +60,19 @@ func (h *IngestHandler) IngestPayment(c *gin.Context) {
 	}
 
 	// 4. Update all derived data in one Convex transaction (vendor, agent, fleet, edge)
-	h.convex.Mutation("aggregates:updateAllDerived", map[string]interface{}{
+	if _, err := h.convex.Mutation("aggregates:updateAllDerived", map[string]interface{}{
 		"agent_id": payload.Event["agent_id"],
 		"fleet_id": payload.Event["fleet_id"],
 		"domain":   payload.Event["domain"],
 		"amount":   payload.Event["amount"],
 		"outcome":  payload.Event["outcome"],
 		"standard": payload.Event["standard"],
-	})
+	}); err != nil {
+		log.Printf("ingest: failed to update derived data: %v", err)
+	}
 
-	// 5. Run intelligence rules engine (best-effort — errors logged inside engine)
-	h.engine.Evaluate(payload.Event, payload.Trace)
+	// 5. Run intelligence rules engine asynchronously (best-effort, doesn't block response)
+	go h.engine.Evaluate(payload.Event, payload.Trace)
 
 	// 6. Trigger Merkle batching
 	fleetID, _ := payload.Event["fleet_id"].(string)

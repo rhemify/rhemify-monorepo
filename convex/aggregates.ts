@@ -1,7 +1,9 @@
 import { internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-const ALPHA = 0.2; // EMA smoothing factor
+// EMA smoothing factor (alpha=0.2 gives ~5-period effective window;
+// fields named "7d" are approximate rolling averages, not true 7-day windows)
+const ALPHA = 0.2;
 
 // Called after every payment ingest to maintain per-agent spend aggregates.
 export const updateAgent = internalMutation({

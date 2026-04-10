@@ -14,7 +14,7 @@ export const getByDomain = query({
 
     return {
       domain: vendor.domain,
-      isBlocked: vendor.is_blocked === true || vendor.success_rate < 0.5,
+      isBlocked: vendor.is_blocked === true,
       blockedReason: vendor.blocked_reason ?? null,
       successRate: vendor.success_rate,
       avgLatencyMs: vendor.avg_latency_ms,
