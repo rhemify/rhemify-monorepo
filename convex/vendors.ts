@@ -1,5 +1,60 @@
-import { internalMutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+
+// ============================================================================
+// FRONTEND QUERIES — @junshen these are ready for the Vendor Intelligence view
+//
+// Vendor Table:     useQuery(api.vendors.listAll)
+// Single Vendor:    useQuery(api.vendors.getByDomain, { domain })
+// Operator Unblock: useMutation(api.vendors.unblockVendor, { domain })
+//
+// See docs/intelligence-layer-spec.md Section 6 for the Vendor Intelligence View spec.
+// ============================================================================
+
+// List all vendors with health metrics for the Vendor Intelligence table.
+// Returns all vendors sorted by most recently seen first.
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    const vendors = await ctx.db.query("vendor_registry").collect();
+
+    return vendors
+      .map((v) => ({
+        _id: v._id,
+        domain: v.domain,
+        successRate: v.success_rate,
+        avgLatencyMs: v.avg_latency_ms,
+        uptimePct: v.uptime_pct,
+        totalPayments: v.total_payments,
+        supportedStandards: v.supported_standards ?? [],
+        lastSeenAt: v.last_seen_at,
+        isBlocked: v.is_blocked === true,
+        blockedReason: v.blocked_reason ?? null,
+        blockedAt: v.blocked_at ?? null,
+      }))
+      .sort((a, b) => (b.lastSeenAt ?? 0) - (a.lastSeenAt ?? 0));
+  },
+});
+
+// Operator manually unblocks a vendor from the dashboard.
+export const unblockVendor = mutation({
+  args: { domain: v.string() },
+  handler: async (ctx, args) => {
+    const vendor = await ctx.db
+      .query("vendor_registry")
+      .withIndex("by_domain", (q) => q.eq("domain", args.domain))
+      .unique();
+
+    if (!vendor) throw new Error(`Vendor not found: ${args.domain}`);
+    if (!vendor.is_blocked) return; // already unblocked
+
+    await ctx.db.patch(vendor._id, {
+      is_blocked: false,
+      blocked_reason: undefined,
+      blocked_until: undefined,
+    });
+  },
+});
 
 // GET /api/vendor/:domain — vendor status for SDK policy engine
 export const getByDomain = query({

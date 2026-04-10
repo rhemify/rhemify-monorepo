@@ -1,6 +1,20 @@
 import { internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+// ============================================================================
+// FRONTEND QUERIES — @junshen these are ready for the dashboard
+//
+// Agent Spend Overview: useQuery(api.aggregates.listAgentsByFleet, { fleet_id })
+// Fleet Spend Card:     useQuery(api.aggregates.getFleetAggregates, { fleet_id })
+// Single Agent Detail:  useQuery(api.aggregates.getAgentAggregates, { agent_id })
+// Edge Stats (graphs):  useQuery(api.aggregates.getEdgeStats, { agent_id, domain })
+// Payment Graph:        useQuery(api.aggregates.listEdgesByAgent, { agent_id })
+//
+// These return real spend data from the intelligence pipeline.
+// The old `fleet.getStats` and `transactions.list` are mock data —
+// use these queries instead for the real intelligence dashboard.
+// ============================================================================
+
 // EMA smoothing factor (alpha=0.2 gives ~5-period effective window;
 // fields named "7d" are approximate rolling averages, not true 7-day windows)
 const ALPHA = 0.2;
@@ -359,7 +373,11 @@ export const updateAllDerived = internalMutation({
   },
 });
 
-// Read agent aggregates for rules engine context.
+// ============================================================================
+// QUERIES — used by both Go server (engine context) and frontend (dashboard)
+// ============================================================================
+
+// Read agent aggregates. Used by rules engine AND agent detail page.
 export const getAgentAggregates = query({
   args: { agent_id: v.string() },
   handler: async (ctx, args) => {
@@ -370,7 +388,7 @@ export const getAgentAggregates = query({
   },
 });
 
-// Read fleet aggregates for rules engine context.
+// Read fleet aggregates. Used by rules engine AND fleet dashboard.
 export const getFleetAggregates = query({
   args: { fleet_id: v.string() },
   handler: async (ctx, args) => {
@@ -381,7 +399,7 @@ export const getFleetAggregates = query({
   },
 });
 
-// Read (agent, domain) edge stats for SA-2 vendor context.
+// Read (agent, domain) edge stats. Used by SA-2 rule AND payment graph.
 export const getEdgeStats = query({
   args: { agent_id: v.string(), domain: v.string() },
   handler: async (ctx, args) => {
@@ -401,5 +419,27 @@ export const getEdgeStats = query({
       event_count: eventCount,
       avg_payment: eventCount > 0 ? edge.cumulative_spend / eventCount : 0,
     };
+  },
+});
+
+// List all agents' spend aggregates for a fleet. Powers the agent spend overview table.
+export const listAgentsByFleet = query({
+  args: { fleet_id: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("agent_aggregates")
+      .withIndex("by_fleet", (q) => q.eq("fleet_id", args.fleet_id))
+      .collect();
+  },
+});
+
+// List all payment edges for an agent. Powers the "who pays whom" payment graph.
+export const listEdgesByAgent = query({
+  args: { agent_id: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("payment_edges")
+      .withIndex("by_agent", (q) => q.eq("from_agent_id", args.agent_id))
+      .collect();
   },
 });
