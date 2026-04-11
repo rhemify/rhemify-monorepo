@@ -101,6 +101,7 @@ export default defineSchema({
     delegation_depth: v.float64(),
     cumulative_spend: v.float64(),
     last_seen_at: v.float64(), // epoch ms
+    event_count: v.optional(v.float64()),
   })
     .index("by_agent", ["from_agent_id"])
     .index("by_service", ["to_service"])
@@ -156,6 +157,13 @@ export default defineSchema({
     uptime_pct: v.float64(),
     total_payments: v.float64(),
     last_seen_at: v.float64(), // epoch ms
+    total_successes: v.optional(v.float64()),
+    is_blocked: v.optional(v.boolean()),
+    blocked_reason: v.optional(v.string()),
+    blocked_at: v.optional(v.float64()),
+    blocked_until: v.optional(v.float64()),
+    block_count_24h: v.optional(v.float64()),
+    last_blocked_at: v.optional(v.float64()),
   }).index("by_domain", ["domain"]),
 
   // Actions taken by the intelligence rules engine
@@ -165,9 +173,13 @@ export default defineSchema({
     evidence: v.any(), // JSON object
     outcome: v.string(), // pending | applied | dismissed | reversed
     operator_override: v.optional(v.string()),
-    agent_id: v.string(),
-    domain: v.string(),
+    agent_id: v.optional(v.string()),
+    domain: v.optional(v.string()),
     resolved_at: v.optional(v.float64()), // epoch ms
+    fleet_id: v.optional(v.string()),
+    trigger_event_id: v.optional(v.string()),
+    severity: v.optional(v.string()),
+    action_detail: v.optional(v.string()),
   })
     .index("by_action_type", ["action_type"])
     .index("by_agent", ["agent_id"])
@@ -221,6 +233,32 @@ export default defineSchema({
     .index("by_fleet", ["fleet_id"])
     .index("by_status", ["status"])
     .index("by_dwallet", ["dwallet_id"]),
+
+  // Materialized per-agent aggregates (updated on every payment event ingest)
+  agent_aggregates: defineTable({
+    agent_id: v.string(),
+    fleet_id: v.string(),
+    daily_spend: v.float64(),
+    daily_spend_date: v.string(),
+    avg_daily_7d: v.float64(),
+    avg_tx_amount: v.float64(),
+    total_events: v.float64(),
+    active_days: v.float64(),
+    success_rate: v.float64(),
+    last_active: v.float64(),
+  })
+    .index("by_agent", ["agent_id"])
+    .index("by_fleet", ["fleet_id"]),
+
+  // Materialized per-fleet aggregates (updated on every payment event ingest)
+  fleet_aggregates: defineTable({
+    fleet_id: v.string(),
+    hourly_spend: v.float64(),
+    hourly_spend_since: v.float64(),
+    avg_hourly_7d: v.float64(),
+    total_spend_today: v.float64(),
+    today_date: v.string(),
+  }).index("by_fleet", ["fleet_id"]),
 
   // Daily Merkle root batches (Layer 2 trace anchoring)
   anchor_batches: defineTable({
