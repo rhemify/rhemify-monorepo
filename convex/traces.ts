@@ -66,22 +66,6 @@ export const insert = mutation({
   },
 });
 
-// Fetch trace + linked event by trace_id string for the replay engine.
-// Returns full replay_snapshot and policy_rules_fired needed for counterfactual analysis.
-export const getForReplay = query({
-  args: { trace_id: v.string() },
-  handler: async (ctx, args) => {
-    const trace = await ctx.db
-      .query("payment_traces")
-      .withIndex("by_trace_id", (q) => q.eq("trace_id", args.trace_id))
-      .unique();
-    if (!trace) return null;
-
-    const event = await ctx.db.get(trace.payment_event_id);
-    return { trace, event };
-  },
-});
-
 // PATCH /api/traces/:id/anchor — update trace with Memo tx signature
 export const updateAnchor = mutation({
   args: {
