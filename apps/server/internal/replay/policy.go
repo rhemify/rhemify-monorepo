@@ -5,7 +5,9 @@ import (
 	"strings"
 )
 
-// EvaluatePolicy runs 6 policy rules against snapshot data.
+// EvaluatePolicy runs 6 SDK payment policy rules against snapshot data.
+// These are distinct from the intelligence engine rules (VH-1, SA-1, etc. in internal/engine/)
+// — those detect anomalies post-hoc, while these are the gate checks that allow/block a payment.
 // Returns a PolicyOutcome with per-rule results.
 // Rules with missing snapshot data return result "skipped".
 func EvaluatePolicy(
@@ -166,10 +168,16 @@ func EvaluatePolicy(
 // Scalar values are replaced directly.
 // Array values support add (no prefix) and remove ("-" prefix).
 func ApplyOverrides(policyState map[string]interface{}, overrides map[string]interface{}) map[string]interface{} {
-	// Deep copy
+	// Deep copy (including slices to avoid shared references)
 	result := make(map[string]interface{}, len(policyState))
 	for k, v := range policyState {
-		result[k] = v
+		if slice, ok := v.([]interface{}); ok {
+			cp := make([]interface{}, len(slice))
+			copy(cp, slice)
+			result[k] = cp
+		} else {
+			result[k] = v
+		}
 	}
 
 	for key, val := range overrides {

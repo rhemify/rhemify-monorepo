@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,13 +22,11 @@ func NewReplayHandler(convex *cx.Client) *ReplayHandler {
 func (h *ReplayHandler) HandleReplay(c *gin.Context) {
 	traceID := c.Param("id")
 
-	// Parse optional request body
+	// Parse optional request body (ignore EOF on empty body)
 	var req replay.ReplayRequest
-	if c.Request.ContentLength > 0 {
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body: " + err.Error()})
-			return
-		}
+	if err := c.ShouldBindJSON(&req); err != nil && c.Request.ContentLength > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON body"})
+		return
 	}
 
 	// Fetch trace + event from Convex
@@ -35,11 +34,12 @@ func (h *ReplayHandler) HandleReplay(c *gin.Context) {
 		"trace_id": traceID,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch trace"})
+		log.Printf("replay: failed to fetch trace %s: %v", traceID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 	if string(raw) == "null" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "trace not found: " + traceID})
+		c.JSON(http.StatusNotFound, gin.H{"error": "trace not found"})
 		return
 	}
 
@@ -49,7 +49,8 @@ func (h *ReplayHandler) HandleReplay(c *gin.Context) {
 		Event map[string]interface{} `json:"event"`
 	}
 	if err := json.Unmarshal(raw, &data); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse trace data"})
+		log.Printf("replay: failed to unmarshal trace %s: %v", traceID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -65,7 +66,6 @@ func (h *ReplayHandler) HandleReplay(c *gin.Context) {
 
 	policyRulesFired, _ := data.Trace["policy_rules_fired"].([]interface{})
 
-	// Build event map from the linked payment_event
 	event := data.Event
 	if event == nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "no linked payment event"})
@@ -82,7 +82,8 @@ func (h *ReplayHandler) HandleReplay(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "replay failed"})
+		log.Printf("replay: failed for trace %s: %v", traceID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
