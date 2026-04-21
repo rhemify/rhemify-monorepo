@@ -54,7 +54,7 @@ var vendors = []struct {
 
 func main() {
 	flag.Parse()
-	rand.New(rand.NewSource(time.Now().UnixNano()))
+	// Go 1.20+ auto-seeds the global rand source; no manual seeding needed.
 
 	log.Printf("Seeding %s (scenario: %s)", *baseURL, *scenario)
 
@@ -99,7 +99,7 @@ func seedMixed(n int) {
 	}
 }
 
-// seedFailingVendor sends 15 events to a vendor with 60% failure rate → triggers VH-1 auto-block.
+// seedFailingVendor sends 15 events to a vendor with 80% failure rate (3/15 success) → triggers VH-1 auto-block.
 func seedFailingVendor() {
 	log.Println("  [failing-vendor] Triggering VH-1 auto-block for oracle.chainlink.io...")
 	for i := 0; i < 15; i++ {
@@ -143,7 +143,10 @@ func seedBridgeHeavy() {
 	}
 }
 
-// seedSpendSpike sends a burst of high-value payments → triggers SA-1 agent anomaly + SA-3 fleet spike.
+// seedSpendSpike sends a burst of high-value payments → designed to trigger SA-1 agent anomaly + SA-3 fleet spike.
+// NOTE: SA-1 requires ActiveDays >= 3 and SA-3 requires AvgHourly7d >= $50. Since all events land in
+// one burst, these guards may prevent firing on first run. Run seed multiple times across hours/days,
+// or the mixed scenario will build up the baseline over time.
 func seedSpendSpike() {
 	log.Println("  [spend-spike] Building baseline then triggering SA-1/SA-3...")
 
