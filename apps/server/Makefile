@@ -1,4 +1,4 @@
-.PHONY: dev build run tidy test test-verbose test-engine test-replay
+.PHONY: dev build run tidy test test-verbose test-engine test-replay seed
 
 # Run with hot reload (requires air: go install github.com/air-verse/air@latest)
 dev:
@@ -27,6 +27,14 @@ test-engine:
 # Run only replay tests
 test-replay:
 	go test -v ./internal/replay/...
+
+# Seed demo data (requires server running: make dev)
+seed:
+	go run ./cmd/seed -scenario all
+
+# Seed specific scenario
+seed-%:
+	go run ./cmd/seed -scenario $*
 
 # Tidy dependencies
 tidy:
