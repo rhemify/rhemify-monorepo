@@ -19,7 +19,7 @@ export function SegmentedControl({ label, options, value, onChange }: SegmentedC
               onClick={() => onChange(option.value)}
               className={`flex-1 p-2.5 text-center text-xs font-medium cursor-pointer rounded-lg border transition-all duration-200 outline-none ${
                 selected
-                  ? "border-primary bg-primary text-primary-foreground"
+                  ? "border-(--onboarding-accent) bg-(--onboarding-accent) text-(--onboarding-accent-foreground)"
                   : "border-border bg-card text-muted-foreground"
               }`}
             >

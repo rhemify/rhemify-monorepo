@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useMatches } from "@tanstack/react-router";
 import { useTheme } from "@/lib/theme/theme-provider";
 import { useEffect } from "react";
 import { ProgressBar } from "@/components/onboarding/progress-bar";
@@ -27,12 +27,21 @@ function OnboardingLayout() {
   return (
     <div className="theme-onboarding min-h-screen bg-background text-foreground">
       <header className="flex justify-between items-center px-8 py-3.5 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary w-[26px] h-[26px] rounded-md flex items-center justify-center text-primary-foreground font-semibold text-xs">
-            R
-          </div>
-          <span className="font-medium text-sm text-foreground">rhemify</span>
-        </div>
+        <Link
+          to="/"
+          aria-label="Rhemify home"
+          className="flex shrink-0 items-center py-1"
+        >
+          <span className="inline-flex items-center justify-center rounded-lg px-3 py-2">
+            <img
+              src="/rhemify-logo.svg"
+              alt="Rhemify"
+              className="h-[24px] w-auto"
+              loading="eager"
+              decoding="async"
+            />
+          </span>
+        </Link>
         <ProgressBar currentStep={step} totalSteps={4} />
         <div className="w-[100px]" />
       </header>

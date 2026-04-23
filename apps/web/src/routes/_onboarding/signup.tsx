@@ -75,7 +75,7 @@ function SignupScreen() {
 
       <button
         onClick={handleSubmit}
-        className="w-full h-9 px-4 rounded-lg text-[13px] font-medium bg-primary text-primary-foreground hover:opacity-[0.88] transition-opacity duration-150 cursor-pointer"
+        className="w-full h-9 cursor-pointer rounded-lg border border-(--onboarding-accent) bg-(--onboarding-accent) px-4 text-[13px] font-medium text-(--onboarding-accent-foreground) transition-opacity duration-150 hover:opacity-[0.88]"
       >
         Set up my company →
       </button>

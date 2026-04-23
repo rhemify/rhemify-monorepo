@@ -32,7 +32,10 @@ function FundScreen() {
 
       {/* Tab toggle */}
       <div className="flex mb-5">
-        <button className="flex-1 h-9 text-[13px] font-medium bg-primary text-primary-foreground rounded-l-lg cursor-pointer border-none">
+        <button
+          type="button"
+          className="flex-1 h-9 cursor-pointer rounded-l-lg border border-(--onboarding-accent) border-r-0 bg-(--onboarding-accent) text-[13px] font-medium text-(--onboarding-accent-foreground)"
+        >
           Pay with card
         </button>
         <button className="flex-1 h-9 text-[13px] font-medium bg-card text-muted-foreground border border-border rounded-r-lg cursor-default">
@@ -78,7 +81,7 @@ function FundScreen() {
       {/* CTA */}
       <button
         onClick={handleDeploy}
-        className="w-full h-9 px-4 rounded-lg text-[13px] font-medium bg-primary text-primary-foreground hover:opacity-[0.88] transition-opacity duration-150 cursor-pointer"
+        className="w-full h-9 cursor-pointer rounded-lg border border-(--onboarding-accent) bg-(--onboarding-accent) px-4 text-[13px] font-medium text-(--onboarding-accent-foreground) transition-opacity duration-150 hover:opacity-[0.88]"
       >
         Deploy agents →
       </button>

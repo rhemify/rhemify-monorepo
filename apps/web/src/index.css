@@ -47,6 +47,9 @@
   --border: rgba(0, 0, 0, 0.08);
   --primary: #0a0a0b;
   --primary-foreground: #ffffff;
+  /* Mint accent — use for onboarding CTAs, segmented control, and header step bar only (not --primary) */
+  --onboarding-accent: #4dba8a;
+  --onboarding-accent-foreground: #0a0a0b;
   --secondary: #f0f0ee;
   --secondary-foreground: #0a0a0b;
 }
