@@ -10,16 +10,16 @@ A thorough analysis of every competitor in the agent payment space: what they bu
 
 The agent payment space has exploded across four Colosseum hackathons. Eight projects have won prizes or honorable mentions in this space. Two external companies (Sponge, AgentCash) dominate outside the hackathon ecosystem. Here's the full map:
 
-| Product | Type | Standard(s) | Model | Intelligence | MCP | Prize/Status |
-|---|---|---|---|---|---|---|
-| **MCPay** | Hackathon → C4 accelerator | x402 only | Proxy monetizer | None | Yes (x402 only) | 1st Stablecoins, Cypherpunk ($25k) |
-| **Latinum** | Hackathon | Custom wallet | Custodial wallet | None | Yes (wallet) | 1st AI, Breakout ($25k) |
-| **CORBITS.DEV** | Hackathon | x402 only | Merchant proxy | Merchant dashboard | No (merchant-side) | 2nd Infrastructure, Cypherpunk ($20k) |
-| **Mercantill** | Hackathon | None specified | Multi-sig banking | Audit logs | No | 4th Stablecoins, Cypherpunk ($10k) |
-| **Sponge** | External company | x402 | Custodial wallet + gateway | None | MCP tool (sponge_pay) | YC W26, live product |
-| **AgentCash** | External company | x402 | Curated API marketplace | None | Works with Claude/Cursor/Codex | 59k+ installs, 338 endpoints |
-| **Agent-Cred** | Hackathon | None | Hotkey/coldkey wallet | Real-time monitoring | No | No prize |
-| **Armor Wallet** | Hackathon | None | AI wallet + MCP | None | Yes | HM AI, Breakout ($5k) |
+| Product          | Type                       | Standard(s)    | Model                      | Intelligence         | MCP                            | Prize/Status                          |
+| ---------------- | -------------------------- | -------------- | -------------------------- | -------------------- | ------------------------------ | ------------------------------------- |
+| **MCPay**        | Hackathon → C4 accelerator | x402 only      | Proxy monetizer            | None                 | Yes (x402 only)                | 1st Stablecoins, Cypherpunk ($25k)    |
+| **Latinum**      | Hackathon                  | Custom wallet  | Custodial wallet           | None                 | Yes (wallet)                   | 1st AI, Breakout ($25k)               |
+| **CORBITS.DEV**  | Hackathon                  | x402 only      | Merchant proxy             | Merchant dashboard   | No (merchant-side)             | 2nd Infrastructure, Cypherpunk ($20k) |
+| **Mercantill**   | Hackathon                  | None specified | Multi-sig banking          | Audit logs           | No                             | 4th Stablecoins, Cypherpunk ($10k)    |
+| **Sponge**       | External company           | x402           | Custodial wallet + gateway | None                 | MCP tool (sponge_pay)          | YC W26, live product                  |
+| **AgentCash**    | External company           | x402           | Curated API marketplace    | None                 | Works with Claude/Cursor/Codex | 59k+ installs, 338 endpoints          |
+| **Agent-Cred**   | Hackathon                  | None           | Hotkey/coldkey wallet      | Real-time monitoring | No                             | No prize                              |
+| **Armor Wallet** | Hackathon                  | None           | AI wallet + MCP            | None                 | Yes                            | HM AI, Breakout ($5k)                 |
 
 ---
 
@@ -109,7 +109,7 @@ Solo builder (Cypherpunk, Sep 2025). Solana + React + TypeScript + Rust.
 
 3. **Solo builder, polished output.** A one-person team shipping a complete dashboard with real-time analytics in a hackathon signals exceptional execution. Judges reward this.
 
-4. **x402 ecosystem play.** CORBITS positioned itself as infrastructure *for* the x402 ecosystem, not as a competitor to it. This "rising tide lifts all boats" framing is strategically smart.
+4. **x402 ecosystem play.** CORBITS positioned itself as infrastructure _for_ the x402 ecosystem, not as a competitor to it. This "rising tide lifts all boats" framing is strategically smart.
 
 ### Why They're Vulnerable
 
@@ -156,15 +156,15 @@ Solo builder (Cypherpunk, Sep 2025). Solana + Squads Grid + Rust + Anchor.
 
 Mercantill is the closest competitor in positioning ("enterprise governance for agent payments") but Rhemify is a generation ahead in execution:
 
-| Dimension | Mercantill | Rhemify |
-|---|---|---|
+| Dimension            | Mercantill                              | Rhemify                                                     |
+| -------------------- | --------------------------------------- | ----------------------------------------------------------- |
 | Governance mechanism | On-chain multi-sig (heavy, per-tx cost) | Client-side policy engine (lightweight, zero on-chain cost) |
-| Audit capability | Transaction logs | Decision traces with full reasoning context |
-| Replay | None | Sandbox replay with counterfactual analysis |
-| Standard awareness | None | Multi-standard detection and routing |
-| MCP native | No | Yes — ships as MCP tools |
-| Non-custodial | Multi-sig (shared custody) | OWS/Privy (zero custody) |
-| Vendor intelligence | None | Auto-built from transaction data |
+| Audit capability     | Transaction logs                        | Decision traces with full reasoning context                 |
+| Replay               | None                                    | Sandbox replay with counterfactual analysis                 |
+| Standard awareness   | None                                    | Multi-standard detection and routing                        |
+| MCP native           | No                                      | Yes — ships as MCP tools                                    |
+| Non-custodial        | Multi-sig (shared custody)              | OWS/Privy (zero custody)                                    |
+| Vendor intelligence  | None                                    | Auto-built from transaction data                            |
 
 The story to judges: "Mercantill proved the market exists. Rhemify is what Mercantill should have been."
 
@@ -281,6 +281,7 @@ Every winner rode a wave. Latinum (Apr 2025) caught the "MCP is the future" wave
 ### Pattern 2: Demo Simplicity
 
 Winners have a demo that judges understand in under 60 seconds:
+
 - MCPay: "Set a price on your MCP tool. Agent pays. You get paid." (30 seconds)
 - Latinum: "Agent has a wallet. Agent pays for services. Balance decreases." (30 seconds)
 - CORBITS: "Here's your real-time revenue dashboard for x402 payments." (30 seconds)
@@ -311,17 +312,17 @@ MCPay won Stablecoins (1st, $25k). Latinum won AI (1st, $25k). CORBITS won Infra
 
 After analyzing all 8 competitors + 2 external companies, the gap map is definitive:
 
-| Capability | MCPay | Latinum | CORBITS | Mercantill | Sponge | AgentCash | Rhemify |
-|---|---|---|---|---|---|---|---|
-| Agent can make payments | Yes (x402) | Yes (wallet) | No (merchant) | No (governance) | Yes (custodial) | Yes (curated) | **Yes (universal)** |
-| Multi-standard routing | No | No | No | No | No | No | **Yes** |
-| Decision trace (WHY) | No | No | No | Audit log only | No | No | **Full trace + replay** |
-| Fleet governance | No | Budget only | No | Multi-sig | No | No | **Policy engine** |
-| Non-custodial | Proxy (no custody) | Custodial | N/A | Multi-sig | Custodial | Custodial | **OWS/Privy** |
-| Cross-chain | EVM + Solana | No | No | No | No | No | **CCTP + relay.link** |
-| Vendor intelligence | No | No | Merchant analytics | No | No | Curated list | **Auto-built** |
-| MCP-native | Yes | Yes | No | No | Yes | IDE integrations | **Yes** |
-| Compounds with data | No | No | No | No | No | No | **Yes** |
+| Capability              | MCPay              | Latinum      | CORBITS            | Mercantill      | Sponge          | AgentCash        | Rhemify                 |
+| ----------------------- | ------------------ | ------------ | ------------------ | --------------- | --------------- | ---------------- | ----------------------- |
+| Agent can make payments | Yes (x402)         | Yes (wallet) | No (merchant)      | No (governance) | Yes (custodial) | Yes (curated)    | **Yes (universal)**     |
+| Multi-standard routing  | No                 | No           | No                 | No              | No              | No               | **Yes**                 |
+| Decision trace (WHY)    | No                 | No           | No                 | Audit log only  | No              | No               | **Full trace + replay** |
+| Fleet governance        | No                 | Budget only  | No                 | Multi-sig       | No              | No               | **Policy engine**       |
+| Non-custodial           | Proxy (no custody) | Custodial    | N/A                | Multi-sig       | Custodial       | Custodial        | **OWS/Privy**           |
+| Cross-chain             | EVM + Solana       | No           | No                 | No              | No              | No               | **CCTP + relay.link**   |
+| Vendor intelligence     | No                 | No           | Merchant analytics | No              | No              | Curated list     | **Auto-built**          |
+| MCP-native              | Yes                | Yes          | No                 | No              | Yes             | IDE integrations | **Yes**                 |
+| Compounds with data     | No                 | No           | No                 | No              | No              | No               | **Yes**                 |
 
 **Every competitor solves one piece. Nobody solves the whole puzzle. Rhemify is the first product that combines payment execution, multi-standard routing, fleet governance, decision intelligence, and non-custodial architecture in a single runtime.**
 
@@ -363,7 +364,7 @@ The strongest pushback against agentic commerce isn't about standards — it's a
 
 3. **"x402 is solving a problem subscriptions already solved"** — Someone at the x402 hackathon built a cache so agents don't pay per call. That's just a subscription with extra steps.
 
-Robbie Petersen (Dragonfly) crystallized this: *"The agentic economy will be enormous; most of it will be billed monthly."* He argues 95% of agent spend will be SaaS invoices, not micropayments.
+Robbie Petersen (Dragonfly) crystallized this: _"The agentic economy will be enormous; most of it will be billed monthly."_ He argues 95% of agent spend will be SaaS invoices, not micropayments.
 
 ### Where They're Right
 
@@ -396,7 +397,7 @@ The subscription model breaks when: agent discovers a new data source, needs a o
 
 4. **Path Resolver scores ALL options** — Single tx, Squads session, credit balance, AgentCard, swap, bridge. Whatever is cheapest wins. Not ideological about micropayments — pragmatic about cost.
 
-The pitch: *"95% of agent API calls will be covered by subscriptions. We agree. But the other 5% — the new vendor, the one-off data pull, the cross-org payment — that's where agents hit 402. Rhemify routes the payments that subscriptions can't cover. And when our intelligence layer sees an agent paying the same vendor 50 times, we recommend switching to a subscription. We're smart enough to tell you when to stop using us."*
+The pitch: _"95% of agent API calls will be covered by subscriptions. We agree. But the other 5% — the new vendor, the one-off data pull, the cross-org payment — that's where agents hit 402. Rhemify routes the payments that subscriptions can't cover. And when our intelligence layer sees an agent paying the same vendor 50 times, we recommend switching to a subscription. We're smart enough to tell you when to stop using us."_
 
 ### Ecosystem Validation
 

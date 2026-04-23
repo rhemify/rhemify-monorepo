@@ -1,4 +1,5 @@
 # Rhemify — Hackathon Positioning
+
 ## Target: Colosseum Frontier (April 6 - May 11, 2026)
 
 > Route. Govern. Verify. The home of agentic commerce.
@@ -15,14 +16,14 @@ Rhemify is the verifiable payment layer for agentic commerce — where every age
 
 Rhemify serves both ends of the market with the same product at different zoom levels.
 
-| | Solo Founder (B2C) | Enterprise (B2B) |
-|---|---|---|
-| **Their pain** | "My agents are spending money and I have no idea if it's working" | "We can't deploy agents with payment access until legal/compliance signs off" |
-| **What "treasury" means to them** | Budget control — "I set $50/day and sleep" | Governance — "Per-agent policies, audit trails, SOC 2 path" |
-| **What "intelligence" means to them** | "It tells me which vendors are wasting my money" | "It tells our CFO exactly why every dollar was spent, with replay" |
-| **Entry point** | `npx rhemify onboard` + AgentCard ($0 to start) | SDK integration + OWS vault + fleet policy config |
-| **Pricing** | Free (3 agents) → Builder ($9/agent) | Team ($49/mo) → Enterprise (custom) |
-| **Demo moment that sells** | Agent pays, dashboard shows real-time spend | Decision trace replay — "why did agent-7 pay $340 at 2am?" |
+|                                       | Solo Founder (B2C)                                                | Enterprise (B2B)                                                              |
+| ------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Their pain**                        | "My agents are spending money and I have no idea if it's working" | "We can't deploy agents with payment access until legal/compliance signs off" |
+| **What "treasury" means to them**     | Budget control — "I set $50/day and sleep"                        | Governance — "Per-agent policies, audit trails, SOC 2 path"                   |
+| **What "intelligence" means to them** | "It tells me which vendors are wasting my money"                  | "It tells our CFO exactly why every dollar was spent, with replay"            |
+| **Entry point**                       | `npx rhemify onboard` + AgentCard ($0 to start)                   | SDK integration + OWS vault + fleet policy config                             |
+| **Pricing**                           | Free (3 agents) → Builder ($9/agent)                              | Team ($49/mo) → Enterprise (custom)                                           |
+| **Demo moment that sells**            | Agent pays, dashboard shows real-time spend                       | Decision trace replay — "why did agent-7 pay $340 at 2am?"                    |
 
 Solo founders onboard in 2 minutes — same playbook as AgentCash's 59k installs. That's the growth engine. Enterprises come through the SDK and stay for governance and intelligence. That's the revenue engine.
 
@@ -38,12 +39,12 @@ The gap: a solo founder's 3 agents overspend on a failing API overnight. An ente
 
 ### What Past Winners Got Right (and What They Missed)
 
-| Project | Hackathon | Prize | What They Did | What's Missing |
-|---|---|---|---|---|
-| **MCPay** | Cypherpunk (Sep 2025) | 1st Stablecoins ($25k) | x402 billing for MCP tools | Single standard. No governance. No intelligence. Process and forget. |
-| **Latinum** | Breakout (Apr 2025) | 1st AI ($25k) | MCP-compatible wallet for agent payments | Wallet-based. No multi-standard. No fleet policy. No audit trail. |
-| **Mercantill** | Cypherpunk (Sep 2025) | 4th Stablecoins ($10k) | Enterprise banking infra — audit logs + spending controls via Squads multi-sig | Closest to our angle but: on-chain multi-sig (heavy), audit logs only (no decision traces), no standard detection, no replay. |
-| **CORBITS.DEV** | Cypherpunk (Sep 2025) | 2nd Infrastructure ($20k) | x402 API proxy + merchant revops dashboard | Merchant-side only. No agent-side intelligence. Single standard. |
+| Project         | Hackathon             | Prize                     | What They Did                                                                  | What's Missing                                                                                                                |
+| --------------- | --------------------- | ------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| **MCPay**       | Cypherpunk (Sep 2025) | 1st Stablecoins ($25k)    | x402 billing for MCP tools                                                     | Single standard. No governance. No intelligence. Process and forget.                                                          |
+| **Latinum**     | Breakout (Apr 2025)   | 1st AI ($25k)             | MCP-compatible wallet for agent payments                                       | Wallet-based. No multi-standard. No fleet policy. No audit trail.                                                             |
+| **Mercantill**  | Cypherpunk (Sep 2025) | 4th Stablecoins ($10k)    | Enterprise banking infra — audit logs + spending controls via Squads multi-sig | Closest to our angle but: on-chain multi-sig (heavy), audit logs only (no decision traces), no standard detection, no replay. |
+| **CORBITS.DEV** | Cypherpunk (Sep 2025) | 2nd Infrastructure ($20k) | x402 API proxy + merchant revops dashboard                                     | Merchant-side only. No agent-side intelligence. Single standard.                                                              |
 
 **The pattern:** Judges reward agent payment infrastructure. Each successive winner adds a layer — MCPay added x402, Latinum added MCP wallets, Mercantill added governance. **Rhemify is the next logical step: all of the above, plus intelligence that compounds.**
 
@@ -72,6 +73,7 @@ Mercantill uses Squads multi-sig for spending controls — on-chain, requires mu
 **4. Intelligence That Compounds**
 
 The more payments flow through Rhemify, the smarter it gets:
+
 - **Payment graph memory**: which agents pay which vendors, delegation chains, cost attribution
 - **Vendor intelligence**: reliability scores, latency, success rates — auto-built from transaction data
 - **Predictive pre-positioning**: after 30 days of data, Rhemify can pre-position funds for agents with recurring payment patterns
@@ -105,6 +107,7 @@ An agent tries to pay a vendor outside the allowed domain list, or exceeds its d
 ### Act 4: The Flight Recorder Moment (90 seconds)
 
 This is the climax. Go to the dashboard and pick a payment from the live feed. Open the decision trace. Show:
+
 - The agent's task context when it made the payment
 - The 402 response that triggered it
 - Which payment paths were evaluated (AgentCard vs on-chain vs bridge)
@@ -146,45 +149,53 @@ Rhemify is native to AI agent runtimes — ships as MCP tools (`rhemify.pay`, `r
 
 ## Competitive Positioning Matrix
 
-| Dimension | Sponge | MCPay | Latinum | Mercantill | Rhemify |
-|---|---|---|---|---|---|
-| **Payment model** | Custodial wallet | x402 proxy | MCP wallet | Multi-sig banking | Non-custodial orchestration |
-| **Standards** | Single | x402 only | Single | None specified | x402 + MPP + L402 + more |
-| **MCP-native** | MCP tool | Yes (x402) | Yes | No | Yes (multi-standard) |
-| **Fleet governance** | No | No | Budget only | Multi-sig controls | Full policy engine |
-| **Audit/intelligence** | No | No | No | Audit logs | Decision traces + replay |
-| **Cross-chain** | No | No | No | No | CCTP + relay.link |
-| **Vendor intelligence** | No | No | No | No | Auto-built registry |
-| **Data compounds** | No | No | No | No | Yes — every payment trains the system |
-| **Session/batched settlement** | No | No | No | No | Squads Smart Account sessions |
-| **Subscription awareness** | No | No | No | No | Intel recommends when to stop micropaying |
+| Dimension                      | Sponge           | MCPay      | Latinum     | Mercantill         | Rhemify                                   |
+| ------------------------------ | ---------------- | ---------- | ----------- | ------------------ | ----------------------------------------- |
+| **Payment model**              | Custodial wallet | x402 proxy | MCP wallet  | Multi-sig banking  | Non-custodial orchestration               |
+| **Standards**                  | Single           | x402 only  | Single      | None specified     | x402 + MPP + L402 + more                  |
+| **MCP-native**                 | MCP tool         | Yes (x402) | Yes         | No                 | Yes (multi-standard)                      |
+| **Fleet governance**           | No               | No         | Budget only | Multi-sig controls | Full policy engine                        |
+| **Audit/intelligence**         | No               | No         | No          | Audit logs         | Decision traces + replay                  |
+| **Cross-chain**                | No               | No         | No          | No                 | CCTP + relay.link                         |
+| **Vendor intelligence**        | No               | No         | No          | No                 | Auto-built registry                       |
+| **Data compounds**             | No               | No         | No          | No                 | Yes — every payment trains the system     |
+| **Session/batched settlement** | No               | No         | No          | No                 | Squads Smart Account sessions             |
+| **Subscription awareness**     | No               | No         | No          | No                 | Intel recommends when to stop micropaying |
 
 ---
 
 ## Key Talking Points for Judges
 
 **If asked "Why not just use subscriptions? Per-call payments are wasteful."**
+
 > We agree — 95% of agent API calls will be covered by subscriptions. Rhemify doesn't replace subscriptions. We route the payments that subscriptions can't cover: the new vendor discovered mid-task, the one-off data pull, the cross-org payment. And for recurring vendors, we use Squads Smart Account sessions with batched 24hr settlement — zero per-call overhead. When our intelligence layer sees an agent paying the same vendor 50 times, we recommend switching to a subscription. We're routing realists, not micropayment maximalists.
 
 **If asked "How is this different from Sponge?"**
+
 > Sponge is a custodial wallet with one payment standard. Rhemify is a non-custodial orchestration runtime that routes across every standard. More importantly, Sponge processes transactions and forgets. Rhemify captures the full decision context — why the agent paid, what alternatives were considered, which policy rules fired — and makes it replayable. Sponge tells you what happened. Rhemify tells you why.
 
 **If asked "How is this different from MCPay?" (the Stablecoins winner)**
+
 > MCPay monetizes MCP tools via x402. It's a billing layer for one standard. Rhemify detects any standard from the 402 response and routes automatically — x402, MPP, L402, and more. MCPay is a payment pipe. Rhemify is a treasury intelligence layer with policy governance, decision tracing, and cross-chain routing.
 
 **If asked "Why not just use AgentCard/AgentCash?"**
+
 > AgentCard issues the card. AgentCash curates the endpoints. Rhemify orchestrates the payment — it decides which instrument to use (AgentCard for fiat, OWS for on-chain), enforces policy before execution, and captures the decision trace. They're complementary layers, not competitors. Rhemify integrates both.
 
 **If asked "Why does the intelligence layer matter?"**
+
 > Gartner projects 40% of agentic AI projects canceled by 2027. Root cause isn't model quality — it's missing memory. When an agent's context window closes, the reasoning behind every payment evaporates. Rhemify's decision trace is the persistent memory that survives context closure. It's the difference between "agent spent $340" and "agent spent $340 on Bloomberg because it was executing a market research task, the x402 endpoint was the cheapest option, and the daily limit still had $660 remaining." That's the compliance story AND the debugging story in one.
 
 **If asked "What's the business model?"**
+
 > Solo founders onboard in 2 minutes with `npx rhemify onboard` — free for 3 agents forever. That's our growth engine, same playbook as AgentCash's 59k installs. As they scale to 4-10 agents, they hit the Builder tier at $9/agent/mo. Enterprises come through the SDK, stay for governance and intelligence, and pay $49/mo base or custom pricing. The volume fee (0.8% above $500/mo in routed spend) aligns our revenue with their usage. Free tier converts to paid because the intelligence layer is what makes their agents cheaper and safer over time.
 
 **If asked "Who's the customer — developers or businesses?"**
+
 > Both, and it's the same product. A solo founder with 3 agents uses `npx rhemify onboard`, sets a budget, and watches the dashboard. An enterprise with 500 agents integrates the SDK, configures fleet policy with per-department overrides, and exports decision traces for SOC 2 audits. The treasury engine, the policy engine, the intelligence layer — all identical. The enterprise just uses more of it.
 
 **If asked "What's the moat?"**
+
 > Data that compounds. Every payment builds the vendor registry (reliability, latency, success rates), the payment graph (who pays whom), and the decision corpus (what works, what fails). After 10k transactions, Rhemify can pre-position funds, recommend cheaper routes, and flag anomalous spending patterns. Competitors that process and forget can't replicate this without rebuilding from scratch. And because we serve both solo founders (volume, data) and enterprises (revenue, retention), the data flywheel spins from day one.
 
 ---
