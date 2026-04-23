@@ -1,11 +1,11 @@
-import { useKillSwitch } from '@/lib/hooks'
+import { useKillSwitch } from "@/lib/hooks";
 
 interface TopbarProps {
-  title: string
+  title: string;
 }
 
 export function Topbar({ title }: TopbarProps) {
-  const killSwitch = useKillSwitch()
+  const killSwitch = useKillSwitch();
 
   return (
     <header className="h-14 min-h-14 border-b border-border flex items-center justify-between px-7">
@@ -17,5 +17,5 @@ export function Topbar({ title }: TopbarProps) {
         Kill switch
       </button>
     </header>
-  )
+  );
 }

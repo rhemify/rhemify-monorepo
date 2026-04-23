@@ -1,8 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/dashboard/wallets')({
+export const Route = createFileRoute("/dashboard/wallets")({
   component: WalletsPlaceholder,
-})
+});
 
 function WalletsPlaceholder() {
   return (
@@ -14,5 +14,5 @@ function WalletsPlaceholder() {
         </p>
       </div>
     </div>
-  )
+  );
 }

@@ -1,21 +1,21 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useFleetStats } from '@/lib/hooks'
-import { NavGuide } from '@/components/dashboard/nav-guide'
-import { StatValue } from '@/components/dashboard/stat-value'
-import { FleetTable } from '@/components/dashboard/fleet-table'
-import { LiveFeed } from '@/components/dashboard/live-feed'
+import { createFileRoute } from "@tanstack/react-router";
+import { useFleetStats } from "@/lib/hooks";
+import { NavGuide } from "@/components/dashboard/nav-guide";
+import { StatValue } from "@/components/dashboard/stat-value";
+import { FleetTable } from "@/components/dashboard/fleet-table";
+import { LiveFeed } from "@/components/dashboard/live-feed";
 
-export const Route = createFileRoute('/dashboard/')({
+export const Route = createFileRoute("/dashboard/")({
   component: FleetOverview,
-})
+});
 
 function FleetOverview() {
-  const { data: stats } = useFleetStats()
+  const { data: stats } = useFleetStats();
 
   const spentDelta =
     stats && stats.spentYesterday > 0
       ? Math.round(((stats.spentToday - stats.spentYesterday) / stats.spentYesterday) * 100)
-      : 0
+      : 0;
 
   return (
     <div>
@@ -33,19 +33,15 @@ function FleetOverview() {
           label="Spent today"
           value={`$${(stats?.spentToday ?? 0).toFixed(2)}`}
           mono
-          sub={`${spentDelta >= 0 ? '+' : ''}${spentDelta}% vs yesterday`}
+          sub={`${spentDelta >= 0 ? "+" : ""}${spentDelta}% vs yesterday`}
           subColor="var(--color-rhm-success)"
         />
-        <StatValue
-          label="Tasks completed"
-          value={stats?.tasksCompleted ?? 0}
-          sub="this session"
-        />
+        <StatValue label="Tasks completed" value={stats?.tasksCompleted ?? 0} sub="this session" />
         <StatValue
           label="Blocked"
           value={stats?.blockedAgents ?? 0}
-          sub={stats && stats.blockedAgents > 0 ? 'support agent' : undefined}
-          subColor={stats && stats.blockedAgents > 0 ? 'var(--color-rhm-danger)' : undefined}
+          sub={stats && stats.blockedAgents > 0 ? "support agent" : undefined}
+          subColor={stats && stats.blockedAgents > 0 ? "var(--color-rhm-danger)" : undefined}
         />
       </div>
 
@@ -55,5 +51,5 @@ function FleetOverview() {
         <LiveFeed />
       </div>
     </div>
-  )
+  );
 }
