@@ -4,7 +4,6 @@
   "claudeMdHash": "bbf30bd25ceea0aefd279d62e1cb2b4c207fcb712b69adf26f3d02b296ffc7b2",
   "agentSkillsSha": "231a67aa8a5b29cc2794cbc8298335a71aaa6d0e",
   "installedSkillNames": [
-    "colosseum-copilot",
     "convex",
     "convex-create-component",
     "convex-migration-helper",
