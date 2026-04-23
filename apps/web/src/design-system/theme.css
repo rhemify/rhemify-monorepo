@@ -1,0 +1,114 @@
+/**
+ * Rhemify design system — semantic colors, radii, and tag tokens for Tailwind v4.
+ * Typography uses Geist Sans + Geist Mono (--font-geist-* on :root in packages/ui globals.css).
+ */
+
+@theme {
+  /* Typography */
+  --font-sans: var(--font-geist-sans), sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  /* Canvas & surfaces */
+  --color-bg: #060607;
+  --color-bg-elevated: #0c0c0e;
+  --color-surface: #111114;
+  --color-surface2: #18181c;
+
+  /* Content */
+  --color-text: #fafafa;
+  --color-muted: #a1a1aa;
+  --color-muted-deep: #71717a;
+
+  /* Semantic aliases (use alongside legacy names) */
+  --color-background: #060607;
+  --color-foreground: #fafafa;
+  --color-card: #111114;
+  --color-card-foreground: #fafafa;
+  --color-popover: #0c0c0e;
+  --color-popover-foreground: #fafafa;
+  --color-secondary: #18181b;
+  --color-secondary-foreground: #fafafa;
+  --color-muted-foreground: #a1a1aa;
+
+  /* Borders & focus */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-input: rgba(255, 255, 255, 0.1);
+  --color-ring: rgba(190, 242, 100, 0.45);
+
+  /* Brand / actions */
+  --color-accent: #bef264;
+  --color-accent-foreground: #0a0a0b;
+  --color-accent-hover: #d9f99d;
+  --color-accent-dark: #84cc16;
+  --color-accent-tint: rgba(190, 242, 100, 0.12);
+  --color-accent-blue: #38bdf8;
+  --color-primary: #bef264;
+  --color-primary-foreground: #0a0a0b;
+  --color-btn-primary-text: #0a0a0b;
+
+  /* Status */
+  --color-success: #4ade80;
+  --color-success-foreground: #052e16;
+  --color-warning: #fbbf24;
+  --color-warning-foreground: #422006;
+  --color-danger: #f87171;
+  --color-danger-foreground: #450a0a;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #fef2f2;
+  --color-info: #38bdf8;
+  --color-info-foreground: #082f49;
+
+  /* Tag fills (pair with *-text utilities) */
+  --color-tag-neutral: rgba(255, 255, 255, 0.08);
+  --color-tag-neutral-text: #e4e4e7;
+  --color-tag-neutral-border: rgba(255, 255, 255, 0.12);
+
+  --color-tag-muted: rgba(255, 255, 255, 0.05);
+  --color-tag-muted-text: #a1a1aa;
+  --color-tag-muted-border: rgba(255, 255, 255, 0.08);
+
+  --color-tag-accent: rgba(190, 242, 100, 0.14);
+  --color-tag-accent-text: #d9f99d;
+  --color-tag-accent-border: rgba(190, 242, 100, 0.28);
+
+  --color-tag-success: rgba(74, 222, 128, 0.12);
+  --color-tag-success-text: #86efac;
+  --color-tag-success-border: rgba(74, 222, 128, 0.25);
+
+  --color-tag-warning: rgba(251, 191, 36, 0.12);
+  --color-tag-warning-text: #fcd34d;
+  --color-tag-warning-border: rgba(251, 191, 36, 0.28);
+
+  --color-tag-danger: rgba(248, 113, 113, 0.12);
+  --color-tag-danger-text: #fca5a5;
+  --color-tag-danger-border: rgba(248, 113, 113, 0.28);
+
+  --color-tag-info: rgba(56, 189, 248, 0.12);
+  --color-tag-info-text: #7dd3fc;
+  --color-tag-info-border: rgba(56, 189, 248, 0.28);
+
+  --color-tag-outline-text: #a1a1aa;
+  --color-tag-outline-border: rgba(255, 255, 255, 0.16);
+
+  /* Radius */
+  --radius-tag: 0.375rem;
+}
+
+@layer components {
+  /* Primitive: pair .ds-tag with theme color utilities (see Tag.tsx). */
+  .ds-tag {
+    @apply inline-flex max-w-fit items-center justify-center rounded-tag border font-medium uppercase tracking-wide;
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.08em;
+    padding: 0.125rem 0.5rem;
+  }
+
+  .ds-tag--md {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: 0.06em;
+    padding: 0.25rem 0.625rem;
+  }
+}

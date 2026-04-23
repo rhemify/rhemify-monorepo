@@ -23,15 +23,16 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       {
         title: "Rhemify — The payment layer for agent companies",
       },
+      {
+        name: "description",
+        content:
+          "Deploy autonomous agents that pay for tools, manage budgets, and delegate — all on your card.",
+      },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap",
       },
     ],
   }),

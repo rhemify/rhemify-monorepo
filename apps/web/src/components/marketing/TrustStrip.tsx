@@ -1,97 +1,113 @@
-function StripeLogo() {
+import { ScrollReveal } from "@/components/marketing/ScrollReveal";
+
+const LOGOS = [
+  { src: "/logo/agentcard.svg", label: "AgentCard" },
+  { src: "/logo/circle.svg", label: "Circle" },
+  { src: "/logo/l402.svg", label: "L402" },
+  { src: "/logo/mpp.svg", label: "MPP" },
+  { src: "/logo/solana.svg", label: "Solana" },
+  { src: "/logo/virtual.svg", label: "Virtuals" },
+  { src: "/logo/x402.svg", label: "x402" },
+  { src: "/logo/superteam.svg", label: "Superteam" },
+] as const;
+
+const LOGO_TINT = "#6F6C68";
+
+function TrustLogo({ src, label }: { src: string; label: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.918 3.757 7.11c0 4.46 2.72 5.592 5.514 6.757 2.54 1.064 3.476 1.776 3.476 2.888 0 .987-.747 1.579-2.157 1.579-1.873 0-4.795-.876-6.651-2.047L3 21.905C4.745 22.942 7.602 24 10.757 24c2.626 0 4.809-.641 6.372-1.852 1.678-1.305 2.506-3.201 2.506-5.632 0-4.597-2.78-5.729-5.659-6.866z"
-        fill="#B4B2A9"
+    <div
+      className="flex h-7 max-h-8 min-h-7 w-[min(160px,28vw)] min-w-[72px] max-w-[160px] shrink-0 items-center justify-center sm:h-8"
+      role="img"
+      aria-label={label}
+    >
+      <span
+        className="block h-full w-full"
+        style={{
+          backgroundColor: LOGO_TINT,
+          WebkitMaskImage: `url(${src})`,
+          maskImage: `url(${src})`,
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+        }}
       />
-    </svg>
-  )
+    </div>
+  );
 }
 
-function SolanaLogo() {
+function LogoRow() {
   return (
-    <svg width="20" height="20" viewBox="0 0 398 312" fill="none">
-      <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z" fill="#B4B2A9" />
-      <path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z" fill="#B4B2A9" />
-      <path d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z" fill="#B4B2A9" />
-    </svg>
-  )
+    <>
+      {LOGOS.map(({ src, label }) => (
+        <div key={src} className="flex shrink-0 items-center justify-center px-3 sm:px-10 md:px-8">
+          <TrustLogo src={src} label={label} />
+        </div>
+      ))}
+    </>
+  );
 }
 
-function OpenAILogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.998 5.998 0 0 0-3.998 2.9 6.047 6.047 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.896zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"
-        fill="#B4B2A9"
-      />
-    </svg>
-  )
-}
+type TrustStripProps = {
+  /** `hero` = glass bar on top of video; default = full section between page blocks */
+  variant?: "default" | "hero";
+};
 
-function MPPLogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <rect x="2" y="6" width="6" height="12" rx="1" fill="#B4B2A9" />
-      <rect x="9" y="3" width="6" height="18" rx="1" fill="#B4B2A9" />
-      <rect x="16" y="6" width="6" height="12" rx="1" fill="#B4B2A9" />
-    </svg>
-  )
-}
-
-function VirtualsLogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2L3 8v8l9 6 9-6V8l-9-6zm0 2.5L18.5 8.5 12 12.5 5.5 8.5 12 4.5z" fill="#B4B2A9" />
-      <path d="M5.5 9.5L12 13.5V20l-6.5-4V9.5z" fill="#B4B2A9" opacity="0.7" />
-      <path d="M18.5 9.5L12 13.5V20l6.5-4V9.5z" fill="#B4B2A9" opacity="0.5" />
-    </svg>
-  )
-}
-
-function AgentCardLogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 170 272" fill="none">
-      <path
-        d="M127.356 0.886C135.314-2.312 143.984 3.546 143.984 12.122V102.362C143.984 106.209 141.645 109.668 138.077 111.103L79.806 134.521C70.614 138.215 64.591 147.126 64.591 157.032V229.662C64.591 233.508 62.252 236.968 58.684 238.402L16.627 255.304C8.67 258.502 0 252.643 0 244.067V75.712C0 61.426 8.685 48.575 21.94 43.248L127.356 0.886Z"
-        fill="#B4B2A9"
-      />
-      <path
-        d="M160.139 139.986C164.218 138.347 168.661 141.35 168.661 145.746L168.597 232.636C168.597 239.958 164.145 246.545 157.351 249.275L103.319 270.989C99.241 272.628 94.798 269.625 94.797 265.229L94.861 178.339C94.861 171.017 99.312 164.431 106.106 161.7L160.139 139.986Z"
-        fill="#B4B2A9"
-      />
-    </svg>
-  )
-}
-
-const partners = [
-  { name: 'Stripe', logo: StripeLogo },
-  { name: 'AgentCard', logo: AgentCardLogo },
-  { name: 'MPP', logo: MPPLogo },
-  { name: 'Solana', logo: SolanaLogo },
-  { name: 'Virtuals', logo: VirtualsLogo },
-  { name: 'OpenAI', logo: OpenAILogo },
-]
-
-export function TrustStrip() {
-  return (
-    <section className="bg-background border-t-[0.5px] border-border px-6 py-8 md:px-12 md:py-8">
-      <div className="mx-auto max-w-[1100px]">
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground text-center">
-          INTEGRATED WITH
+export function TrustStrip({ variant = "default" }: TrustStripProps) {
+  const isHero = variant === "hero";
+  const rootClass = isHero
+    ? "w-full px-8 py-6 pb-10 md:px-10 lg:px-20"
+    : "border-y border-border bg-bg-elevated/40 px-8 py-10 md:px-10 lg:px-20";
+  const body = (
+    <div className="mx-auto w-full max-w-full">
+      <ScrollReveal
+        fadeOnly
+        durationMs={920}
+        delayMs={0}
+        className="flex justify-center text-center"
+      >
+        <p
+          className={`w-full max-w-full text-sm leading-snug md:text-base ${isHero ? "text-zinc-400" : "text-muted"}`}
+        >
+          Partnered with leading institutions, chains, and open payment standards.
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-10">
-          {partners.map((partner) => (
-            <div key={partner.name} className="flex items-center gap-2.5">
-              <partner.logo />
-              <span className="text-sm font-medium" style={{ color: '#B4B2A9' }}>
-                {partner.name}
-              </span>
-            </div>
-          ))}
+      </ScrollReveal>
+
+      <div
+        className={`hidden flex-wrap items-center justify-center gap-x-4 gap-y-5 sm:gap-x-10 sm:gap-y-8 motion-reduce:flex ${isHero ? "mt-5" : "mt-8"}`}
+        aria-label="Partner logos"
+      >
+        {LOGOS.map(({ src, label }) => (
+          <div
+            key={src}
+            className="flex w-[min(160px,40vw)] min-w-[72px] max-w-[160px] justify-center sm:w-40"
+          >
+            <TrustLogo src={src} label={label} />
+          </div>
+        ))}
+      </div>
+
+      <div
+        className={`relative overflow-hidden motion-reduce:hidden mask-[linear-gradient(90deg,transparent_0%,black_8%,black_92%,transparent_100%)] ${isHero ? "mt-5" : "mt-8"}`}
+        aria-label="Partner logos, scrolling"
+      >
+        <div className="marquee-trust items-center">
+          <LogoRow />
+          <LogoRow />
         </div>
       </div>
-    </section>
-  )
+    </div>
+  );
+
+  if (isHero) {
+    return (
+      <div role="region" aria-label="Partners" className={rootClass}>
+        {body}
+      </div>
+    );
+  }
+
+  return <section className={rootClass}>{body}</section>;
 }

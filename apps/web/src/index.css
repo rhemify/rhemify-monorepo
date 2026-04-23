@@ -1,18 +1,39 @@
 @import "@rhemify-monorepo/ui/globals.css";
+@import "./design-system/theme.css";
 
-/* Marketing warm palette — scoped to landing page */
-.theme-marketing {
-  --background: #F5F4F0;
-  --foreground: #0D0D0E;
-  --card: #EDECEA;
-  --card-foreground: #0D0D0E;
-  --muted: #E0DED8;
-  --muted-foreground: #6E6E7A;
-  --border: #E0DED8;
-  --primary: #0D0D0E;
-  --primary-foreground: #FFFFFF;
-  --secondary: #EDECEA;
-  --secondary-foreground: #0D0D0E;
+/* Geist is loaded in `@rhemify-monorepo/ui/globals.css` (@font-face + :root --font-geist-*). */
+
+/* Marketing landing uses apps/web design tokens (see theme.css), aligned with the Next.js reference. */
+
+/* TrustStrip marquee — used by `TrustStrip.tsx` (.marquee-trust). */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 40s linear infinite;
+}
+
+.marquee-trust {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 36s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hemi-aurora,
+  .animate-hemi-glow,
+  .marquee-track,
+  .marquee-trust {
+    animation: none;
+  }
 }
 
 /* Onboarding neutral palette — signup through deploy */
