@@ -1,4 +1,4 @@
-# Rhemos Intelligence Layer — System Diagram
+# Rhemify Intelligence Layer — System Diagram
 
 ## Full Application Flow
 
@@ -7,14 +7,14 @@ flowchart TB
     subgraph AGENT["Agent Runtime (Claude Code / OpenClaw / Codex)"]
         A1[Agent executes task]
         A2["Hits paywalled API → HTTP 402"]
-        A3["Calls rhemos.pay(url)"]
+        A3["Calls rhemify.pay(url)"]
     end
 
     subgraph MCP["MCP Server Layer"]
-        M1["rhemos.pay"]
-        M2["rhemos.status"]
-        M3["rhemos.set_policy"]
-        M4["rhemos.check_policy"]
+        M1["rhemify.pay"]
+        M2["rhemify.status"]
+        M3["rhemify.set_policy"]
+        M4["rhemify.check_policy"]
     end
 
     subgraph RUNTIME["Payment Runtime (Sean's Workstream)"]
@@ -460,7 +460,7 @@ sequenceDiagram
     participant WS as WebSocket
     participant OP as Operator Dashboard
 
-    Agent->>MCP: rhemos.pay(url)
+    Agent->>MCP: rhemify.pay(url)
 
     MCP->>SD: detect(402_response)
     SD-->>IL: {standard: "x402", confidence: "high"}

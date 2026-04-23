@@ -1,0 +1,14 @@
+{
+  "name": "@rhemify-monorepo/types",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./intelligence": "./src/intelligence.ts"
+  },
+  "devDependencies": {
+    "@rhemify-monorepo/config": "workspace:*",
+    "typescript": "^5"
+  }
+}

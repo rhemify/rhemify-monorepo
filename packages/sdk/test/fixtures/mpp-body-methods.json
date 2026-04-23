@@ -1,0 +1,22 @@
+{
+  "status": 402,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "amount": "50000",
+    "currency": "USDC",
+    "recipient": "So1anaMppRecipient111111111111111111",
+    "methods": [
+      {
+        "name": "solana-charge",
+        "methodDetails": {
+          "network": "devnet",
+          "decimals": 6,
+          "feePayer": true,
+          "feePayerKey": "FeePayerPubkey111111111111111111"
+        }
+      }
+    ]
+  }
+}

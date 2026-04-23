@@ -1,0 +1,8 @@
+{
+  "status": 402,
+  "headers": {
+    "x-acp-job": "job_abc123",
+    "content-type": "application/json"
+  },
+  "body": { "job": "job_abc123", "cost": "0.05" }
+}

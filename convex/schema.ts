@@ -26,6 +26,7 @@ export default defineSchema({
     skills: v.array(v.string()),
     allowed_domains: v.array(v.string()),
     allowed_standards: v.array(v.string()),
+    dwallet_id: v.optional(v.string()), // Ika dWallet linked to this agent
   })
     .index("by_fleet", ["fleet_id"])
     .index("by_agent_key", ["agent_key"]),
@@ -77,6 +78,7 @@ export default defineSchema({
   // Append-only: full reasoning context for each payment decision
   payment_traces: defineTable({
     payment_event_id: v.id("payment_events"),
+    trace_id: v.string(), // SDK-generated trace ID (trc_...)
     agent_task_context: v.string(),
     trigger_402_raw: v.string(),
     alternatives_evaluated: v.any(), // JSON array
@@ -84,7 +86,13 @@ export default defineSchema({
     instrument_selection_log: v.any(), // JSON object
     confidence: v.string(), // high | medium | low
     replay_snapshot: v.any(), // JSON object
-  }).index("by_payment_event", ["payment_event_id"]),
+    trace_hash: v.string(), // SHA-256 of canonical trace fields
+    anchor_tx_hash: v.optional(v.string()), // Layer 1: Solana Memo tx signature
+    merkle_proof: v.optional(v.any()), // Layer 2: sibling hashes for Merkle verification
+  })
+    .index("by_payment_event", ["payment_event_id"])
+    .index("by_trace_id", ["trace_id"])
+    .index("by_trace_hash", ["trace_hash"]),
 
   // Agent-to-service spending graph
   payment_edges: defineTable({
@@ -93,6 +101,7 @@ export default defineSchema({
     delegation_depth: v.float64(),
     cumulative_spend: v.float64(),
     last_seen_at: v.float64(), // epoch ms
+    event_count: v.optional(v.float64()),
   })
     .index("by_agent", ["from_agent_id"])
     .index("by_service", ["to_service"])
@@ -148,6 +157,13 @@ export default defineSchema({
     uptime_pct: v.float64(),
     total_payments: v.float64(),
     last_seen_at: v.float64(), // epoch ms
+    total_successes: v.optional(v.float64()),
+    is_blocked: v.optional(v.boolean()),
+    blocked_reason: v.optional(v.string()),
+    blocked_at: v.optional(v.float64()),
+    blocked_until: v.optional(v.float64()),
+    block_count_24h: v.optional(v.float64()),
+    last_blocked_at: v.optional(v.float64()),
   }).index("by_domain", ["domain"]),
 
   // Actions taken by the intelligence rules engine
@@ -157,11 +173,102 @@ export default defineSchema({
     evidence: v.any(), // JSON object
     outcome: v.string(), // pending | applied | dismissed | reversed
     operator_override: v.optional(v.string()),
-    agent_id: v.string(),
-    domain: v.string(),
+    agent_id: v.optional(v.string()),
+    domain: v.optional(v.string()),
     resolved_at: v.optional(v.float64()), // epoch ms
+    fleet_id: v.optional(v.string()),
+    trigger_event_id: v.optional(v.string()),
+    severity: v.optional(v.string()),
+    action_detail: v.optional(v.string()),
   })
     .index("by_action_type", ["action_type"])
     .index("by_agent", ["agent_id"])
     .index("by_outcome", ["outcome"]),
+
+  // dWallet registry — fleet treasury and agent wallets
+  dwallet_registry: defineTable({
+    fleet_id: v.id("fleets"),
+    agent_id: v.optional(v.id("agents")), // null = fleet treasury dWallet
+    dwallet_type: v.union(v.literal("treasury"), v.literal("agent")),
+    dwallet_id: v.string(), // Ika dWallet identifier
+    dwallet_cap_id: v.string(), // ownership cap (Solana account)
+    supported_chains: v.array(v.string()), // ["ethereum", "base", "arbitrum"]
+    status: v.union(v.literal("creating"), v.literal("active"), v.literal("frozen"), v.literal("revoked")),
+    created_at: v.float64(),
+  })
+    .index("by_fleet", ["fleet_id"])
+    .index("by_agent", ["agent_id"])
+    .index("by_dwallet", ["dwallet_id"]),
+
+  // Cross-chain wallet balances synced by Go server
+  wallet_balances: defineTable({
+    dwallet_id: v.string(),
+    chain: v.string(), // "ethereum" | "base" | "arbitrum"
+    token: v.string(), // "ETH" | "USDC" | etc.
+    amount: v.float64(),
+    last_synced_at: v.float64(),
+  })
+    .index("by_dwallet", ["dwallet_id"])
+    .index("by_dwallet_chain", ["dwallet_id", "chain"]),
+
+  // Signing requests — agent payment approval pipeline
+  signing_requests: defineTable({
+    agent_id: v.optional(v.id("agents")),
+    fleet_id: v.id("fleets"),
+    dwallet_id: v.string(),
+    target_chain: v.string(), // "base" | "arbitrum" | "ethereum"
+    target_address: v.string(),
+    token: v.string(),
+    amount: v.float64(),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"), v.literal("signed"), v.literal("broadcast"), v.literal("confirmed"), v.literal("failed")),
+    intelligence_decision: v.optional(v.any()),
+    rejection_reason: v.optional(v.string()),
+    ika_signature: v.optional(v.string()),
+    target_tx_hash: v.optional(v.string()),
+    trace_id: v.optional(v.string()),
+    created_at: v.float64(),
+    resolved_at: v.optional(v.float64()),
+  })
+    .index("by_agent", ["agent_id"])
+    .index("by_fleet", ["fleet_id"])
+    .index("by_status", ["status"])
+    .index("by_dwallet", ["dwallet_id"]),
+
+  // Materialized per-agent aggregates (updated on every payment event ingest)
+  agent_aggregates: defineTable({
+    agent_id: v.string(),
+    fleet_id: v.string(),
+    daily_spend: v.float64(),
+    daily_spend_date: v.string(),
+    avg_daily_7d: v.float64(),
+    avg_tx_amount: v.float64(),
+    total_events: v.float64(),
+    active_days: v.float64(),
+    success_rate: v.float64(),
+    last_active: v.float64(),
+  })
+    .index("by_agent", ["agent_id"])
+    .index("by_fleet", ["fleet_id"]),
+
+  // Materialized per-fleet aggregates (updated on every payment event ingest)
+  fleet_aggregates: defineTable({
+    fleet_id: v.string(),
+    hourly_spend: v.float64(),
+    hourly_spend_since: v.float64(),
+    avg_hourly_7d: v.float64(),
+    total_spend_today: v.float64(),
+    today_date: v.string(),
+  }).index("by_fleet", ["fleet_id"]),
+
+  // Daily Merkle root batches (Layer 2 trace anchoring)
+  anchor_batches: defineTable({
+    fleet_id: v.string(),
+    date: v.string(), // "YYYY-MM-DD" UTC
+    merkle_root: v.string(), // hex
+    trace_count: v.float64(),
+    pda_address: v.optional(v.string()), // base58 Solana PDA
+    tx_hash: v.optional(v.string()), // Solana tx signature
+    status: v.string(), // pending | anchored | failed
+    tree_data: v.optional(v.any()), // Full Merkle tree for proof generation
+  }).index("by_fleet_date", ["fleet_id", "date"]),
 });

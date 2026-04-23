@@ -41,7 +41,10 @@ func (h *EventsHandler) ListEvents(c *gin.Context) {
 	}
 
 	var events interface{}
-	json.Unmarshal(result, &events)
+	if err := json.Unmarshal(result, &events); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse events: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, events)
 }
 
@@ -58,6 +61,9 @@ func (h *EventsHandler) GetEvent(c *gin.Context) {
 	}
 
 	var event interface{}
-	json.Unmarshal(result, &event)
+	if err := json.Unmarshal(result, &event); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse event: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, event)
 }

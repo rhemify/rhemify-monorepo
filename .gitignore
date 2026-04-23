@@ -85,3 +85,15 @@ skills/
 # Claude Code runtime artifacts
 .claude/worktrees/
 .claude/skills/
+
+# Anchor / Solana build artifacts
+/target/
+/programs/rhemify-anchor/target/
+/programs/rhemify-dwallet/target/
+
+# Claude Code worktrees and generated skills
+.claude/worktrees/
+.claude/skills/
+
+# Local solana-go dependency (referenced via go.mod replace directive)
+/solana-go/
