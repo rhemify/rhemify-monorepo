@@ -10,9 +10,7 @@ export const getDailyRoot = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("anchor_batches")
-      .withIndex("by_fleet_date", (q) =>
-        q.eq("fleet_id", args.fleet_id).eq("date", args.date),
-      )
+      .withIndex("by_fleet_date", (q) => q.eq("fleet_id", args.fleet_id).eq("date", args.date))
       .unique();
   },
 });
@@ -90,9 +88,7 @@ export const upsertBatch = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("anchor_batches")
-      .withIndex("by_fleet_date", (q) =>
-        q.eq("fleet_id", args.fleet_id).eq("date", args.date),
-      )
+      .withIndex("by_fleet_date", (q) => q.eq("fleet_id", args.fleet_id).eq("date", args.date))
       .unique();
 
     if (existing) {
@@ -145,9 +141,7 @@ export const getUnbatchedHashes = query({
     for (const event of todayEvents) {
       const traces = await ctx.db
         .query("payment_traces")
-        .withIndex("by_payment_event", (q) =>
-          q.eq("payment_event_id", event._id),
-        )
+        .withIndex("by_payment_event", (q) => q.eq("payment_event_id", event._id))
         .collect();
 
       for (const trace of traces) {

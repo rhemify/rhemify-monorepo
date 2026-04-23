@@ -31,9 +31,7 @@ export const listActions = query({
     if (args.action_type) {
       actions = await ctx.db
         .query("intelligence_actions")
-        .withIndex("by_action_type", (q) =>
-          q.eq("action_type", args.action_type!)
-        )
+        .withIndex("by_action_type", (q) => q.eq("action_type", args.action_type!))
         .order("desc")
         .take(limit);
     } else if (args.outcome) {
@@ -43,10 +41,7 @@ export const listActions = query({
         .order("desc")
         .take(limit);
     } else {
-      actions = await ctx.db
-        .query("intelligence_actions")
-        .order("desc")
-        .take(limit);
+      actions = await ctx.db.query("intelligence_actions").order("desc").take(limit);
     }
 
     // Post-filter by fleet_id if provided (no compound index available)

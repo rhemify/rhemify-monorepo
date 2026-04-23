@@ -57,9 +57,7 @@ export const getWithContext = query({
       .reduce((sum, e) => sum + e.amount, 0);
 
     // Get blocked domains from vendor_registry
-    const blockedVendors = await ctx.db
-      .query("vendor_registry")
-      .collect();
+    const blockedVendors = await ctx.db.query("vendor_registry").collect();
     const blockedDomains = blockedVendors
       .filter((v) => {
         const data = v as Record<string, unknown>;
@@ -117,7 +115,8 @@ export const upsert = mutation({
 
     const updates: Record<string, unknown> = {};
     if (args.daily_limit !== undefined) updates.daily_limit = args.daily_limit;
-    if (args.max_per_transaction !== undefined) updates.max_per_transaction = args.max_per_transaction;
+    if (args.max_per_transaction !== undefined)
+      updates.max_per_transaction = args.max_per_transaction;
     if (args.approval_threshold !== undefined) updates.approval_threshold = args.approval_threshold;
     if (args.allowed_standards !== undefined) updates.allowed_standards = args.allowed_standards;
     if (args.domain_allowlist !== undefined) updates.domain_allowlist = args.domain_allowlist;

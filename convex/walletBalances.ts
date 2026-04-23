@@ -13,7 +13,7 @@ export const upsert = mutation({
     const existing = await ctx.db
       .query("wallet_balances")
       .withIndex("by_dwallet_chain", (q) =>
-        q.eq("dwallet_id", args.dwallet_id).eq("chain", args.chain)
+        q.eq("dwallet_id", args.dwallet_id).eq("chain", args.chain),
       )
       .filter((q) => q.eq(q.field("token"), args.token))
       .unique();

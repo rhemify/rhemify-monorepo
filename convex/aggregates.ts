@@ -58,21 +58,16 @@ export const updateAgent = internalMutation({
 
     // Day rollover: apply yesterday's total to EMA, reset daily counter
     if (existing.daily_spend_date !== today) {
-      avg_daily_7d =
-        ALPHA * existing.daily_spend + (1 - ALPHA) * existing.avg_daily_7d;
+      avg_daily_7d = ALPHA * existing.daily_spend + (1 - ALPHA) * existing.avg_daily_7d;
       daily_spend = isSuccess ? args.amount : 0;
       active_days = existing.active_days + 1;
     } else {
-      daily_spend = isSuccess
-        ? existing.daily_spend + args.amount
-        : existing.daily_spend;
+      daily_spend = isSuccess ? existing.daily_spend + args.amount : existing.daily_spend;
     }
 
-    const avg_tx_amount =
-      ALPHA * args.amount + (1 - ALPHA) * existing.avg_tx_amount;
+    const avg_tx_amount = ALPHA * args.amount + (1 - ALPHA) * existing.avg_tx_amount;
     const successVal = isSuccess ? 1.0 : 0.0;
-    const success_rate =
-      ALPHA * successVal + (1 - ALPHA) * existing.success_rate;
+    const success_rate = ALPHA * successVal + (1 - ALPHA) * existing.success_rate;
 
     await ctx.db.patch(existing._id, {
       daily_spend,
@@ -133,14 +128,11 @@ export const updateFleet = internalMutation({
 
     // Hourly window rollover: apply completed window to EMA, start fresh
     if (now - existing.hourly_spend_since > ONE_HOUR) {
-      avg_hourly_7d =
-        ALPHA * existing.hourly_spend + (1 - ALPHA) * existing.avg_hourly_7d;
+      avg_hourly_7d = ALPHA * existing.hourly_spend + (1 - ALPHA) * existing.avg_hourly_7d;
       hourly_spend = isSuccess ? args.amount : 0;
       hourly_spend_since = now;
     } else {
-      hourly_spend = isSuccess
-        ? existing.hourly_spend + args.amount
-        : existing.hourly_spend;
+      hourly_spend = isSuccess ? existing.hourly_spend + args.amount : existing.hourly_spend;
     }
 
     await ctx.db.patch(existing._id, {
@@ -166,7 +158,7 @@ export const upsertEdge = internalMutation({
     const existing = await ctx.db
       .query("payment_edges")
       .withIndex("by_agent_service", (q) =>
-        q.eq("from_agent_id", args.agent_id).eq("to_service", args.domain)
+        q.eq("from_agent_id", args.agent_id).eq("to_service", args.domain),
       )
       .unique();
 
@@ -232,8 +224,7 @@ export const updateAllDerived = internalMutation({
         standards.push(args.standard);
       }
       const totalPayments = vendor.total_payments + 1;
-      const totalSuccesses =
-        (vendor.total_successes ?? 0) + (isSuccess ? 1 : 0);
+      const totalSuccesses = (vendor.total_successes ?? 0) + (isSuccess ? 1 : 0);
       const successRate = totalSuccesses / totalPayments;
 
       await ctx.db.patch(vendor._id, {
@@ -271,26 +262,21 @@ export const updateAllDerived = internalMutation({
       let activeDays = agent.active_days;
 
       if (agent.daily_spend_date !== today) {
-        avgDaily7d =
-          ALPHA * agent.daily_spend + (1 - ALPHA) * agent.avg_daily_7d;
+        avgDaily7d = ALPHA * agent.daily_spend + (1 - ALPHA) * agent.avg_daily_7d;
         dailySpend = isSuccess ? args.amount : 0;
         activeDays = agent.active_days + 1;
       } else {
-        dailySpend = isSuccess
-          ? agent.daily_spend + args.amount
-          : agent.daily_spend;
+        dailySpend = isSuccess ? agent.daily_spend + args.amount : agent.daily_spend;
       }
 
       await ctx.db.patch(agent._id, {
         daily_spend: dailySpend,
         daily_spend_date: today,
         avg_daily_7d: avgDaily7d,
-        avg_tx_amount:
-          ALPHA * args.amount + (1 - ALPHA) * agent.avg_tx_amount,
+        avg_tx_amount: ALPHA * args.amount + (1 - ALPHA) * agent.avg_tx_amount,
         total_events: agent.total_events + 1,
         active_days: activeDays,
-        success_rate:
-          ALPHA * (isSuccess ? 1.0 : 0.0) + (1 - ALPHA) * agent.success_rate,
+        success_rate: ALPHA * (isSuccess ? 1.0 : 0.0) + (1 - ALPHA) * agent.success_rate,
         last_active: now,
       });
     }
@@ -325,14 +311,11 @@ export const updateAllDerived = internalMutation({
       }
 
       if (now - fleet.hourly_spend_since > ONE_HOUR) {
-        avgHourly7d =
-          ALPHA * fleet.hourly_spend + (1 - ALPHA) * fleet.avg_hourly_7d;
+        avgHourly7d = ALPHA * fleet.hourly_spend + (1 - ALPHA) * fleet.avg_hourly_7d;
         hourlySpend = isSuccess ? args.amount : 0;
         hourlySpendSince = now;
       } else {
-        hourlySpend = isSuccess
-          ? fleet.hourly_spend + args.amount
-          : fleet.hourly_spend;
+        hourlySpend = isSuccess ? fleet.hourly_spend + args.amount : fleet.hourly_spend;
       }
 
       await ctx.db.patch(fleet._id, {
@@ -348,7 +331,7 @@ export const updateAllDerived = internalMutation({
     const edge = await ctx.db
       .query("payment_edges")
       .withIndex("by_agent_service", (q) =>
-        q.eq("from_agent_id", args.agent_id).eq("to_service", args.domain)
+        q.eq("from_agent_id", args.agent_id).eq("to_service", args.domain),
       )
       .unique();
 
@@ -363,9 +346,7 @@ export const updateAllDerived = internalMutation({
       });
     } else {
       await ctx.db.patch(edge._id, {
-        cumulative_spend: isSuccess
-          ? edge.cumulative_spend + args.amount
-          : edge.cumulative_spend,
+        cumulative_spend: isSuccess ? edge.cumulative_spend + args.amount : edge.cumulative_spend,
         event_count: (edge.event_count ?? 0) + 1,
         last_seen_at: now,
       });
@@ -406,9 +387,7 @@ export const getEdgeStats = query({
     const edge = await ctx.db
       .query("payment_edges")
       .withIndex("by_agent_service", (q) =>
-        q
-          .eq("from_agent_id", args.agent_id)
-          .eq("to_service", args.domain)
+        q.eq("from_agent_id", args.agent_id).eq("to_service", args.domain),
       )
       .unique();
 

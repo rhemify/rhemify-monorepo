@@ -116,8 +116,7 @@ export const updateStats = internalMutation({
     }
 
     const total_payments = existing.total_payments + 1;
-    const total_successes =
-      (existing.total_successes ?? 0) + (isSuccess ? 1 : 0);
+    const total_successes = (existing.total_successes ?? 0) + (isSuccess ? 1 : 0);
     const success_rate = total_successes / total_payments;
 
     await ctx.db.patch(existing._id, {
@@ -147,9 +146,7 @@ export const getStatsForEngine = query({
       .withIndex("by_domain", (q) => q.eq("domain", args.domain))
       .order("desc")
       .take(50);
-    const windowEvents = recentEvents.filter(
-      (e) => e._creationTime >= oneDayAgo
-    );
+    const windowEvents = recentEvents.filter((e) => e._creationTime >= oneDayAgo);
 
     if (windowEvents.length === 0) {
       if (!vendor) return null;
@@ -166,9 +163,7 @@ export const getStatsForEngine = query({
       };
     }
 
-    const successes = windowEvents.filter(
-      (e) => e.outcome === "success"
-    ).length;
+    const successes = windowEvents.filter((e) => e.outcome === "success").length;
     const success_rate = successes / windowEvents.length;
 
     // Consecutive failures from most recent event
@@ -215,9 +210,7 @@ export const blockVendor = internalMutation({
       .unique();
 
     const priorBlockCount =
-      vendor && (vendor.last_blocked_at ?? 0) > oneDayAgo
-        ? (vendor.block_count_24h ?? 0)
-        : 0;
+      vendor && (vendor.last_blocked_at ?? 0) > oneDayAgo ? (vendor.block_count_24h ?? 0) : 0;
 
     let blocked_until: number | undefined;
     if (priorBlockCount === 0) {
