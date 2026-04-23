@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Linkedin, MessageCircle, Youtube } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
-const X_URL = "https://x.com/rhemify";
+const X_URL = "https://x.com/rhemifydotcom";
 
 function XIcon({ className = "" }: { className?: string }) {
   return (
