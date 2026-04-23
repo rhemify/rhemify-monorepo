@@ -78,7 +78,7 @@ func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 
 		// SDK endpoints (require fleet API key)
 		sdk := api.Group("")
-		sdk.Use(middleware.FleetAPIKeyAuth())
+		sdk.Use(middleware.FleetAPIKeyAuth(convex))
 		{
 			sdk.POST("/ingest/payment", ingest.IngestPayment)
 			sdk.GET("/policy/:agentId", policy.GetPolicy)

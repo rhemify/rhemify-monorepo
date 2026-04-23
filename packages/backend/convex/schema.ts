@@ -12,9 +12,11 @@ export default defineSchema({
     monthly_spend_cap: v.float64(),
     is_deployed: v.boolean(),
     ownerUserId: v.optional(v.string()), // Better Auth user ID — links authenticated user to fleet
+    api_key: v.optional(v.string()), // Fleet API key for SDK auth (Bearer token)
   })
     .index("by_email", ["email"])
-    .index("by_owner", ["ownerUserId"]),
+    .index("by_owner", ["ownerUserId"])
+    .index("by_api_key", ["api_key"]),
 
   agents: defineTable({
     fleet_id: v.id("fleets"),

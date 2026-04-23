@@ -18,6 +18,19 @@ export const getByEmail = query({
   },
 });
 
+// Resolve a fleet API key to fleet_id. Called by Go server on every SDK request.
+export const getByApiKey = query({
+  args: { api_key: v.string() },
+  handler: async (ctx, args) => {
+    const fleet = await ctx.db
+      .query("fleets")
+      .withIndex("by_api_key", (q) => q.eq("api_key", args.api_key))
+      .unique();
+    if (!fleet) return null;
+    return { fleet_id: fleet._id, company_name: fleet.company_name };
+  },
+});
+
 export const create = mutation({
   args: {
     email: v.string(),
@@ -31,10 +44,17 @@ export const create = mutation({
     if (!identity) {
       throw new Error("Unauthenticated: must be signed in to create a fleet");
     }
+    // Generate a fleet API key: "rhm_" + 32 random hex chars
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    const api_key =
+      "rhm_" + Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+
     return await ctx.db.insert("fleets", {
       ...args,
       is_deployed: false,
       ownerUserId: identity.subject,
+      api_key,
     });
   },
 });
