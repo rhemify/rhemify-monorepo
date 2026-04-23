@@ -3,9 +3,15 @@ import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import type { Id } from "@convex/_generated/dataModel";
 
-const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string;
+let _convexClient: ConvexReactClient | null = null;
 
-export const convexClient = new ConvexReactClient(CONVEX_URL);
+export function getConvexClient() {
+  if (!_convexClient) {
+    const url = import.meta.env.VITE_CONVEX_URL as string;
+    _convexClient = new ConvexReactClient(url);
+  }
+  return _convexClient;
+}
 
 // Fleet context — holds the current fleet ID after onboarding
 type FleetContextValue = {
@@ -43,7 +49,7 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ConvexProvider client={convexClient}>
+    <ConvexProvider client={getConvexClient()}>
       <FleetContext value={{ fleetId, setFleetId }}>
         {children}
       </FleetContext>
