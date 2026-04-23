@@ -1,0 +1,22 @@
+{
+  "name": "rhemos",
+  "version": "0.1.0",
+  "description": "Rhemos CLI — the verifiable payment layer for agentic commerce",
+  "type": "module",
+  "bin": {
+    "rhemos": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@rhemify-monorepo/sdk": "workspace:*",
+    "@solana/web3.js": "^1.98.4",
+    "picocolors": "^1.1.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

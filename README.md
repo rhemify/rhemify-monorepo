@@ -1,104 +1,89 @@
-# rhemify-monorepo
+# Rhemos
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Start, Self, and more.
+The verifiable payment layer for agentic commerce. **Route. Govern. Verify.**
 
-## Features
-
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Start** - SSR framework with TanStack Router
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Drizzle** - TypeScript-first ORM
-- **SQLite/Turso** - Database engine
-- **Authentication** - Better-Auth
-- **Oxlint** - Oxlint + Oxfmt (linting & formatting)
-- **Turborepo** - Optimized monorepo build system
-
-## Getting Started
-
-First, install the dependencies:
-
-```bash
-bun install
+```
+rhemos.pay(url)
 ```
 
-## Database Setup
+One call. Any standard. Cheapest path. Fully governed. Permanently verifiable.
 
-This project uses SQLite with Drizzle ORM.
+## What is Rhemos?
 
-1. Start the local SQLite database (optional):
+Agents shouldn't need to know what payment standard a vendor uses, what chain they're on, or how to get the right token there. Rhemos is the **Jupiter for agent payments** — it abstracts away the fragmentation so builders just build.
 
-```bash
-bun run db:local
-```
+- **Route** — Multi-standard payment routing (x402, MPP, L402, AP2, ACP). Detects the standard from HTTP 402 headers, resolves the cheapest instrument + chain path, and executes.
+- **Govern** — Fleet policy engine with per-agent spend limits, domain allowlists, standard restrictions, approval thresholds, and intelligence rules.
+- **Verify** — Every payment decision hashed on Solana (PDAs). Provable, immutable, replayable decision traces.
 
-2. Update your `.env` file in the `apps/web` directory with the appropriate connection details if needed.
+## Tech Stack
 
-3. Apply the schema to your database:
-
-```bash
-bun run db:push
-```
-
-Then, run the development server:
-
-```bash
-bun run dev
-```
-
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the fullstack application.
-
-## UI Customization
-
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
-
-```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
-```
-
-Import shared components like this:
-
-```tsx
-import { Button } from "@rhemify-monorepo/ui/components/button";
-```
-
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-## Git Hooks and Formatting
-
-- Format and lint fix: `bun run check`
+| Layer | Technology |
+|-------|------------|
+| Frontend | TanStack Start (React 19), TanStack Router, TanStack Query |
+| UI | Tailwind CSS 4, shadcn/ui, Inter + DM Mono |
+| Backend | Go (REST API + WebSocket) |
+| Database | PostgreSQL (intelligence layer), SQLite/Turso (auth) |
+| Payment Runtime | TypeScript, @x402/fetch, mppx, OWS signing |
+| Settlement | Solana (trace hashes in PDAs), Helius RPC |
+| Auth | Better-Auth (email/password) |
+| Build | Turborepo, Bun |
 
 ## Project Structure
 
 ```
 rhemify-monorepo/
 ├── apps/
-│   └── web/         # Fullstack application (React + TanStack Start)
+│   └── web/              # Fullstack app (marketing + onboarding + dashboard)
 ├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+│   ├── ui/               # Shared shadcn/ui components + brand tokens
+│   ├── auth/             # Better-Auth configuration
+│   ├── db/               # Drizzle ORM + SQLite schema
+│   ├── env/              # Zod-validated environment variables
+│   └── config/           # Shared TSConfig
+├── docs/                 # Research, specs, architecture docs
+└── turbo.json
 ```
 
-## Available Scripts
+## Getting Started
 
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `bun run db:local`: Start the local SQLite database
-- `bun run check`: Run Oxlint and Oxfmt
+```bash
+bun install
+bun run dev:web          # Start web app on port 3001
+```
+
+### Database
+
+```bash
+bun run db:push          # Push schema changes
+bun run db:studio        # Open Drizzle Studio
+```
+
+### All Commands
+
+```bash
+bun run dev              # Start all apps
+bun run build            # Build all apps
+bun run check-types      # TypeScript type checking
+bun run check            # Oxlint + Oxfmt
+```
+
+## Payment Standards Supported
+
+| Standard | Protocol | Header | SDK |
+|----------|----------|--------|-----|
+| x402 | HTTP 402 + `PAYMENT-REQUIRED` / `PAYMENT-SIGNATURE` | Coinbase x402 v2 | @x402/fetch |
+| MPP | HTTP 402 + `WWW-Authenticate: Payment` / `Authorization: Payment` | Tempo + Stripe | mppx |
+| L402 | HTTP 402 + `WWW-Authenticate: L402 macaroon=..., invoice=...` | Lightning Labs | lsat-js |
+| AP2 | Agent Payment Protocol v2 | Emerging | TBD |
+
+## Team
+
+- **Sean** — Core runtime (schemas, standard detection, policy engine, MCP server, SDK)
+- **Aaron** — Payment execution (signing, AgentCard, Jupiter Swap, CCTP Bridge, 402 endpoints, CLI)
+- **Zhe Hong** — Backend + intelligence (Go API, DB, event ingestion, rules engine, replay)
+- **Jun Shen** — Dashboard + UI (fleet overview, trace viewer, intelligence chat, onboarding)
+
+## License
+
+Private — Colosseum Frontier hackathon submission (Apr 6 — May 11, 2026).

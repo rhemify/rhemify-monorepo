@@ -15,7 +15,8 @@ interface X402Requirement {
 /**
  * Detects x402 (Coinbase) payment protocol from 402 response.
  *
- * x402 responses return JSON with payment requirements in one of these shapes:
+ * x402 v2 puts payment requirements in a base64-encoded `payment-required` header.
+ * v1 and some implementations put them in the JSON body in one of these shapes:
  * - { accepts: [{ scheme, network, maxAmountRequired, payTo, ... }] }
  * - { paymentRequirements: [{ scheme, network, maxAmountRequired, payTo, ... }] }
  * - { scheme, network, maxAmountRequired, payTo, ... } (direct object)
@@ -29,15 +30,31 @@ export const x402Detector: ProtocolDetector = {
     _headers: Record<string, string>,
     body: unknown,
   ): DetectionResult | null {
-    if (status !== 402 || !body || typeof body !== "object") return null;
+    if (status !== 402) return null;
 
-    const req = extractRequirement(body);
+    // x402 v2: base64-encoded JSON in `payment-required` header
+    const paymentRequiredHeader = _headers["payment-required"];
+    let headerBody: unknown = null;
+    if (paymentRequiredHeader) {
+      try {
+        const decoded = atob(paymentRequiredHeader);
+        headerBody = JSON.parse(decoded);
+      } catch {
+        // Not valid base64 JSON — fall through to body parsing
+      }
+    }
+
+    // Try header-decoded data first, then body
+    const source = headerBody ?? body;
+    if (!source || typeof source !== "object") return null;
+
+    const req = extractRequirement(source);
     if (!req) return null;
 
     const amount = String(
       req.maxAmountRequired ?? req.amount ?? req.price ?? "0",
     );
-    const network = req.network ?? "base";
+    const network = normalizeNetwork(req.network ?? "base");
     const currency =
       req.extra?.name ?? req.extra?.currency ?? guessCurrency(network);
 
@@ -57,17 +74,17 @@ export const x402Detector: ProtocolDetector = {
 function extractRequirement(body: unknown): X402Requirement | null {
   const obj = body as Record<string, unknown>;
 
-  // { accepts: [...] }
+  // { accepts: [...] } — prefer Solana networks (Rhemify is Solana-first)
   if (Array.isArray(obj.accepts) && obj.accepts.length > 0) {
-    return obj.accepts[0] as X402Requirement;
+    return pickPreferred(obj.accepts as X402Requirement[]);
   }
 
-  // { paymentRequirements: [...] }
+  // { paymentRequirements: [...] } — same preference
   if (
     Array.isArray(obj.paymentRequirements) &&
     obj.paymentRequirements.length > 0
   ) {
-    return obj.paymentRequirements[0] as X402Requirement;
+    return pickPreferred(obj.paymentRequirements as X402Requirement[]);
   }
 
   // Direct object with scheme field
@@ -81,6 +98,29 @@ function extractRequirement(body: unknown): X402Requirement | null {
   }
 
   return null;
+}
+
+/** When multiple accepts exist, prefer Solana networks (Rhemify is Solana-first) */
+function pickPreferred(reqs: X402Requirement[]): X402Requirement {
+  const solana = reqs.find(
+    (r) => r.network?.startsWith("solana") || normalizeNetwork(r.network ?? "").startsWith("solana"),
+  );
+  return solana ?? reqs[0];
+}
+
+/** Map CAIP-2 network identifiers to our short names */
+function normalizeNetwork(network: string): string {
+  const caip2Map: Record<string, string> = {
+    "eip155:8453": "base",
+    "eip155:84532": "base-sepolia",
+    "eip155:1": "ethereum",
+    "eip155:42161": "arbitrum",
+    "eip155:10": "optimism",
+    "eip155:137": "polygon",
+    "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana-mainnet",
+    "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1": "solana-devnet",
+  };
+  return caip2Map[network] ?? network;
 }
 
 function guessCurrency(network: string): string {

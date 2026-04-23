@@ -1,11 +1,17 @@
 import type { DetectionResult, ExecutionResult, PayOptions, WalletConfig } from "../types.js";
 import { ExecutionError, NoWalletError } from "../errors.js";
+import { decodeSolanaKey } from "../utils/keys.js";
 import type { PaymentExecutor } from "./types.js";
 
 /**
  * x402 executor for Solana.
  * Uses the `x402-solana` npm package (peer dep) via dynamic import.
- * Wraps its fetch-with-payment into our ExecutionResult format.
+ * createX402Client({ wallet, network }) returns a client whose .fetch()
+ * handles the full 402 → sign → pay → retry loop automatically.
+ *
+ * x402-solana expects a wallet adapter object with:
+ *   - publicKey (PublicKey instance)
+ *   - signTransaction(tx) → signed tx
  */
 export const x402SolanaExecutor: PaymentExecutor = {
   protocol: "x402",
@@ -29,19 +35,10 @@ export const x402SolanaExecutor: PaymentExecutor = {
       throw new NoWalletError("solana");
     }
 
-    // Dynamic import — fails gracefully if peer dep not installed
-    let x402Solana: {
-      payWithSolana: (
-        url: string,
-        options: {
-          privateKey: string;
-          network?: string;
-          method?: string;
-          headers?: Record<string, string>;
-          body?: string;
-        },
-      ) => Promise<Response>;
-    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let x402Solana: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let web3: any;
 
     try {
       // @ts-expect-error -- optional peer dep, may not be installed
@@ -53,10 +50,35 @@ export const x402SolanaExecutor: PaymentExecutor = {
     }
 
     try {
-      const response = await x402Solana.payWithSolana(url, {
-        privateKey: wallet.solanaPrivateKey,
-        network: detection.network,
-        method: options.method,
+      // @ts-expect-error -- dependency of the SDK
+      web3 = await import("@solana/web3.js");
+    } catch {
+      throw new ExecutionError(
+        '@solana/web3.js is not installed. Run: bun add @solana/web3.js',
+      );
+    }
+
+    try {
+      // Build a wallet adapter from the private key
+      const keyBytes = decodeSolanaKey(wallet.solanaPrivateKey);
+      const keypair = web3.Keypair.fromSecretKey(keyBytes);
+
+      // x402-solana expects { publicKey, signTransaction }
+      const walletAdapter = {
+        publicKey: keypair.publicKey,
+        signTransaction: async (tx: { sign: (signers: unknown[]) => void }) => {
+          tx.sign([keypair]);
+          return tx;
+        },
+      };
+
+      const client = x402Solana.createX402Client({
+        wallet: walletAdapter,
+        network: detection.network === "solana-devnet" ? "solana-devnet" : "solana-mainnet",
+      });
+
+      const response = await client.fetch(url, {
+        method: options.method ?? "GET",
         headers: options.headers,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
@@ -68,16 +90,15 @@ export const x402SolanaExecutor: PaymentExecutor = {
         );
       }
 
-      // Parse response
       const contentType = response.headers.get("content-type") ?? "";
       const data = contentType.includes("json")
         ? await response.json()
         : await response.text();
 
-      // Extract receipt from headers
       const txHash =
+        response.headers.get("payment-response") ??
+        response.headers.get("x-payment-response") ??
         response.headers.get("x-payment-receipt") ??
-        response.headers.get("x-transaction-hash") ??
         undefined;
 
       return {

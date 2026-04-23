@@ -63,3 +63,8 @@ skills-lock.json
 
 # Local solana-go dependency (referenced via go.mod replace directive)
 /solana-go/
+
+# Test wallets and local databases (contain private keys / local state)
+.test-wallet.json
+.env.test
+local.db

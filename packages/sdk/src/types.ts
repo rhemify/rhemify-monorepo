@@ -60,6 +60,7 @@ export interface PolicyContext {
 // --- Path Resolver ---
 
 export type InstrumentType =
+  | "credit"
   | "ows"
   | "privy"
   | "agentcard"
@@ -142,6 +143,7 @@ export interface RhemifyConfig {
   timeout?: number;
   policyCacheTtl?: number;
   solanaRpcUrl?: string;
+  agentcardApiKey?: string;
   anchor?: {
     enabled?: boolean;
     rpcUrl?: string;

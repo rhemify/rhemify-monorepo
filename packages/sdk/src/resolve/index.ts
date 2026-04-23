@@ -1,9 +1,41 @@
-import type { DetectionResult, ScoredPath, WalletConfig } from "../types.js";
+import type { DetectionResult, InstrumentType, ScoredPath, WalletConfig } from "../types.js";
 import type { InstrumentEvaluator } from "./types.js";
 
 export type { InstrumentEvaluator } from "./types.js";
 
+// Module-level flags — set by client factory when external services are configured
+let agentcardConfigured = false;
+export function setAgentCardConfigured(value: boolean) {
+  agentcardConfigured = value;
+}
+
+let creditConfigured = false;
+export function setCreditConfigured(value: boolean) {
+  creditConfigured = value;
+}
+
 // --- Instrument evaluators ---
+
+const credit: InstrumentEvaluator = {
+  instrument: "credit" as InstrumentType,
+  isAvailable(_wallet, _detection) {
+    // Credit path available when a credit/prepaid balance service is configured
+    return creditConfigured;
+  },
+  estimateCost(detection) {
+    // Zero transaction fee — just the base price
+    return basePrice(detection);
+  },
+  estimateLatency() {
+    return 500; // API call only, no chain
+  },
+  risk() {
+    return "low" as const;
+  },
+  unavailableReason() {
+    return "No credit/prepaid balance service configured";
+  },
+};
 
 const owsSolana: InstrumentEvaluator = {
   instrument: "ows",
@@ -72,7 +104,9 @@ const agentcard: InstrumentEvaluator = {
   instrument: "agentcard",
   isAvailable(_wallet, detection) {
     // AgentCard works with MPP (fiat path via Visa)
-    return detection.protocol === "mpp";
+    // Only available if agentcard API key is configured (checked via executor)
+    // and the detection is MPP protocol
+    return detection.protocol === "mpp" && !!agentcardConfigured;
   },
   estimateCost(detection) {
     // AgentCard: payment amount + ~2.9% card processing
@@ -113,9 +147,14 @@ const squads: InstrumentEvaluator = {
 const jupiter: InstrumentEvaluator = {
   instrument: "jupiter",
   isAvailable(wallet, detection) {
-    // Jupiter swap needed when agent holds wrong token on Solana
-    // For now: available if Solana wallet exists but currency mismatch would need swap
-    return !!wallet.solanaPrivateKey && isSolanaNetwork(detection.network);
+    // Jupiter swap only needed when agent holds a different token than vendor wants.
+    // Jupiter is mainnet only — no devnet support.
+    const isMainnet = detection.network === "solana-mainnet" || detection.network === "mainnet-beta";
+    return (
+      !!wallet.solanaPrivateKey &&
+      isMainnet &&
+      detection.currency !== "USDC"
+    );
   },
   estimateCost(detection) {
     // Swap: payment amount + ~0.3% slippage + tx fees
@@ -162,7 +201,8 @@ const cctp: InstrumentEvaluator = {
 };
 
 /**
- * Default instrument priority from CLAUDE.md Path Resolver spec:
+ * Default instrument priority:
+ * 0. Credit/prepaid balance — zero tx fee, fastest path
  * 1. AgentCard (fiat via MPP) — for fiat vendors
  * 2. Squads session — for recurring on-chain vendors
  * 3. Direct on-chain OWS (Solana or EVM) — one-off payments
@@ -170,6 +210,7 @@ const cctp: InstrumentEvaluator = {
  * 5. CCTP bridge — vendor on different chain
  */
 const defaultEvaluators: InstrumentEvaluator[] = [
+  credit,
   agentcard,
   squads,
   owsSolana,

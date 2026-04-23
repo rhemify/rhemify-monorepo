@@ -5,6 +5,8 @@ import type { PaymentExecutor } from "./types.js";
 /**
  * x402 executor for EVM chains (Base, Ethereum, Arbitrum, etc.).
  * Uses the `x402-fetch` npm package (peer dep) via dynamic import.
+ * wrapFetchWithPayment(fetch, walletClient, maxValue) returns a fetch
+ * function that handles the full 402 → sign → pay → retry loop.
  */
 export const x402EvmExecutor: PaymentExecutor = {
   protocol: "x402",
@@ -28,18 +30,8 @@ export const x402EvmExecutor: PaymentExecutor = {
       throw new NoWalletError("evm");
     }
 
-    let x402Fetch: {
-      payWithFetch: (
-        url: string,
-        options: {
-          privateKey: string;
-          network?: string;
-          method?: string;
-          headers?: Record<string, string>;
-          body?: string;
-        },
-      ) => Promise<Response>;
-    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let x402Fetch: any;
 
     try {
       // @ts-expect-error -- optional peer dep, may not be installed
@@ -51,10 +43,22 @@ export const x402EvmExecutor: PaymentExecutor = {
     }
 
     try {
-      const response = await x402Fetch.payWithFetch(url, {
-        privateKey: wallet.evmPrivateKey,
-        network: detection.network,
-        method: options.method,
+      // x402-fetch API: createSigner(network, privateKey) → walletClient
+      // wrapFetchWithPayment(fetch, walletClient, maxValue) → paymentFetch
+      const signer = await x402Fetch.createSigner(
+        detection.network,
+        wallet.evmPrivateKey,
+      );
+
+      const maxValue = BigInt(detection.priceRaw) * 2n; // 2x buffer for safety
+      const paymentFetch = x402Fetch.wrapFetchWithPayment(
+        globalThis.fetch,
+        signer,
+        maxValue,
+      );
+
+      const response = await paymentFetch(url, {
+        method: options.method ?? "GET",
         headers: options.headers,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
@@ -71,9 +75,11 @@ export const x402EvmExecutor: PaymentExecutor = {
         ? await response.json()
         : await response.text();
 
+      // x402 v2 uses payment-response header for settlement receipt
       const txHash =
+        response.headers.get("payment-response") ??
+        response.headers.get("x-payment-response") ??
         response.headers.get("x-payment-receipt") ??
-        response.headers.get("x-transaction-hash") ??
         undefined;
 
       return {

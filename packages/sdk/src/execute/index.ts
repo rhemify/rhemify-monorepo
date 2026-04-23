@@ -5,17 +5,28 @@ import { x402SolanaExecutor } from "./x402-solana.js";
 import { x402EvmExecutor } from "./x402-evm.js";
 import { mppChargeExecutor } from "./mpp-charge.js";
 import { mppSessionExecutor } from "./mpp-session.js";
+import { agentcardMppExecutor } from "./agentcard-mpp.js";
+import { jupiterSwapExecutor } from "./jupiter-swap.js";
+import { creditPayExecutor } from "./credit-pay.js";
 
 export type { PaymentExecutor } from "./types.js";
+export { setAgentCardApiKey } from "./agentcard-mpp.js";
+export { setJupiterApiKey } from "./jupiter-swap.js";
+export { setCreditConfig } from "./credit-pay.js";
 
 /**
  * Default executor registry, ordered by preference.
  * selectExecutor() returns the first executor that can handle the detection.
+ *
+ * Order: credit (cheapest) → direct → fiat → swap → session
  */
 const defaultExecutors: PaymentExecutor[] = [
+  creditPayExecutor,
   x402SolanaExecutor,
   x402EvmExecutor,
+  agentcardMppExecutor,
   mppChargeExecutor,
+  jupiterSwapExecutor,
   mppSessionExecutor,
 ];
 
