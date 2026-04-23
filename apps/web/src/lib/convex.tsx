@@ -1,13 +1,13 @@
-import { ConvexProvider, ConvexReactClient } from "convex/react";
+/**
+ * Convex utilities for the frontend.
+ * Auth provider is now in __root.tsx via ConvexBetterAuthProvider.
+ * This file provides fleet context for the app.
+ */
+
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import type { Id } from "@convex/_generated/dataModel";
 
-const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string;
-
-export const convexClient = new ConvexReactClient(CONVEX_URL);
-
-// Fleet context — holds the current fleet ID after onboarding
 type FleetContextValue = {
   fleetId: Id<"fleets"> | null;
   setFleetId: (id: Id<"fleets">) => void;
@@ -26,7 +26,7 @@ export function useSetFleetId() {
   return useContext(FleetContext).setFleetId;
 }
 
-export function ConvexClientProvider({ children }: { children: ReactNode }) {
+export function FleetProvider({ children }: { children: ReactNode }) {
   const [fleetId, setFleetIdState] = useState<Id<"fleets"> | null>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("rhemify_fleet_id");
@@ -43,10 +43,8 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ConvexProvider client={convexClient}>
-      <FleetContext value={{ fleetId, setFleetId }}>
-        {children}
-      </FleetContext>
-    </ConvexProvider>
+    <FleetContext value={{ fleetId, setFleetId }}>
+      {children}
+    </FleetContext>
   );
 }

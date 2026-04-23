@@ -24,8 +24,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@rhemify-monorepo/ui/*": ["../../packages/ui/src/*"],
-      "@convex/*": ["../../convex/*"],
-      "@convex/_generated/*": ["../../convex/_generated/*"]
+      "@convex/*": ["../../packages/backend/convex/*"],
+      "@convex/_generated/*": ["../../packages/backend/convex/_generated/*"]
     }
   }
 }

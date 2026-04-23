@@ -1,0 +1,19 @@
+{
+  "name": "@rhemify-monorepo/backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "convex dev",
+    "dev:setup": "convex dev --configure --until-success",
+    "deploy": "convex deploy"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "^0.11.3",
+    "better-auth": "catalog:",
+    "convex": "catalog:"
+  },
+  "devDependencies": {
+    "@rhemify-monorepo/config": "workspace:*",
+    "typescript": "^5"
+  }
+}
