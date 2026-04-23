@@ -24,6 +24,7 @@ import { Route as OnboardingDeployRouteImport } from './routes/_onboarding/deplo
 import { Route as OnboardingBuildRouteImport } from './routes/_onboarding/build'
 import { Route as DashboardAgentAgentIdRouteImport } from './routes/dashboard/agent.$agentId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as MarketingDemoKeyRouteImport } from './routes/_marketing/demo.$key'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -98,6 +99,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarketingDemoKeyRoute = MarketingDemoKeyRouteImport.update({
+  id: '/demo/$key',
+  path: '/demo/$key',
+  getParentRoute: () => MarketingRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/policies': typeof DashboardPoliciesRoute
   '/dashboard/wallets': typeof DashboardWalletsRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/demo/$key': typeof MarketingDemoKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/agent/$agentId': typeof DashboardAgentAgentIdRoute
 }
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/dashboard/policies': typeof DashboardPoliciesRoute
   '/dashboard/wallets': typeof DashboardWalletsRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/demo/$key': typeof MarketingDemoKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/agent/$agentId': typeof DashboardAgentAgentIdRoute
 }
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/dashboard/wallets': typeof DashboardWalletsRoute
   '/_marketing/': typeof MarketingIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/_marketing/demo/$key': typeof MarketingDemoKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/agent/$agentId': typeof DashboardAgentAgentIdRoute
 }
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/dashboard/policies'
     | '/dashboard/wallets'
     | '/dashboard/'
+    | '/demo/$key'
     | '/api/auth/$'
     | '/dashboard/agent/$agentId'
   fileRoutesByTo: FileRoutesByTo
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/dashboard/policies'
     | '/dashboard/wallets'
     | '/dashboard'
+    | '/demo/$key'
     | '/api/auth/$'
     | '/dashboard/agent/$agentId'
   id:
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/dashboard/wallets'
     | '/_marketing/'
     | '/dashboard/'
+    | '/_marketing/demo/$key'
     | '/api/auth/$'
     | '/dashboard/agent/$agentId'
   fileRoutesById: FileRoutesById
@@ -310,15 +322,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_marketing/demo/$key': {
+      id: '/_marketing/demo/$key'
+      path: '/demo/$key'
+      fullPath: '/demo/$key'
+      preLoaderRoute: typeof MarketingDemoKeyRouteImport
+      parentRoute: typeof MarketingRoute
+    }
   }
 }
 
 interface MarketingRouteChildren {
   MarketingIndexRoute: typeof MarketingIndexRoute
+  MarketingDemoKeyRoute: typeof MarketingDemoKeyRoute
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingIndexRoute: MarketingIndexRoute,
+  MarketingDemoKeyRoute: MarketingDemoKeyRoute,
 }
 
 const MarketingRouteWithChildren = MarketingRoute._addFileChildren(

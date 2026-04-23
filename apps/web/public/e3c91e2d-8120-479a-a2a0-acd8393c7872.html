@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rhemify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface2: #1f1f23;
+      --border: #27272a;
+      --text: #fafafa;
+      --muted: #71717a;
+      --muted2: #52525b;
+      --accent: #C8F03A;
+      --success: #4ade80;
+      --warn: #fbbf24;
+      --danger: #f87171;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 28px; height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .logo { font-size: 16px; font-weight: 700; letter-spacing: -.5px; }
+    .logo em { color: var(--accent); font-style: normal; }
+    .header-tag { font-size: 11px; color: var(--muted); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #C8F03A 0%, #a3c430 100%); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #09090b; }
+    .user-name { font-size: 13px; font-weight: 500; }
+
+    /* ── Layout ── */
+    .body { flex: 1; display: grid; grid-template-columns: 300px 1fr 280px; overflow: hidden; min-height: 0; }
+    .col { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+    .col:last-child { border-right: none; }
+    .col-head { padding: 12px 18px 11px; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .col-title { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .col-body { flex: 1; overflow-y: auto; padding: 16px; }
+    .col-body::-webkit-scrollbar { width: 3px; }
+    .col-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── Steps (left) ── */
+    .step { display: flex; gap: 11px; align-items: flex-start; padding: 9px 0; opacity: 0; transform: translateY(4px); transition: opacity .3s, transform .3s; position: relative; }
+    .step.show { opacity: 1; transform: none; }
+    .step:not(:last-child)::after { content: ''; position: absolute; left: 14px; top: 34px; width: 1px; height: calc(100% - 10px); background: var(--border); }
+    .step-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; background: var(--surface2); border: 1px solid var(--border); position: relative; z-index: 1; transition: border-color .3s, background .3s; }
+    .step-icon.active { border-color: var(--accent); background: rgba(200,240,58,.08); }
+    .step-icon.done { border-color: var(--success); background: rgba(74,222,128,.08); }
+    .step-icon.warn { border-color: var(--warn); background: rgba(251,191,36,.08); }
+    .step-content { padding-top: 3px; }
+    .step-title { font-size: 12.5px; font-weight: 500; line-height: 1.4; }
+    .step-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+    .step-sub.ok { color: var(--success); }
+    .step-sub.hi { color: var(--accent); }
+
+    /* ── ReactFlow diagram (center) ── */
+    .diagram-container {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    .diagram-container svg { display: block; width: 100%; }
+
+    /* dot grid background like ReactFlow */
+    .diagram-container::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, #2d2d31 1px, transparent 1px);
+      background-size: 20px 20px;
+      pointer-events: none;
+    }
+
+    /* edge flow animation */
+    @keyframes flowAnim { to { stroke-dashoffset: -18; } }
+    .edge-flowing { animation: flowAnim .8s linear infinite; }
+
+    /* ── Rules ── */
+    .rules-wrap { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; opacity: 0; transition: opacity .4s; }
+    .rules-wrap.show { opacity: 1; }
+    .rules-head { padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--surface); }
+    .rule-row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 12px; opacity: 0; transition: opacity .3s, background .3s; }
+    .rule-row:last-child { border-bottom: none; }
+    .rule-row.show { opacity: 1; }
+    .rule-row.pass { background: rgba(74,222,128,.04); }
+    .rule-icon { font-size: 12px; width: 16px; text-align: center; color: var(--muted); transition: color .3s; }
+    .rule-text { flex: 1; color: var(--text); }
+    .rule-val { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+    .rule-val.ok { color: var(--success); }
+
+    /* ── Receipt (right) ── */
+    .receipt-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 8px; color: var(--muted2); }
+    .receipt-empty-icon { font-size: 28px; opacity: .35; }
+    .receipt-empty-text { font-size: 12px; }
+    .receipt-card { display: none; flex-direction: column; gap: 0; }
+    .receipt-card.show { display: flex; }
+    .receipt-amount-wrap { text-align: center; padding: 18px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+    .receipt-label { font-size: 10px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
+    .receipt-amount { font-family: 'DM Mono', monospace; font-size: 30px; font-weight: 500; letter-spacing: -1px; }
+    .receipt-amount em { font-size: 13px; color: var(--muted); font-style: normal; font-weight: 400; }
+    .receipt-saving { font-size: 11.5px; color: var(--success); margin-top: 4px; }
+    .receipt-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); opacity: 0; transition: opacity .35s; }
+    .receipt-row:last-child { border-bottom: none; }
+    .receipt-row.show { opacity: 1; }
+    .rr-key { font-size: 11.5px; color: var(--muted); }
+    .rr-val { font-size: 11.5px; font-weight: 500; font-family: 'DM Mono', monospace; }
+    .rr-val.ok { color: var(--success); }
+    .rr-val.ac { color: var(--accent); }
+    .proof-box { margin-top: 14px; border: 1px solid var(--border); border-radius: 8px; padding: 11px; opacity: 0; transition: opacity .4s .2s; }
+    .proof-box.show { opacity: 1; }
+    .proof-head { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+    .proof-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 5px var(--success); }
+    .proof-title { font-size: 11px; font-weight: 600; color: var(--success); }
+    .proof-text { font-size: 11px; color: var(--muted); line-height: 1.55; }
+    .proof-link { display: inline-flex; align-items: center; gap: 3px; margin-top: 9px; font-size: 11px; font-weight: 500; color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 5px; border: 1px solid rgba(200,240,58,.25); cursor: pointer; transition: background .2s; }
+    .proof-link:hover { background: rgba(200,240,58,.07); }
+
+    /* ── Overlay ── */
+    .overlay { position: fixed; inset: 0; background: rgba(9,9,11,.9); display: flex; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(8px); }
+    .overlay-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 36px 40px; width: 420px; }
+    .overlay-logo { font-size: 22px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 6px; }
+    .overlay-logo em { color: var(--accent); font-style: normal; }
+    .overlay-sub { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+    .input-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; }
+    .task-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text); outline: none; resize: none; height: 72px; line-height: 1.55; transition: border-color .2s; margin-bottom: 10px; }
+    .task-input:focus { border-color: var(--accent); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 22px; }
+    .chip { font-size: 11px; color: var(--muted); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; transition: color .15s, border-color .15s; font-family: 'Inter', sans-serif; }
+    .chip:hover { color: var(--text); border-color: var(--muted2); }
+    .go-btn { width: 100%; background: var(--accent); color: #09090b; border: none; padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: opacity .2s; }
+    .go-btn:hover { opacity: .88; }
+    .restart { position: fixed; bottom: 14px; right: 14px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 5px 11px; border-radius: 5px; font-size: 11px; cursor: pointer; font-family: 'Inter', sans-serif; z-index: 10; transition: color .15s; }
+    .restart:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="overlay-logo">Rhem<em>ify</em></div>
+    <div class="overlay-sub">Your AI agents can now pay for things — safely, within your rules, at the best price. Tell your agent what to do.</div>
+    <label class="input-label">What should your agent do?</label>
+    <textarea class="task-input" id="taskInput">Research competitor pricing for our Q2 strategy report</textarea>
+    <div class="chips">
+      <div class="chip" onclick="setTask('Research competitor pricing for our Q2 strategy report')">Competitor research</div>
+      <div class="chip" onclick="setTask('Find the top 10 industry news stories today')">Industry news</div>
+      <div class="chip" onclick="setTask('Monitor our top 5 vendor websites for changes')">Vendor monitoring</div>
+    </div>
+    <button class="go-btn" onclick="startDemo()">Dispatch Agent →</button>
+  </div>
+</div>
+
+<button class="restart" onclick="location.reload()">↺ Restart</button>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">Rhem<em>ify</em></div>
+  <div class="header-tag">Research Dept</div>
+  <div class="header-right">
+    <div class="user-name">Acme Corp</div>
+    <div class="avatar">AC</div>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="body">
+
+  <!-- Left: Steps -->
+  <div class="col">
+    <div class="col-head"><span class="col-title">What's happening</span></div>
+    <div class="col-body"><div id="stepList"></div></div>
+  </div>
+
+  <!-- Center: Flow diagram -->
+  <div class="col">
+    <div class="col-head">
+      <span class="col-title">How we paid</span>
+      <span id="routeStatus" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;"></span>
+    </div>
+    <div class="col-body">
+
+      <!-- ReactFlow-style diagram -->
+      <div class="diagram-container" id="diagramWrap" style="height:240px;">
+        <svg id="flowSvg" viewBox="0 0 540 220" style="height:240px;">
+          <defs>
+            <!-- Default arrow -->
+            <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#3f3f46"/>
+            </marker>
+            <!-- Green arrow -->
+            <marker id="arr-green" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#C8F03A"/>
+            </marker>
+            <!-- Glow filter -->
+            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- ── Edges (drawn first, behind nodes) ── -->
+
+          <!-- src → A -->
+          <path id="eA1" d="M 112,110 C 152,110 152,50 190,50"
+            stroke="#3f3f46" stroke-width="1.5" fill="none" stroke-linecap="round"
+            marker-end="url(#arr)" opacity="0"/>
+          <!-- src → B -->
+          <path id="eB1" d="M 112,110 C 152,110 152,110 190,110"
+            stroke="#3f3f46" stroke-width="1.5" fill="none" stroke-linecap="round"
+            marker-end="url(#arr)" opacity="0"/>
+          <!-- src → C -->
+          <path id="eC1" d="M 112,110 C 152,110 152,170 190,170"
+            stroke="#3f3f46" stroke-width="1.5" fill="none" stroke-linecap="round"
+            marker-end="url(#arr)" opacity="0"/>
+          <!-- A → dst -->
+          <path id="eA2" d="M 330,50 C 368,50 368,110 408,110"
+            stroke="#3f3f46" stroke-width="1.5" fill="none" stroke-linecap="round"
+            marker-end="url(#arr)" opacity="0"/>
+          <!-- B → dst -->
+          <path id="eB2" d="M 330,110 C 368,110 368,110 408,110"
+            stroke="#3f3f46" stroke-width="1.5" fill="none" stroke-linecap="round"
+            marker-end="url(#arr)" opacity="0"/>
+          <!-- C → dst -->
+          <path id="eC2" d="M 330,170 C 368,170 368,110 408,110"
+            stroke="#3f3f46" stroke-width="1.5" fill="none" stroke-linecap="round"
+            marker-end="url(#arr)" opacity="0"/>
+
+          <!-- Flow overlay (animated, shown only on selected route) -->
+          <path id="flowA1" d="M 112,110 C 152,110 152,50 190,50"
+            stroke="#C8F03A" stroke-width="1.5" fill="none" stroke-linecap="round"
+            stroke-dasharray="6 8" opacity="0"/>
+          <path id="flowA2" d="M 330,50 C 368,50 368,110 408,110"
+            stroke="#C8F03A" stroke-width="1.5" fill="none" stroke-linecap="round"
+            stroke-dasharray="6 8" opacity="0"/>
+
+          <!-- ── Source node: Balance ── -->
+          <g id="nSrc" opacity="0" style="transition:opacity .35s">
+            <rect x="8" y="88" width="104" height="44" rx="8"
+              fill="#18181b" stroke="#3f3f46" stroke-width="1.5"/>
+            <!-- handle right -->
+            <circle cx="112" cy="110" r="3" fill="#3f3f46"/>
+            <text x="60" y="107" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#fafafa">Your Balance</text>
+            <text x="60" y="122" text-anchor="middle" font-family="DM Mono" font-size="10" fill="#71717a">$25.80 USDC</text>
+          </g>
+
+          <!-- ── Route A: Direct Transfer ── -->
+          <g id="nA" opacity="0" style="transition:opacity .4s">
+            <rect id="nA-rect" x="190" y="22" width="140" height="56" rx="8"
+              fill="#18181b" stroke="#3f3f46" stroke-width="1.5"/>
+            <!-- handle left -->
+            <circle cx="190" cy="50" r="3" fill="#3f3f46"/>
+            <!-- handle right -->
+            <circle cx="330" cy="50" r="3" fill="#3f3f46"/>
+            <text x="260" y="43" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#fafafa">Direct Transfer</text>
+            <text x="260" y="58" text-anchor="middle" font-family="DM Mono" font-size="11" fill="#fafafa" id="nA-price">$0.4997</text>
+            <text x="260" y="70" text-anchor="middle" font-family="Inter" font-size="9.5" fill="#71717a" id="nA-badge">Fastest · lowest fee</text>
+          </g>
+
+          <!-- ── Route B: Via Exchange ── -->
+          <g id="nB" opacity="0" style="transition:opacity .4s">
+            <rect id="nB-rect" x="190" y="82" width="140" height="56" rx="8"
+              fill="#18181b" stroke="#3f3f46" stroke-width="1.5"/>
+            <circle cx="190" cy="110" r="3" fill="#3f3f46"/>
+            <circle cx="330" cy="110" r="3" fill="#3f3f46"/>
+            <text x="260" y="103" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#fafafa">Via Exchange</text>
+            <text x="260" y="118" text-anchor="middle" font-family="DM Mono" font-size="11" fill="#fafafa">$0.4991</text>
+            <text x="260" y="130" text-anchor="middle" font-family="Inter" font-size="9.5" fill="#71717a">Slower · higher fee</text>
+          </g>
+
+          <!-- ── Route C: Cross-network ── -->
+          <g id="nC" opacity="0" style="transition:opacity .4s">
+            <rect id="nC-rect" x="190" y="142" width="140" height="56" rx="8"
+              fill="#18181b" stroke="#3f3f46" stroke-width="1.5"/>
+            <circle cx="190" cy="170" r="3" fill="#3f3f46"/>
+            <circle cx="330" cy="170" r="3" fill="#3f3f46"/>
+            <text x="260" y="163" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#fafafa">Cross-network</text>
+            <text x="260" y="178" text-anchor="middle" font-family="DM Mono" font-size="11" fill="#fafafa">$0.4985</text>
+            <text x="260" y="190" text-anchor="middle" font-family="Inter" font-size="9.5" fill="#71717a">Slowest · higher risk</text>
+          </g>
+
+          <!-- ── Destination: Exa Search ── -->
+          <g id="nDst" opacity="0" style="transition:opacity .35s">
+            <rect x="408" y="88" width="122" height="44" rx="8"
+              fill="#18181b" stroke="#3f3f46" stroke-width="1.5" id="nDst-rect"/>
+            <circle cx="408" cy="110" r="3" fill="#3f3f46"/>
+            <text x="469" y="107" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#fafafa">Exa Search</text>
+            <text x="469" y="122" text-anchor="middle" font-family="DM Mono" font-size="10" fill="#71717a">exa.ai</text>
+          </g>
+
+          <!-- ── "Best deal" badge on Route A (hidden initially) ── -->
+          <g id="bestBadge" opacity="0" style="transition:opacity .4s">
+            <rect x="222" y="8" width="76" height="16" rx="4" fill="rgba(200,240,58,0.15)"/>
+            <text x="260" y="20" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#C8F03A">⚡ BEST DEAL</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Rules -->
+      <div class="rules-wrap" id="rulesWrap">
+        <div class="rules-head">Your spending rules</div>
+        <div class="rule-row" id="rl1">
+          <span class="rule-icon">○</span>
+          <span class="rule-text">Under your $2.00 per-payment limit</span>
+          <span class="rule-val" id="rv1">—</span>
+        </div>
+        <div class="rule-row" id="rl2">
+          <span class="rule-icon">○</span>
+          <span class="rule-text">Trusted website (exa.ai)</span>
+          <span class="rule-val" id="rv2">—</span>
+        </div>
+        <div class="rule-row" id="rl3">
+          <span class="rule-icon">○</span>
+          <span class="rule-text">Within today's team budget</span>
+          <span class="rule-val" id="rv3">—</span>
+        </div>
+        <div class="rule-row" id="rl4">
+          <span class="rule-icon">○</span>
+          <span class="rule-text">Price locked before paying</span>
+          <span class="rule-val" id="rv4">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Receipt -->
+  <div class="col">
+    <div class="col-head"><span class="col-title">Your receipt</span></div>
+    <div class="col-body">
+      <div class="receipt-empty" id="receiptEmpty">
+        <div class="receipt-empty-icon">🧾</div>
+        <div class="receipt-empty-text">Receipt will appear here</div>
+      </div>
+      <div class="receipt-card" id="receiptCard">
+        <div class="receipt-amount-wrap">
+          <div class="receipt-label">Amount paid</div>
+          <div class="receipt-amount">$0.4997 <em>USDC</em></div>
+          <div class="receipt-saving">✓ Best price of 3 options</div>
+        </div>
+        <div>
+          <div class="receipt-row" id="rr1"><span class="rr-key">Paid to</span><span class="rr-val">Exa Search</span></div>
+          <div class="receipt-row" id="rr2"><span class="rr-key">For</span><span class="rr-val" id="rrTask" style="font-family:Inter;font-size:11px;text-align:right;max-width:130px;">—</span></div>
+          <div class="receipt-row" id="rr3"><span class="rr-key">Fee charged</span><span class="rr-val">$0.0002</span></div>
+          <div class="receipt-row" id="rr4"><span class="rr-key">Time</span><span class="rr-val" id="rrTime">—</span></div>
+          <div class="receipt-row" id="rr5"><span class="rr-key">Rules passed</span><span class="rr-val ok">4 / 4 ✓</span></div>
+          <div class="receipt-row" id="rr6"><span class="rr-key">Best deal?</span><span class="rr-val ac">Yes ✓</span></div>
+        </div>
+        <div class="proof-box" id="proofBox">
+          <div class="proof-head"><div class="proof-dot"></div><div class="proof-title">Tamper-proof receipt saved</div></div>
+          <div class="proof-text">This payment is permanently recorded on the blockchain. Nobody can alter or deny it happened — not even us.</div>
+          <a class="proof-link" href="#">View proof ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  function setTask(t) { $('taskInput').value = t; }
+
+  $('taskInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); startDemo(); }
+  });
+
+  /* ── Steps ── */
+  function addStep(icon, title, sub, iconCls = '') {
+    const el = document.createElement('div');
+    el.className = 'step';
+    el.innerHTML = `
+      <div class="step-icon ${iconCls}">${icon}</div>
+      <div class="step-content">
+        <div class="step-title">${title}</div>
+        ${sub ? `<div class="step-sub">${sub}</div>` : ''}
+      </div>`;
+    $('stepList').appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    return el;
+  }
+
+  function updateStep(el, icon, iconCls, sub, subCls = '') {
+    el.querySelector('.step-icon').textContent = icon;
+    el.querySelector('.step-icon').className = `step-icon ${iconCls}`;
+    let s = el.querySelector('.step-sub');
+    if (sub !== undefined) {
+      if (!s) { s = document.createElement('div'); el.querySelector('.step-content').appendChild(s); }
+      s.className = `step-sub ${subCls}`;
+      s.textContent = sub;
+    }
+  }
+
+  /* ── SVG helpers ── */
+  function svgShow(id) { $(id).setAttribute('opacity', '1'); }
+  function svgOpacity(id, v) { $(id).setAttribute('opacity', v); }
+
+  function drawEdge(id) {
+    const el = $(id);
+    const len = el.getTotalLength();
+    el.style.strokeDasharray = len;
+    el.style.strokeDashoffset = len;
+    el.setAttribute('opacity', '1');
+    el.getBoundingClientRect();
+    el.style.transition = 'stroke-dashoffset 0.55s ease';
+    el.style.strokeDashoffset = 0;
+  }
+
+  function highlightEdge(id, color) {
+    const el = $(id);
+    el.setAttribute('stroke', color);
+    el.setAttribute('marker-end', 'url(#arr-green)');
+  }
+
+  function dimEdge(id) {
+    svgOpacity(id, '0.12');
+  }
+
+  function highlightNode(rectId, color) {
+    $(rectId).setAttribute('stroke', color);
+    $(rectId).setAttribute('filter', 'url(#glow)');
+  }
+
+  function dimNode(groupId) {
+    svgOpacity(groupId, '0.2');
+  }
+
+  function startFlow(id) {
+    const el = $(id);
+    el.setAttribute('opacity', '1');
+    el.classList.add('edge-flowing');
+  }
+
+  /* ── Rules ── */
+  function rulePass(id, val) {
+    const row = $(id);
+    row.classList.add('show', 'pass');
+    const icon = row.querySelector('.rule-icon');
+    icon.textContent = '✓';
+    icon.style.color = 'var(--success)';
+    const rv = row.querySelector('.rule-val');
+    rv.textContent = val;
+    rv.classList.add('ok');
+  }
+
+  /* ── Receipt ── */
+  function showReceipt(task) {
+    $('receiptEmpty').style.display = 'none';
+    $('receiptCard').classList.add('show');
+    $('rrTask').textContent = task.length > 28 ? task.slice(0, 26) + '…' : task;
+    $('rrTime').textContent = new Date().toLocaleTimeString();
+    ['rr1','rr2','rr3','rr4','rr5','rr6'].forEach((id, i) =>
+      setTimeout(() => $(id).classList.add('show'), i * 110)
+    );
+    setTimeout(() => $('proofBox').classList.add('show'), 6 * 110 + 300);
+  }
+
+  /* ── Main demo sequence ── */
+  async function startDemo() {
+    const task = $('taskInput').value.trim() || 'Research competitor pricing for our Q2 strategy report';
+    $('overlay').style.display = 'none';
+
+    await delay(300);
+
+    // 1. Agent starts
+    const s1 = addStep('🤖', 'Agent started your task',
+      task.length > 44 ? '"' + task.slice(0,42) + '…"' : '"' + task + '"');
+    await delay(1000);
+
+    // 2. Finds data source
+    const s2 = addStep('🔍', 'Searching for the best data source', 'Checking available tools…');
+    await delay(1100);
+    updateStep(s2, '✓', 'done', 'Found it — Exa Search has exactly what we need', 'ok');
+
+    await delay(900);
+
+    // 3. Paywall
+    const s3 = addStep('💳', 'Hit a paywall', 'Exa Search requires a small payment to proceed', 'warn');
+    await delay(700);
+
+    // Show source + dest nodes
+    svgShow('nSrc');
+    svgShow('nDst');
+    await delay(300);
+
+    // Show route nodes one by one
+    svgShow('nA');
+    await delay(120);
+    svgShow('nB');
+    await delay(120);
+    svgShow('nC');
+    await delay(200);
+
+    // Draw edges src → routes
+    drawEdge('eA1'); await delay(100);
+    drawEdge('eB1'); await delay(100);
+    drawEdge('eC1'); await delay(400);
+
+    // Draw edges routes → dest
+    drawEdge('eA2'); await delay(80);
+    drawEdge('eB2'); await delay(80);
+    drawEdge('eC2'); await delay(300);
+
+    $('routeStatus').textContent = '3 paths found';
+
+    // 4. Finding best deal
+    const s4 = addStep('⚖️', 'Finding you the best deal', 'Comparing 3 different ways to pay…');
+    await delay(1600);
+    updateStep(s4, '✓', 'done', 'Direct transfer wins — fastest and cheapest', 'ok');
+
+    // Highlight Route A
+    highlightNode('nA-rect', '#C8F03A');
+    $('nA-price').setAttribute('fill', '#C8F03A');
+    dimNode('nB');
+    dimNode('nC');
+    dimEdge('eB1'); dimEdge('eC1');
+    dimEdge('eB2'); dimEdge('eC2');
+    highlightEdge('eA1', '#C8F03A');
+    highlightEdge('eA2', '#C8F03A');
+    highlightNode('nDst-rect', '#C8F03A');
+    svgShow('bestBadge');
+
+    // Animate flow on selected path
+    await delay(300);
+    startFlow('flowA1');
+    startFlow('flowA2');
+
+    $('routeStatus').textContent = 'Route A selected';
+
+    await delay(600);
+
+    // 5. Rules check
+    const s5 = addStep('🛡️', 'Checking your spending rules', 'Making sure everything is within your limits…');
+    $('rulesWrap').classList.add('show');
+    $('rl1').classList.add('show');
+    $('rl2').classList.add('show');
+    $('rl3').classList.add('show');
+    $('rl4').classList.add('show');
+
+    await delay(350); rulePass('rl1', '$0.50 ✓');
+    await delay(350); rulePass('rl2', 'Approved ✓');
+    await delay(350); rulePass('rl3', '$25.30 left ✓');
+    await delay(350); rulePass('rl4', 'Locked ✓');
+    await delay(300);
+    updateStep(s5, '✓', 'done', 'All 4 rules passed — safe to proceed', 'ok');
+
+    await delay(700);
+
+    // 6. Execute
+    const s6 = addStep('⚡', 'Paying now…', 'Sending $0.50 to Exa Search');
+    await delay(1100);
+    updateStep(s6, '✓', 'done', 'Paid $0.4997 · completed in 0.4 seconds', 'ok');
+
+    await delay(500);
+    addStep('📊', 'Agent got the data', '47 results returned — writing your report now', 'active');
+
+    await delay(600);
+    addStep('🔒', 'Receipt saved permanently', 'Tamper-proof record stored on the blockchain', 'done');
+
+    await delay(400);
+    showReceipt(task);
+  }
+</script>
+</body>
+</html>
