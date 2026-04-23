@@ -43,6 +43,19 @@ func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 	vendor := handler.NewVendorHandler(convex)
 	replayHandler := handler.NewReplayHandler(convex)
 
+	// Swagger UI at /docs, OpenAPI spec at /docs/openapi.yaml
+	r.StaticFile("/docs/openapi.yaml", "./docs/openapi.yaml")
+	r.GET("/docs", func(c *gin.Context) {
+		c.Data(200, "text/html; charset=utf-8", []byte(`<!DOCTYPE html>
+<html><head><title>Rhemify API</title>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+</head><body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>SwaggerUIBundle({url:"/docs/openapi.yaml",dom_id:"#swagger-ui"})</script>
+</body></html>`))
+	})
+
 	api := r.Group("/api")
 	{
 		// Public endpoints (no auth)

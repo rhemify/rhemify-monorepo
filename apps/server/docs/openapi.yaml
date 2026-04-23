@@ -1,0 +1,651 @@
+openapi: 3.0.3
+info:
+  title: Rhemify Intelligence Server
+  description: |
+    Go intelligence processing engine for Rhemify. Reads from Convex, runs rules engine
+    (anomaly detection, vendor health, route optimization), writes intelligence actions back.
+
+    **Auth:** SDK endpoints require `Authorization: Bearer <fleet-api-key>`.
+    Dashboard endpoints are currently unauthenticated.
+  version: 1.0.0
+  contact:
+    name: Rhemify Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Health
+    description: Server health check
+  - name: Dashboard
+    description: Read-only endpoints for the frontend dashboard (no auth)
+  - name: Ingest
+    description: Payment event ingestion (SDK auth required)
+  - name: Policy
+    description: Agent policy CRUD (SDK auth required)
+  - name: Vendor
+    description: Vendor intelligence (SDK auth required)
+  - name: Replay
+    description: Decision replay engine (SDK auth required)
+  - name: Anchor
+    description: Solana trace anchoring (SDK auth required)
+
+components:
+  securitySchemes:
+    FleetAPIKey:
+      type: http
+      scheme: bearer
+      description: Fleet API key passed as Bearer token
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    PaymentEvent:
+      type: object
+      properties:
+        _id:
+          type: string
+        agent_id:
+          type: string
+        fleet_id:
+          type: string
+        standard:
+          type: string
+          enum: [x402, mpp, l402, ap2, acp]
+        amount:
+          type: number
+        token:
+          type: string
+        chain:
+          type: string
+        domain:
+          type: string
+        outcome:
+          type: string
+          enum: [success, rejected, failed]
+        instrument_type:
+          type: string
+        trace_id:
+          type: string
+        chain_from:
+          type: string
+          nullable: true
+        chain_to:
+          type: string
+          nullable: true
+        _creationTime:
+          type: number
+
+    IngestRequest:
+      type: object
+      required: [event, trace, policyDecisions]
+      properties:
+        event:
+          type: object
+          required: [agent_id, fleet_id, standard, amount, token, chain, domain, outcome, instrument_type, trace_id]
+          properties:
+            agent_id:
+              type: string
+            fleet_id:
+              type: string
+            standard:
+              type: string
+            amount:
+              type: number
+            token:
+              type: string
+            chain:
+              type: string
+            domain:
+              type: string
+            outcome:
+              type: string
+              enum: [success, rejected, failed]
+            instrument_type:
+              type: string
+            trace_id:
+              type: string
+            chain_from:
+              type: string
+            chain_to:
+              type: string
+        trace:
+          type: object
+          required: [id, agent_task_context, trigger_402_raw, alternatives_evaluated, policy_rules_fired, instrument_selection_log, confidence, replay_snapshot, trace_hash]
+          properties:
+            id:
+              type: string
+            agent_task_context:
+              type: string
+            trigger_402_raw:
+              type: string
+            alternatives_evaluated:
+              type: array
+              items: {}
+            policy_rules_fired:
+              type: array
+              items: {}
+            instrument_selection_log:
+              type: array
+              items: {}
+            confidence:
+              type: string
+              enum: [high, medium, low]
+            replay_snapshot:
+              type: object
+              properties:
+                policy_state:
+                  type: object
+                vendor_registry_snapshot:
+                  type: object
+                agent_context:
+                  type: object
+                wallet_manifest:
+                  type: object
+            trace_hash:
+              type: string
+        policyDecisions:
+          type: array
+          items:
+            type: object
+
+    IngestResponse:
+      type: object
+      properties:
+        eventId:
+          type: string
+        traceId:
+          type: string
+
+    VendorStatus:
+      type: object
+      properties:
+        domain:
+          type: string
+        isBlocked:
+          type: boolean
+        blockedReason:
+          type: string
+          nullable: true
+        successRate:
+          type: number
+        avgLatencyMs:
+          type: number
+        uptimePct:
+          type: number
+        totalPayments:
+          type: integer
+        supportedStandards:
+          type: array
+          items:
+            type: string
+
+    RuleResult:
+      type: object
+      properties:
+        rule:
+          type: string
+          enum: [daily_limit, max_per_transaction, domain_allowlist, standard_allowlist, vendor_blocked, approval_threshold]
+        result:
+          type: string
+          enum: [pass, block, flag, skipped]
+        threshold:
+          type: string
+        actual:
+          type: string
+
+    PolicyOutcome:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+        rule_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleResult'
+
+    PolicyDiff:
+      type: object
+      properties:
+        rule:
+          type: string
+        original_result:
+          type: string
+        replayed_result:
+          type: string
+        changed:
+          type: boolean
+
+    ReplayRequest:
+      type: object
+      properties:
+        policy_overrides:
+          type: object
+          description: |
+            Overrides applied to the snapshot's policy_state before re-evaluation.
+            Scalars replace directly. Arrays support add (no prefix) and remove ("-" prefix).
+          example:
+            daily_limit: 100
+            domain_allowlist: ["-api.bloomberg.com"]
+
+    ReplayResult:
+      type: object
+      properties:
+        trace_id:
+          type: string
+        snapshot_complete:
+          type: boolean
+        original:
+          $ref: '#/components/schemas/PolicyOutcome'
+        replayed:
+          $ref: '#/components/schemas/PolicyOutcome'
+        diff:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyDiff'
+        counterfactual_blocked:
+          type: boolean
+
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Server health check
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                    example: rhemify-intelligence
+                  status:
+                    type: string
+                    example: ok
+
+  /api/fleet/stats:
+    get:
+      tags: [Dashboard]
+      summary: Fleet statistics
+      parameters:
+        - name: fleet_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fleet stats from Convex
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/fleet/agents:
+    get:
+      tags: [Dashboard]
+      summary: List agents in a fleet
+      parameters:
+        - name: fleet_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/fleet/agents/{id}:
+    get:
+      tags: [Dashboard]
+      summary: Get a specific agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/events:
+    get:
+      tags: [Dashboard]
+      summary: List payment events (paginated)
+      parameters:
+        - name: fleet_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+        - name: outcome
+          in: query
+          schema:
+            type: string
+            enum: [success, rejected, failed]
+      responses:
+        '200':
+          description: Paginated event list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentEvent'
+                  has_more:
+                    type: boolean
+
+  /api/events/{id}:
+    get:
+      tags: [Dashboard]
+      summary: Get single event with linked trace and policy decisions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event with trace and decisions
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaymentEvent'
+                  - type: object
+                    properties:
+                      trace:
+                        type: object
+                        nullable: true
+                      policy_decisions:
+                        type: array
+                        items:
+                          type: object
+
+  /api/traces/{id}:
+    get:
+      tags: [Dashboard]
+      summary: Get payment trace with linked event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trace with payment event
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/ingest/payment:
+    post:
+      tags: [Ingest]
+      summary: Ingest a payment event + trace + policy decisions
+      description: |
+        Full pipeline: stores event → updates aggregates (vendor, agent, fleet, edges) →
+        runs 7 intelligence rules → triggers Merkle batching.
+      security:
+        - FleetAPIKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRequest'
+      responses:
+        '200':
+          description: Event ingested successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/policy/{agentId}:
+    get:
+      tags: [Policy]
+      summary: Get agent policy
+      security:
+        - FleetAPIKey: []
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent policy
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      tags: [Policy]
+      summary: Update agent policy
+      security:
+        - FleetAPIKey: []
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Policy updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+
+  /api/vendor/{domain}:
+    get:
+      tags: [Vendor]
+      summary: Get vendor health status
+      description: Returns success rate, latency, blocking status, and supported standards.
+      security:
+        - FleetAPIKey: []
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+          example: api.bloomberg.com
+      responses:
+        '200':
+          description: Vendor status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorStatus'
+
+  /api/traces/{id}/replay:
+    post:
+      tags: [Replay]
+      summary: Replay a payment decision with optional policy overrides
+      description: |
+        Reconstructs the exact context of a historical payment from its replay_snapshot,
+        re-evaluates 6 policy rules, and returns a diff. Pure computation — no side effects.
+
+        **Override syntax:**
+        - Scalars: replace directly (`"daily_limit": 100`)
+        - Arrays: prefix `-` to remove (`["-api.bloomberg.com"]`), no prefix to add
+      security:
+        - FleetAPIKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Trace ID (string, e.g. "trc_abc123")
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplayRequest'
+      responses:
+        '200':
+          description: Replay result with diff
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayResult'
+        '404':
+          description: Trace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Incomplete snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  missing:
+                    type: array
+                    items:
+                      type: string
+
+  /api/traces/{id}/anchor:
+    patch:
+      tags: [Anchor]
+      summary: Update trace with Solana Memo anchor tx hash
+      security:
+        - FleetAPIKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [anchorTxHash]
+              properties:
+                anchorTxHash:
+                  type: string
+      responses:
+        '200':
+          description: Anchor updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+
+  /api/anchor/verify/{traceId}:
+    get:
+      tags: [Anchor]
+      summary: Verify a trace's Merkle proof
+      security:
+        - FleetAPIKey: []
+      parameters:
+        - name: traceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification result with Merkle proof
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/anchor/{fleetId}/{date}:
+    get:
+      tags: [Anchor]
+      summary: Get daily Merkle root for a fleet
+      security:
+        - FleetAPIKey: []
+      parameters:
+        - name: fleetId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+          description: UTC date in YYYY-MM-DD format
+      responses:
+        '200':
+          description: Daily Merkle root
+          content:
+            application/json:
+              schema:
+                type: object

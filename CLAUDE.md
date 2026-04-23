@@ -82,22 +82,27 @@ Zod-validated env vars via `@t3-oss/env-core`. Server vars: `DATABASE_URL`, `BET
 - **Vite plugin order**: `tailwindcss()` → `tanstackStart()` → `viteReact()` — ordering matters.
 - **Do NOT** enable `verbatimModuleSyntax` in tsconfig.
 
-## Current State (as of 2026-04-01)
+### Go Intelligence Server (apps/server)
 
-**Everything is mock/frontend-only.** No real payment runtime, no backend API, no persistent DB beyond auth tables. The dashboard runs on `MockFleetService` + `SimulationEngine` generating fake transactions client-side.
+```bash
+cd apps/server
+make dev           # Hot reload (requires air)
+make test          # Run all tests (82 total)
+make seed          # Seed demo data (requires server running)
+```
 
-### What exists
-- Full onboarding flow UI (signup → build → fund → deploy)
-- Dashboard shell with fleet overview, live feed, policy editor, agent detail
-- Payment standard types (`PaymentStandard`: x402, mpp, l402, ap2) and UI chips
-- `FleetService` interface ready to swap mock → real API
-- Better-Auth wired for email/password login
-- Drizzle schema for auth tables only (user, session, account, verification)
+**API Docs:** Start the server and open http://localhost:8080/docs (Swagger UI).
+OpenAPI spec at `apps/server/docs/openapi.yaml`.
 
-### What doesn't exist yet
-- Real payment protocol handlers (no actual 402 detection or payment execution)
-- Backend API (Go, per Linear tickets)
-- Payment event / decision trace persistence
-- MCP Server
-- Real 402 endpoint integrations
-- Wallet/signing infrastructure
+**Role:** Intelligence processing engine — reads from Convex via HTTP API, runs rules engine (anomaly detection, vendor health, route optimization), writes intelligence actions back. Not a CRUD API for the frontend.
+
+**Key packages:**
+- `internal/engine/` — 7 intelligence rules (VH-1, VH-2, SA-1, SA-2, SA-3, RO-1, SUB-1)
+- `internal/replay/` — Decision replay engine with counterfactual analysis
+- `internal/handler/` — HTTP handlers (ingest, replay, events, fleet, vendor, policy, anchor)
+- `internal/anchor/` — Solana Merkle tree trace anchoring
+- `cmd/seed/` — Demo data seeder (5 scenarios)
+
+**Environment:** Copy `.env.example` → `.env`. Requires `CONVEX_URL`, `CONVEX_DEPLOY_KEY`, `PORT` (default 8080), `CORS_ORIGIN`.
+
+**Frontend integration:** The Go server writes to Convex tables that the frontend reads via `useQuery()`. See `packages/backend/convex/intelligence.ts`, `aggregates.ts`, and `vendors.ts` for the ready-to-use frontend query functions (marked with `@junshen` comments).
