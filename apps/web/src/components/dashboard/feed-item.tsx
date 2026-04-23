@@ -1,11 +1,11 @@
-import type { Transaction } from '@/lib/types'
+import type { Transaction } from "@/lib/types";
 
 interface FeedItemProps {
-  transaction: Transaction
+  transaction: Transaction;
 }
 
 export function FeedItem({ transaction }: FeedItemProps) {
-  const isBlocked = transaction.status === 'blocked'
+  const isBlocked = transaction.status === "blocked";
 
   return (
     <>
@@ -17,16 +17,18 @@ export function FeedItem({ transaction }: FeedItemProps) {
       `}</style>
       <div
         className={`px-5 py-3.5 border-b border-white/[0.03] transition-colors duration-150 hover:bg-white/[0.04] ${
-          isBlocked ? 'bg-red-500/[0.03] hover:bg-red-500/[0.06]' : ''
+          isBlocked ? "bg-red-500/[0.03] hover:bg-red-500/[0.06]" : ""
         }`}
-        style={{ animation: 'rhemify-feed-slide 250ms ease-out both' }}
+        style={{ animation: "rhemify-feed-slide 250ms ease-out both" }}
       >
         <div className="flex justify-between items-center">
           <span className="text-[13px] font-medium text-foreground">{transaction.agentName}</span>
           {isBlocked ? (
             <span className="font-mono text-xs text-rhm-danger">blocked</span>
           ) : (
-            <span className="font-mono text-xs text-white/50">${transaction.amount.toFixed(2)}</span>
+            <span className="font-mono text-xs text-white/50">
+              ${transaction.amount.toFixed(2)}
+            </span>
           )}
         </div>
         <div className="font-mono text-[11px] text-white/20 mt-1">
@@ -34,5 +36,5 @@ export function FeedItem({ transaction }: FeedItemProps) {
         </div>
       </div>
     </>
-  )
+  );
 }

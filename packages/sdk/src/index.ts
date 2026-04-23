@@ -55,11 +55,7 @@ export type {
   StageCompleteEvent,
 } from "./types.js";
 
-export {
-  resolveIdentity,
-  createAgentSubdomain,
-  findAgentSubdomains,
-} from "./identity/index.js";
+export { resolveIdentity, createAgentSubdomain, findAgentSubdomains } from "./identity/index.js";
 export type { AgentIdentity, IdentityConfig } from "./identity/index.js";
 
 export {

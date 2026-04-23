@@ -71,6 +71,8 @@ export default defineSchema({
     outcome: v.string(), // success | rejected | failed
     instrument_type: v.string(),
     trace_id: v.string(),
+    chain_from: v.optional(v.string()),
+    chain_to: v.optional(v.string()),
   })
     .index("by_agent", ["agent_id"])
     .index("by_fleet", ["fleet_id"])
@@ -196,7 +198,12 @@ export default defineSchema({
     dwallet_id: v.string(), // Ika dWallet identifier
     dwallet_cap_id: v.string(), // ownership cap (Solana account)
     supported_chains: v.array(v.string()), // ["ethereum", "base", "arbitrum"]
-    status: v.union(v.literal("creating"), v.literal("active"), v.literal("frozen"), v.literal("revoked")),
+    status: v.union(
+      v.literal("creating"),
+      v.literal("active"),
+      v.literal("frozen"),
+      v.literal("revoked"),
+    ),
     created_at: v.float64(),
   })
     .index("by_fleet", ["fleet_id"])
@@ -223,7 +230,15 @@ export default defineSchema({
     target_address: v.string(),
     token: v.string(),
     amount: v.float64(),
-    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"), v.literal("signed"), v.literal("broadcast"), v.literal("confirmed"), v.literal("failed")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("signed"),
+      v.literal("broadcast"),
+      v.literal("confirmed"),
+      v.literal("failed"),
+    ),
     intelligence_decision: v.optional(v.any()),
     rejection_reason: v.optional(v.string()),
     ika_signature: v.optional(v.string()),

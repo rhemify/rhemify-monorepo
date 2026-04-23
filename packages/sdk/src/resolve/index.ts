@@ -184,7 +184,7 @@ const cctp: InstrumentEvaluator = {
   },
   estimateCost(detection) {
     // Bridge: payment amount + ~$0.05 bridge fee + gas on both chains
-    return basePrice(detection) + 0.10;
+    return basePrice(detection) + 0.1;
   },
   estimateLatency() {
     return 15000; // ~15s for CCTP fast transfer
@@ -232,10 +232,7 @@ export class PathResolver {
    * Returns all paths sorted by composite score (lower = better).
    * Unavailable paths are included with available=false for trace recording.
    */
-  resolve(
-    detection: DetectionResult,
-    wallet: WalletConfig,
-  ): ScoredPath[] {
+  resolve(detection: DetectionResult, wallet: WalletConfig): ScoredPath[] {
     const paths: ScoredPath[] = this.evaluators.map((evaluator) => {
       const available = evaluator.isAvailable(wallet, detection);
 

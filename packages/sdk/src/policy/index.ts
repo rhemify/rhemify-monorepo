@@ -1,8 +1,4 @@
-import type {
-  DetectionResult,
-  PolicyContext,
-  PolicyDecision,
-} from "../types.js";
+import type { DetectionResult, PolicyContext, PolicyDecision } from "../types.js";
 import { defaultRules } from "./rules.js";
 import type { PolicyRule } from "./rules.js";
 import { GoServerTransport } from "../transport/index.js";
@@ -34,10 +30,7 @@ export class PolicyEngine {
    * Returns the aggregate decision: block if any rule blocks,
    * flag if any rule flags, allow otherwise.
    */
-  async evaluate(
-    detection: DetectionResult,
-    domain: string,
-  ): Promise<PolicyDecision> {
+  async evaluate(detection: DetectionResult, domain: string): Promise<PolicyDecision> {
     const context = await this.getContext();
     return this.evaluateWithContext(detection, domain, context);
   }
@@ -51,9 +44,7 @@ export class PolicyEngine {
     domain: string,
     context: PolicyContext,
   ): PolicyDecision {
-    const rulesFired = this.rules.map((rule) =>
-      rule.evaluate(detection, domain, context),
-    );
+    const rulesFired = this.rules.map((rule) => rule.evaluate(detection, domain, context));
 
     // Block takes precedence over flag, flag over allow
     const blocked = rulesFired.find((r) => r.decision === "block");

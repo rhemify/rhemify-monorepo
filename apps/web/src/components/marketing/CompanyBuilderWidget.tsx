@@ -1,52 +1,96 @@
-import { useState } from 'react'
+import { useState } from "react";
 
 interface Department {
-  id: string
-  name: string
-  description: string
-  icon: string
-  iconBg: string
-  enabled: boolean
-  locked?: boolean
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  iconBg: string;
+  enabled: boolean;
+  locked?: boolean;
 }
 
 const initialDepartments: Department[] = [
-  { id: 'ceo', name: 'CEO Agent', description: 'Always included', icon: '⬡', iconBg: '#F0FBD0', enabled: true, locked: true },
-  { id: 'research', name: 'Research', description: 'perplexity.ai, tavily.com', icon: '◇', iconBg: '#E6F1FB', enabled: true },
-  { id: 'marketing', name: 'Marketing', description: 'twitter.com, buffer.com', icon: '◫', iconBg: '#FFF0D4', enabled: true },
-  { id: 'engineering', name: 'Engineering', description: 'github.com, vercel.com', icon: '◧', iconBg: '#FFE5E5', enabled: false },
-  { id: 'finance', name: 'Finance', description: 'stripe.com, quickbooks.com', icon: '◩', iconBg: '#EDECEA', enabled: false },
-]
+  {
+    id: "ceo",
+    name: "CEO Agent",
+    description: "Always included",
+    icon: "⬡",
+    iconBg: "#F0FBD0",
+    enabled: true,
+    locked: true,
+  },
+  {
+    id: "research",
+    name: "Research",
+    description: "perplexity.ai, tavily.com",
+    icon: "◇",
+    iconBg: "#E6F1FB",
+    enabled: true,
+  },
+  {
+    id: "marketing",
+    name: "Marketing",
+    description: "twitter.com, buffer.com",
+    icon: "◫",
+    iconBg: "#FFF0D4",
+    enabled: true,
+  },
+  {
+    id: "engineering",
+    name: "Engineering",
+    description: "github.com, vercel.com",
+    icon: "◧",
+    iconBg: "#FFE5E5",
+    enabled: false,
+  },
+  {
+    id: "finance",
+    name: "Finance",
+    description: "stripe.com, quickbooks.com",
+    icon: "◩",
+    iconBg: "#EDECEA",
+    enabled: false,
+  },
+];
 
-function Toggle({ enabled, locked, onToggle }: { enabled: boolean; locked?: boolean; onToggle: () => void }) {
+function Toggle({
+  enabled,
+  locked,
+  onToggle,
+}: {
+  enabled: boolean;
+  locked?: boolean;
+  onToggle: () => void;
+}) {
   return (
     <button
       type="button"
       disabled={locked}
       onClick={onToggle}
       className={`relative w-[36px] h-[20px] rounded-full transition-colors duration-150 ease-in-out ${
-        enabled ? 'bg-rhm-accent' : 'bg-muted'
-      } ${locked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+        enabled ? "bg-rhm-accent" : "bg-muted"
+      } ${locked ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
     >
       <span
         className={`absolute top-[2px] w-[16px] h-[16px] rounded-full bg-white transition-[left] duration-150 ease-in-out ${
-          enabled ? 'left-[18px]' : 'left-[2px]'
+          enabled ? "left-[18px]" : "left-[2px]"
         }`}
       />
     </button>
-  )
+  );
 }
 
 export function CompanyBuilderWidget() {
-  const [departments, setDepartments] = useState<Department[]>(initialDepartments)
+  const [departments, setDepartments] = useState<Department[]>(initialDepartments);
 
-  const enabledCount = departments.filter((d) => d.enabled && !d.locked).length
-  const price = (enabledCount * 9).toFixed(2)
+  const enabledCount = departments.filter((d) => d.enabled && !d.locked).length;
+  const price = (enabledCount * 9).toFixed(2);
 
   function toggleDepartment(id: string) {
     setDepartments((prev) =>
-      prev.map((d) => (d.id === id && !d.locked ? { ...d, enabled: !d.enabled } : d))
-    )
+      prev.map((d) => (d.id === id && !d.locked ? { ...d, enabled: !d.enabled } : d)),
+    );
   }
 
   return (
@@ -65,7 +109,7 @@ export function CompanyBuilderWidget() {
           <div
             key={dept.id}
             className={`flex items-center justify-between py-[10px] ${
-              i < departments.length - 1 ? 'border-b-[0.5px] border-border' : ''
+              i < departments.length - 1 ? "border-b-[0.5px] border-border" : ""
             }`}
           >
             <div className="flex items-center gap-3">
@@ -80,10 +124,14 @@ export function CompanyBuilderWidget() {
                 <span className="text-[11px] text-muted-foreground">{dept.description}</span>
               </div>
             </div>
-            <Toggle enabled={dept.enabled} locked={dept.locked} onToggle={() => toggleDepartment(dept.id)} />
+            <Toggle
+              enabled={dept.enabled}
+              locked={dept.locked}
+              onToggle={() => toggleDepartment(dept.id)}
+            />
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }

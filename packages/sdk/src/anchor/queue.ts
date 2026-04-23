@@ -44,8 +44,17 @@ export class AnchorQueue {
   private timer: ReturnType<typeof setInterval> | null = null;
   private stopped = false;
   private config: Required<
-    Pick<AnchorQueueConfig, "solanaPrivateKey" | "rpcUrl" | "maxRetries" | "flushIntervalMs" | "maxQueueSize" | "batchSize">
-  > & Pick<AnchorQueueConfig, "transport" | "onAnchored" | "onError">;
+    Pick<
+      AnchorQueueConfig,
+      | "solanaPrivateKey"
+      | "rpcUrl"
+      | "maxRetries"
+      | "flushIntervalMs"
+      | "maxQueueSize"
+      | "batchSize"
+    >
+  > &
+    Pick<AnchorQueueConfig, "transport" | "onAnchored" | "onError">;
 
   constructor(userConfig: AnchorQueueConfig) {
     this.config = {
@@ -70,12 +79,7 @@ export class AnchorQueue {
     }
   }
 
-  enqueue(
-    traceId: string,
-    traceHash: string,
-    fleetId: string,
-    agentId: string,
-  ): void {
+  enqueue(traceId: string, traceHash: string, fleetId: string, agentId: string): void {
     if (this.stopped) return;
 
     if (this.queue.length >= this.config.maxQueueSize) {
@@ -168,9 +172,7 @@ export class AnchorQueue {
         rpcUrl: this.config.rpcUrl,
       });
 
-      this.config.transport
-        ?.updateTraceAnchor(item.traceId, txSignature)
-        .catch(() => {});
+      this.config.transport?.updateTraceAnchor(item.traceId, txSignature).catch(() => {});
 
       this.config.onAnchored?.(item.traceId, txSignature);
       return true;

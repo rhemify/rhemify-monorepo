@@ -10,11 +10,7 @@ import type { ProtocolDetector } from "./types.js";
 export const acpDetector: ProtocolDetector = {
   name: "acp",
 
-  detect(
-    status: number,
-    headers: Record<string, string>,
-    _body: unknown,
-  ): DetectionResult | null {
+  detect(status: number, headers: Record<string, string>, _body: unknown): DetectionResult | null {
     if (status !== 402) return null;
 
     const acpHeader = headers["x-acp-job"] ?? headers["X-ACP-Job"] ?? "";

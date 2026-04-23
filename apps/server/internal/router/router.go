@@ -41,6 +41,7 @@ func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 	policy := handler.NewPolicyHandler(convex)
 	anchorHandler := handler.NewAnchorHandler(convex)
 	vendor := handler.NewVendorHandler(convex)
+	replayHandler := handler.NewReplayHandler(convex)
 
 	api := r.Group("/api")
 	{
@@ -71,6 +72,7 @@ func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 			sdk.POST("/policy/:agentId", policy.SetPolicy)
 			sdk.GET("/vendor/:domain", vendor.GetVendorStatus)
 			sdk.GET("/fleet/status", fleet.GetStats)
+			sdk.POST("/traces/:id/replay", replayHandler.HandleReplay)
 			sdk.PATCH("/traces/:id/anchor", anchorHandler.UpdateTraceAnchor)
 			sdk.GET("/anchor/verify/:traceId", anchorHandler.VerifyTrace)
 			sdk.GET("/anchor/:fleetId/:date", anchorHandler.GetDailyRoot)

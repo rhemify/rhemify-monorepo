@@ -14,9 +14,7 @@ export const x402EvmExecutor: PaymentExecutor = {
 
   canExecute(detection: DetectionResult, wallet: WalletConfig): boolean {
     return (
-      detection.protocol === "x402" &&
-      isEvmNetwork(detection.network) &&
-      !!wallet.evmPrivateKey
+      detection.protocol === "x402" && isEvmNetwork(detection.network) && !!wallet.evmPrivateKey
     );
   },
 
@@ -37,9 +35,7 @@ export const x402EvmExecutor: PaymentExecutor = {
       // @ts-expect-error -- optional peer dep, may not be installed
       x402Fetch = await import("x402-fetch");
     } catch {
-      throw new ExecutionError(
-        'x402-fetch is not installed. Run: bun add x402-fetch',
-      );
+      throw new ExecutionError("x402-fetch is not installed. Run: bun add x402-fetch");
     }
 
     try {
@@ -71,9 +67,7 @@ export const x402EvmExecutor: PaymentExecutor = {
       }
 
       const contentType = response.headers.get("content-type") ?? "";
-      const data = contentType.includes("json")
-        ? await response.json()
-        : await response.text();
+      const data = contentType.includes("json") ? await response.json() : await response.text();
 
       // x402 v2 uses payment-response header for settlement receipt
       const txHash =

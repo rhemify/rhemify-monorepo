@@ -1,12 +1,12 @@
-import { Slider } from '@/components/onboarding/slider'
-import type { Policy } from '@/lib/types'
+import { Slider } from "@/components/onboarding/slider";
+import type { Policy } from "@/lib/types";
 
 interface PolicySlidersProps {
-  policy: Policy
-  onUpdate: (updates: Partial<Policy>) => void
+  policy: Policy;
+  onUpdate: (updates: Partial<Policy>) => void;
 }
 
-const fmt = (v: number) => `$${v.toFixed(2)}`
+const fmt = (v: number) => `$${v.toFixed(2)}`;
 
 export function PolicySliders({ policy, onUpdate }: PolicySlidersProps) {
   return (
@@ -44,5 +44,5 @@ export function PolicySliders({ policy, onUpdate }: PolicySlidersProps) {
         />
       </div>
     </div>
-  )
+  );
 }

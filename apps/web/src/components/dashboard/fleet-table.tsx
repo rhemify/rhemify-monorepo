@@ -1,8 +1,8 @@
-import { useAgents } from '@/lib/hooks'
-import { FleetRow } from '@/components/dashboard/fleet-row'
+import { useAgents } from "@/lib/hooks";
+import { FleetRow } from "@/components/dashboard/fleet-row";
 
 export function FleetTable() {
-  const { data: agents } = useAgents()
+  const { data: agents } = useAgents();
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -19,5 +19,5 @@ export function FleetTable() {
         <FleetRow key={agent.id} agent={agent} />
       ))}
     </div>
-  )
+  );
 }

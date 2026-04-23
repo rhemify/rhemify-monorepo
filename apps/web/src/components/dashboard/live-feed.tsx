@@ -1,8 +1,8 @@
-import { useTransactions } from '@/lib/hooks'
-import { FeedItem } from '@/components/dashboard/feed-item'
+import { useTransactions } from "@/lib/hooks";
+import { FeedItem } from "@/components/dashboard/feed-item";
 
 export function LiveFeed() {
-  const { data: transactions } = useTransactions(15)
+  const { data: transactions } = useTransactions(15);
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -16,7 +16,7 @@ export function LiveFeed() {
         <span>Live transactions</span>
         <span
           className="w-1.5 h-1.5 rounded-full bg-rhm-success"
-          style={{ animation: 'rhemify-feed-pulse 2s infinite ease-in-out' }}
+          style={{ animation: "rhemify-feed-pulse 2s infinite ease-in-out" }}
         />
       </div>
       <div className="max-h-[840px] overflow-y-auto">
@@ -25,5 +25,5 @@ export function LiveFeed() {
         ))}
       </div>
     </div>
-  )
+  );
 }

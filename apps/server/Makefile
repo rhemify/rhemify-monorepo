@@ -1,4 +1,4 @@
-.PHONY: dev build run tidy test test-verbose test-engine
+.PHONY: dev build run tidy test test-verbose test-engine test-replay seed
 
 # Run with hot reload (requires air: go install github.com/air-verse/air@latest)
 dev:
@@ -14,15 +14,27 @@ run: build
 
 # Run all tests (skips packages with missing local deps like solana-go)
 test:
-	go test ./internal/engine/... ./internal/model/... ./internal/chain/...
+	go test ./internal/engine/... ./internal/replay/... ./internal/model/... ./internal/chain/...
 
 # Run all tests with verbose output
 test-verbose:
-	go test -v ./internal/engine/... ./internal/model/... ./internal/chain/...
+	go test -v ./internal/engine/... ./internal/replay/... ./internal/model/... ./internal/chain/...
 
 # Run only engine/rules tests
 test-engine:
 	go test -v ./internal/engine/...
+
+# Run only replay tests
+test-replay:
+	go test -v ./internal/replay/...
+
+# Seed demo data (requires server running: make dev)
+seed:
+	go run ./cmd/seed -scenario all
+
+# Seed specific scenario
+seed-%:
+	go run ./cmd/seed -scenario $*
 
 # Tidy dependencies
 tidy:

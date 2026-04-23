@@ -1,14 +1,14 @@
-import { useNavigate } from '@tanstack/react-router'
-import type { Agent } from '@/lib/types'
-import { StatusDot } from '@/components/dashboard/status-dot'
-import { SpendBar } from '@/components/dashboard/spend-bar'
+import { useNavigate } from "@tanstack/react-router";
+import type { Agent } from "@/lib/types";
+import { StatusDot } from "@/components/dashboard/status-dot";
+import { SpendBar } from "@/components/dashboard/spend-bar";
 
 interface FleetRowProps {
-  agent: Agent
+  agent: Agent;
 }
 
 export function FleetRow({ agent }: FleetRowProps) {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <div
@@ -17,7 +17,7 @@ export function FleetRow({ agent }: FleetRowProps) {
       className="grid grid-cols-[1.4fr_0.6fr_2fr_0.7fr] items-center h-12 px-5 border-b border-white/[0.03] cursor-pointer hover:bg-white/[0.04] transition-colors duration-150"
       onClick={() => navigate({ to: `/dashboard/agent/${agent.id}` as string })}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') navigate({ to: `/dashboard/agent/${agent.id}` as string })
+        if (e.key === "Enter") navigate({ to: `/dashboard/agent/${agent.id}` as string });
       }}
     >
       <span className="flex items-center gap-2 text-[13px] font-medium text-foreground">
@@ -37,9 +37,11 @@ export function FleetRow({ agent }: FleetRowProps) {
           ${agent.spentToday.toFixed(2)} / ${agent.dailyLimit}
         </span>
       </span>
-      <span className={`text-[11px] ${agent.status === 'running' ? 'text-rhm-success' : 'text-foreground/20'}`}>
+      <span
+        className={`text-[11px] ${agent.status === "running" ? "text-rhm-success" : "text-foreground/20"}`}
+      >
         {agent.status}
       </span>
     </div>
-  )
+  );
 }

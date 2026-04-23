@@ -1,80 +1,44 @@
-import { ScrollReveal } from '@/components/marketing/ScrollReveal'
+import type { ReactNode } from "react";
 
-const transactions = [
-  { agent: 'research-001', vendor: 'perplexity.ai', cost: '$0.004', method: 'x402' },
-  { agent: 'marketing-003', vendor: 'buffer.com', cost: '$0.12', method: 'direct' },
-  { agent: 'research-001', vendor: 'tavily.com', cost: '$0.002', method: 'x402' },
-]
+import { ScrollReveal } from "@/components/marketing/ScrollReveal";
+import { Tag } from "@/components/ui/Tag";
+
+const FEATURE_IMAGE_DIMS = { width: 1232, height: 928 } as const;
+
+function FeatureVisualImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    <figure className="overflow-hidden rounded-2xl border border-border bg-surface/40">
+      <img
+        src={src}
+        alt={alt}
+        width={FEATURE_IMAGE_DIMS.width}
+        height={FEATURE_IMAGE_DIMS.height}
+        className="h-auto w-full object-cover"
+        loading="lazy"
+        decoding="async"
+      />
+    </figure>
+  );
+}
 
 function SectionHeader() {
   return (
-    <div className="text-center mb-16">
-      <p className="font-mono text-xs uppercase text-muted-foreground tracking-[0.1em] mb-2">HOW IT WORKS</p>
-      <h2 className="text-[clamp(28px,5vw,38px)] font-bold mb-3">One fleet. Full control.</h2>
-      <p className="text-[17px] text-muted-foreground max-w-[520px] mx-auto leading-[1.7]">
-        Deploy agents that act autonomously — with guardrails you define and spending you can see.
-      </p>
+    <div className="mb-16 text-center">
+      <ScrollReveal fadeOnly durationMs={920} delayMs={0} className="flex justify-center">
+        <Tag variant="muted">How it works</Tag>
+      </ScrollReveal>
+      <ScrollReveal fadeOnly x={32} durationMs={1050} delayMs={110} className="flex justify-center">
+        <h2 className="mt-2 text-[clamp(1.65rem,4vw,2.35rem)] font-bold text-text">
+          One fleet. Full control.
+        </h2>
+      </ScrollReveal>
+      <ScrollReveal fadeOnly durationMs={1020} delayMs={200} className="flex justify-center">
+        <p className="mt-3 w-full max-w-full text-[17px] leading-relaxed text-muted">
+          Deploy agents that act autonomously — with guardrails you define and spending you can see.
+        </p>
+      </ScrollReveal>
     </div>
-  )
-}
-
-function PaymentsVisual() {
-  return (
-    <div className="bg-background rounded-xl border-[0.5px] border-border p-6">
-      <div className="space-y-4">
-        {transactions.map((tx, i) => (
-          <div key={i} className="flex items-center justify-between font-mono text-xs text-muted-foreground">
-            <span>{tx.agent} → {tx.vendor}</span>
-            <span className="text-rhm-accent-dark">{tx.cost} · {tx.method}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function PoliciesVisual() {
-  return (
-    <div className="bg-background rounded-xl border-[0.5px] border-border p-6 space-y-5">
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="font-mono text-xs text-muted-foreground">Research dept</span>
-          <span className="font-mono text-sm">$12.40 / $50.00</span>
-        </div>
-        <div className="h-1.5 bg-muted rounded-full w-full">
-          <div className="h-full bg-rhm-accent rounded-full" style={{ width: '25%' }} />
-        </div>
-      </div>
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="font-mono text-xs text-muted-foreground">Marketing dept</span>
-          <span className="font-mono text-sm">$38.00 / $50.00</span>
-        </div>
-        <div className="h-1.5 bg-muted rounded-full w-full">
-          <div className="h-full bg-rhm-warning rounded-full" style={{ width: '76%' }} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function DelegationVisual() {
-  return (
-    <div className="bg-background rounded-xl border-[0.5px] border-border p-6">
-      <div className="font-mono text-sm overflow-x-auto">
-        <div className="min-w-[280px]">
-          <div className="text-center mb-3">⬡ CEO</div>
-          <div className="text-center text-muted-foreground mb-3">│</div>
-          <div className="text-center text-muted-foreground mb-3">├──────────┼──────────┤</div>
-          <div className="flex justify-between px-4">
-            <span>◈ Research</span>
-            <span>◫ Marketing</span>
-            <span>◧ Engineering</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  );
 }
 
 function FeatureRow({
@@ -83,55 +47,95 @@ function FeatureRow({
   body,
   visual,
   reversed,
+  staggerBase,
 }: {
-  overline: string
-  headline: string
-  body: string
-  visual: React.ReactNode
-  reversed?: boolean
+  overline: string;
+  headline: string;
+  body: string;
+  visual: ReactNode;
+  reversed?: boolean;
+  staggerBase: number;
 }) {
   return (
-    <ScrollReveal>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
-        <div className={reversed ? 'lg:order-2' : ''}>
-          <p className="font-mono text-xs uppercase text-muted-foreground tracking-[0.1em] mb-2">{overline}</p>
-          <h3 className="text-2xl font-bold mb-3">{headline}</h3>
-          <p className="text-[15px] text-muted-foreground leading-[1.7] max-w-[420px]">{body}</p>
-        </div>
-        <div>{visual}</div>
+    <div className="mb-20 grid grid-cols-1 items-start gap-12 last:mb-0 lg:grid-cols-2 lg:gap-x-16 lg:gap-y-14 max-w-7xl mx-auto">
+      <div className={`w-full space-y-1 ${reversed ? "lg:order-2" : ""}`}>
+        <ScrollReveal fadeOnly durationMs={920} delayMs={staggerBase} className="block">
+          <p className="font-mono text-[13px] font-medium uppercase tracking-[0.12em] text-muted-deep sm:text-sm">
+            {overline}
+          </p>
+        </ScrollReveal>
+        <ScrollReveal y={14} durationMs={1050} delayMs={staggerBase + 110} className="block">
+          <h3 className="mt-3 text-[clamp(1.85rem,3.4vw,2.85rem)] font-bold leading-[1.12] tracking-tight text-text">
+            {headline}
+          </h3>
+        </ScrollReveal>
+        <ScrollReveal fadeOnly durationMs={1020} delayMs={staggerBase + 200} className="block">
+          <p className="mt-5 w-full max-w-full text-[clamp(1.05rem,1.5vw,1.35rem)] leading-relaxed text-muted">
+            {body}
+          </p>
+        </ScrollReveal>
       </div>
-    </ScrollReveal>
-  )
+      <ScrollReveal
+        y={18}
+        durationMs={1150}
+        delayMs={staggerBase + 145}
+        className={reversed ? "lg:order-1" : ""}
+      >
+        {visual}
+      </ScrollReveal>
+    </div>
+  );
 }
 
 export function Features() {
   return (
-    <section id="features" className="bg-white py-24">
-      <div className="max-w-5xl mx-auto px-6">
+    <section
+      id="features"
+      className="relative z-10 scroll-mt-24 border-t border-border bg-bg px-8 py-24 md:px-10 lg:px-20"
+    >
+      <div className="mx-auto w-full max-w-full">
         <SectionHeader />
 
         <FeatureRow
-          overline="PAYMENTS"
+          staggerBase={0}
+          overline="// Payments"
           headline="Agents pay with your card"
           body="Every agent gets delegated access to your payment method. Set per-agent budgets, daily limits, and approved vendors. Every charge is logged in real time."
-          visual={<PaymentsVisual />}
+          visual={
+            <FeatureVisualImage
+              src="/payments.png"
+              alt="Stylized digital payment card formed from glowing data streams, representing agent transactions and card spend."
+            />
+          }
         />
 
         <FeatureRow
-          overline="POLICIES"
+          staggerBase={65}
+          overline="// Policies"
           headline="Budgets that enforce themselves"
           body="Define spend policies per agent, per department, per vendor. When limits hit, agents freeze automatically. No surprises."
-          visual={<PoliciesVisual />}
           reversed
+          visual={
+            <FeatureVisualImage
+              src="/policies.png"
+              alt="Abstract visualization of teams in VR headsets formed from code, representing enforced spend policies and guardrails."
+            />
+          }
         />
 
         <FeatureRow
-          overline="DELEGATION"
+          staggerBase={130}
+          overline="// Delegation"
           headline="Agents that hire agents"
           body="Your CEO agent delegates tasks to department agents. Research calls Marketing. Marketing calls Engineering. A mesh of autonomous work."
-          visual={<DelegationVisual />}
+          visual={
+            <FeatureVisualImage
+              src="/delegation.png"
+              alt="Leaders gathered around a glowing data surface, illustrating hierarchical agent delegation and collaboration."
+            />
+          }
         />
       </div>
     </section>
-  )
+  );
 }

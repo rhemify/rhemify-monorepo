@@ -28,6 +28,7 @@ func New(c *cx.Client) *Engine {
 			&SA2UnusualPayment{},
 			&SA3FleetSpike{},
 			&RO1BridgeWarning{},
+			&SUB1SubscriptionRecommend{},
 		},
 	}
 }
@@ -70,6 +71,8 @@ func (e *Engine) shouldDedup(action *Action) bool {
 		chainTo, _ := action.Evidence["chain_to"].(string)
 		subject := action.AgentID + ":" + chainFrom + "->" + chainTo
 		return e.dedup.ShouldSuppress("RO-1", subject, 24*time.Hour)
+	case "SUB-1":
+		return e.dedup.ShouldSuppress("SUB-1", action.AgentID+":"+action.Domain, 24*time.Hour)
 	default:
 		return false
 	}

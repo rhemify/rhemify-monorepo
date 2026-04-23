@@ -53,9 +53,9 @@ describe("error hierarchy", () => {
 
   it("errors have correct codes", () => {
     expect(new DetectionError("x", "u").code).toBe("DETECTION_FAILED");
-    expect(
-      new PolicyBlockedError("x", { action: "block", rulesFired: [] }).code,
-    ).toBe("POLICY_BLOCKED");
+    expect(new PolicyBlockedError("x", { action: "block", rulesFired: [] }).code).toBe(
+      "POLICY_BLOCKED",
+    );
     expect(new BudgetExceededError(5, 1).code).toBe("BUDGET_EXCEEDED");
     expect(new NoWalletError("sol").code).toBe("NO_WALLET");
     expect(new ExecutionError("x").code).toBe("EXECUTION_FAILED");
@@ -63,9 +63,9 @@ describe("error hierarchy", () => {
 
   it("errors have correct names for instanceof checks", () => {
     expect(new DetectionError("x", "u").name).toBe("DetectionError");
-    expect(
-      new PolicyBlockedError("x", { action: "block", rulesFired: [] }).name,
-    ).toBe("PolicyBlockedError");
+    expect(new PolicyBlockedError("x", { action: "block", rulesFired: [] }).name).toBe(
+      "PolicyBlockedError",
+    );
     expect(new BudgetExceededError(5, 1).name).toBe("BudgetExceededError");
     expect(new NoWalletError("sol").name).toBe("NoWalletError");
     expect(new ExecutionError("x").name).toBe("ExecutionError");

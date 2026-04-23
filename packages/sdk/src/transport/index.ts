@@ -32,10 +32,7 @@ export class GoServerTransport {
     return res as PolicyContext;
   }
 
-  async setPolicy(
-    agentId: string,
-    policy: Partial<PolicyConfig>,
-  ): Promise<void> {
+  async setPolicy(agentId: string, policy: Partial<PolicyConfig>): Promise<void> {
     await this.request("POST", `/api/policy/${agentId}`, policy);
   }
 
@@ -44,10 +41,7 @@ export class GoServerTransport {
     return res as IngestResult;
   }
 
-  async updateTraceAnchor(
-    traceId: string,
-    anchorTxHash: string,
-  ): Promise<void> {
+  async updateTraceAnchor(traceId: string, anchorTxHash: string): Promise<void> {
     await this.request("PATCH", `/api/traces/${traceId}/anchor`, {
       anchorTxHash,
     });
@@ -58,18 +52,13 @@ export class GoServerTransport {
     return res as FleetStatus;
   }
 
-  async getVendorStatus(
-    domain: string,
-  ): Promise<{
+  async getVendorStatus(domain: string): Promise<{
     domain: string;
     isBlocked: boolean;
     successRate: number;
     avgLatencyMs: number;
   }> {
-    const res = await this.request(
-      "GET",
-      `/api/vendor/${encodeURIComponent(domain)}`,
-    );
+    const res = await this.request("GET", `/api/vendor/${encodeURIComponent(domain)}`);
     return res as {
       domain: string;
       isBlocked: boolean;
@@ -78,11 +67,7 @@ export class GoServerTransport {
     };
   }
 
-  private async request(
-    method: string,
-    path: string,
-    body?: unknown,
-  ): Promise<unknown> {
+  private async request(method: string, path: string, body?: unknown): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
@@ -97,9 +82,7 @@ export class GoServerTransport {
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(
-        `Go server ${method} ${path} failed: ${res.status} ${text}`,
-      );
+      throw new Error(`Go server ${method} ${path} failed: ${res.status} ${text}`);
     }
 
     const contentType = res.headers.get("content-type") ?? "";

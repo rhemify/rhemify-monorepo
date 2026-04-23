@@ -37,7 +37,7 @@ const validTransitions: Record<string, string[]> = {
   approved: ["signed", "failed"],
   signed: ["broadcast", "failed"],
   broadcast: ["confirmed", "failed"],
-}
+};
 
 // Update signing request status with transition validation
 export const updateStatus = mutation({

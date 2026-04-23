@@ -62,7 +62,9 @@ async function main() {
     console.log(`       Price: ${result.detection.price}`);
     console.log(`       Network: ${result.detection.network}`);
     console.log(`       Can pay: ${result.canPay}`);
-    console.log(`       Paths: ${result.estimatedPaths.filter(p => p.available).length} available`);
+    console.log(
+      `       Paths: ${result.estimatedPaths.filter((p) => p.available).length} available`,
+    );
   });
 
   // --- Test 3: Probe MPP endpoint ---

@@ -37,7 +37,7 @@ export const mppChargeExecutor: PaymentExecutor = {
       mppClient = await import("@solana/mpp/client");
     } catch {
       throw new ExecutionError(
-        '@solana/mpp is not installed. Run: bun add @solana/mpp mppx @solana/kit',
+        "@solana/mpp is not installed. Run: bun add @solana/mpp mppx @solana/kit",
       );
     }
 
@@ -45,9 +45,7 @@ export const mppChargeExecutor: PaymentExecutor = {
       // @ts-expect-error -- optional peer dep, may not be installed
       solanaKit = await import("@solana/kit");
     } catch {
-      throw new ExecutionError(
-        '@solana/kit is not installed. Run: bun add @solana/kit',
-      );
+      throw new ExecutionError("@solana/kit is not installed. Run: bun add @solana/kit");
     }
 
     // Build signer from private key
@@ -89,9 +87,7 @@ export const mppChargeExecutor: PaymentExecutor = {
       }
 
       const contentType = response.headers.get("content-type") ?? "";
-      const data = contentType.includes("json")
-        ? await response.json()
-        : await response.text();
+      const data = contentType.includes("json") ? await response.json() : await response.text();
 
       const txHash =
         response.headers.get("payment-receipt") ??
@@ -113,4 +109,3 @@ export const mppChargeExecutor: PaymentExecutor = {
     }
   },
 };
-

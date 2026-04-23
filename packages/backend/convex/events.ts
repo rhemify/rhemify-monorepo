@@ -53,6 +53,8 @@ export const insert = mutation({
     outcome: v.string(),
     instrument_type: v.string(),
     trace_id: v.string(),
+    chain_from: v.optional(v.string()),
+    chain_to: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const id = await ctx.db.insert("payment_events", args);
