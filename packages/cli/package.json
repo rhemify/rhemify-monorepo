@@ -1,10 +1,10 @@
 {
-  "name": "rhemos",
+  "name": "@rhemify-monorepo/cli",
   "version": "0.1.0",
-  "description": "Rhemos CLI — the verifiable payment layer for agentic commerce",
+  "description": "Rhemify CLI — the verifiable payment layer for agentic commerce",
   "type": "module",
   "bin": {
-    "rhemos": "./dist/index.js"
+    "rhemify": "./dist/index.js"
   },
   "scripts": {
     "build": "tsup",

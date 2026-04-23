@@ -13,6 +13,35 @@ import type { PaymentExecutor } from "./types.js";
  *   - publicKey (PublicKey instance)
  *   - signTransaction(tx) → signed tx
  */
+
+interface SolanaTransaction {
+  sign(signers: unknown[]): void;
+}
+interface SolanaPublicKey {
+  toString(): string;
+}
+interface SolanaKeypair {
+  publicKey: SolanaPublicKey;
+  secretKey: Uint8Array;
+}
+interface X402SolanaClient {
+  fetch: (url: string, init?: RequestInit) => Promise<Response>;
+}
+interface X402Solana {
+  createX402Client(opts: {
+    wallet: {
+      publicKey: SolanaPublicKey;
+      signTransaction(tx: SolanaTransaction): Promise<SolanaTransaction>;
+    };
+    network: string;
+  }): X402SolanaClient;
+}
+interface SolanaWeb3 {
+  Keypair: {
+    fromSecretKey(bytes: Uint8Array): SolanaKeypair;
+  };
+}
+
 export const x402SolanaExecutor: PaymentExecutor = {
   protocol: "x402",
   networks: ["solana-mainnet", "solana-devnet", "solana"],
@@ -35,25 +64,19 @@ export const x402SolanaExecutor: PaymentExecutor = {
       throw new NoWalletError("solana");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let x402Solana: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let web3: any;
+    let x402Solana: X402Solana;
+    let web3: SolanaWeb3;
 
     try {
-      // @ts-expect-error -- optional peer dep, may not be installed
-      x402Solana = await import("x402-solana");
+      x402Solana = (await import("x402-solana")) as unknown as X402Solana;
     } catch {
       throw new ExecutionError("x402-solana is not installed. Run: bun add x402-solana");
     }
 
     try {
-      // @ts-expect-error -- dependency of the SDK
-      web3 = await import("@solana/web3.js");
+      web3 = (await import("@solana/web3.js")) as unknown as SolanaWeb3;
     } catch {
-      throw new ExecutionError(
-        '@solana/web3.js is not installed. Run: bun add @solana/web3.js',
-      );
+      throw new ExecutionError("@solana/web3.js is not installed. Run: bun add @solana/web3.js");
     }
 
     try {
@@ -64,7 +87,7 @@ export const x402SolanaExecutor: PaymentExecutor = {
       // x402-solana expects { publicKey, signTransaction }
       const walletAdapter = {
         publicKey: keypair.publicKey,
-        signTransaction: async (tx: { sign: (signers: unknown[]) => void }) => {
+        signTransaction: async (tx: SolanaTransaction) => {
           tx.sign([keypair]);
           return tx;
         },

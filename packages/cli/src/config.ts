@@ -6,7 +6,7 @@ const CONFIG_DIR = join(homedir(), ".rhemify");
 const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 const WALLET_FILE = join(CONFIG_DIR, "wallet.json");
 
-export interface RhemosConfig {
+export interface RhemifyConfig {
   fleetId: string;
   fleetName: string;
   agentIds: string[];
@@ -20,7 +20,7 @@ function ensureDir() {
   }
 }
 
-export function loadConfig(): RhemosConfig | null {
+export function loadConfig(): RhemifyConfig | null {
   try {
     const raw = readFileSync(CONFIG_FILE, "utf-8");
     return JSON.parse(raw);
@@ -29,7 +29,7 @@ export function loadConfig(): RhemosConfig | null {
   }
 }
 
-export function saveConfig(config: RhemosConfig) {
+export function saveConfig(config: RhemifyConfig) {
   ensureDir();
   writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
 }

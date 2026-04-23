@@ -27,9 +27,14 @@ export const create = mutation({
     monthly_spend_cap: v.float64(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated: must be signed in to create a fleet");
+    }
     return await ctx.db.insert("fleets", {
       ...args,
       is_deployed: false,
+      ownerUserId: identity.subject,
     });
   },
 });
@@ -45,8 +50,18 @@ export const update = mutation({
     is_deployed: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated: must be signed in to update a fleet");
+    }
+    const fleet = await ctx.db.get(args.id);
+    if (!fleet) {
+      throw new Error("Fleet not found");
+    }
+    if (fleet.ownerUserId !== identity.subject) {
+      throw new Error("Unauthorized: not the fleet owner");
+    }
     const { id, ...updates } = args;
-    // Filter out undefined values
     const cleanUpdates: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(updates)) {
       if (value !== undefined) {

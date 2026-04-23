@@ -13,7 +13,7 @@ async function main() {
       break;
     case "pay":
       if (!args[1]) {
-        console.log(pc.red("Usage: rhemos pay <url>"));
+        console.log(pc.red("Usage: rhemify pay <url>"));
         process.exit(1);
       }
       await pay(args[1]);
@@ -37,7 +37,7 @@ async function main() {
 
 function printHelp() {
   console.log(`
-${pc.bold("rhemos")} — the verifiable payment layer for agentic commerce
+${pc.bold("rhemify")} — the verifiable payment layer for agentic commerce
 
 ${pc.bold("Commands:")}
   ${pc.cyan("onboard")}    Set up a new fleet (wallet + agents + test payment)

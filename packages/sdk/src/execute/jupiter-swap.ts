@@ -53,11 +53,13 @@ export const jupiterSwapExecutor: PaymentExecutor = {
       throw new ExecutionError("Jupiter API key not configured. Get one at developers.jup.ag");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let web3: any;
+    interface SolanaWeb3 {
+      Keypair: { fromSecretKey(bytes: Uint8Array): { publicKey: { toString(): string }; sign(signers: unknown[]): void } };
+      VersionedTransaction: { deserialize(bytes: Uint8Array): { sign(signers: unknown[]): void; serialize(): Uint8Array } };
+    }
+    let web3: SolanaWeb3;
     try {
-      // @ts-expect-error -- dependency
-      web3 = await import("@solana/web3.js");
+      web3 = (await import("@solana/web3.js")) as unknown as SolanaWeb3;
     } catch {
       throw new ExecutionError("@solana/web3.js is not installed");
     }

@@ -1,4 +1,4 @@
-import type { DetectionResult, ExecutionResult, PayOptions, WalletConfig, RhemifyConfig } from "../types.js";
+import type { DetectionResult, ExecutionResult, PayOptions, WalletConfig } from "../types.js";
 import { ExecutionError } from "../errors.js";
 import { AgentCardClient } from "../agentcard/client.js";
 import type { PaymentExecutor } from "./types.js";

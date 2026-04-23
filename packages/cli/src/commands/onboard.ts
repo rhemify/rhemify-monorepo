@@ -1,15 +1,11 @@
 import { Keypair, Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { createRhemify } from "@rhemify-monorepo/sdk";
 import pc from "picocolors";
-import {
-  saveConfig,
-  saveWallet,
-  walletExists,
-  loadWallet,
-  CONFIG_DIR,
-} from "../config.js";
+import { saveConfig, saveWallet, walletExists, loadWallet, CONFIG_DIR } from "../config.js";
 
 const DEFAULT_SERVER_URL = "http://localhost:8080";
 const SOLANA_RPC = "https://api.devnet.solana.com";
+const AIRDROP_LAMPORTS = 10_000_000; // 0.01 SOL
 
 const AGENT_TEMPLATES = [
   { name: "Research Agent", dept: "research", skills: ["web-search", "data-analysis"] },
@@ -19,7 +15,7 @@ const AGENT_TEMPLATES = [
 
 export async function onboard() {
   console.log();
-  console.log(pc.bold("  Rhemos — The verifiable payment layer for agentic commerce"));
+  console.log(pc.bold("  Rhemify — The verifiable payment layer for agentic commerce"));
   console.log(pc.dim("  Route. Govern. Verify.\n"));
 
   // Step 1: Fleet name
@@ -51,11 +47,17 @@ export async function onboard() {
   if (solBalance < 0.001) {
     console.log(pc.yellow("  Low balance — requesting devnet SOL airdrop..."));
     try {
-      const sig = await connection.requestAirdrop(keypair.publicKey, 0.01 * LAMPORTS_PER_SOL);
+      const sig = await connection.requestAirdrop(keypair.publicKey, AIRDROP_LAMPORTS);
       await connection.confirmTransaction(sig, "confirmed");
       console.log(pc.green("  Airdrop received: 0.01 SOL"));
     } catch {
-      console.log(pc.yellow("  Airdrop failed (rate limited). Fund manually: solana airdrop 1 " + keypair.publicKey.toString() + " --url devnet"));
+      console.log(
+        pc.yellow(
+          "  Airdrop failed (rate limited). Fund manually: solana airdrop 1 " +
+            keypair.publicKey.toString() +
+            " --url devnet",
+        ),
+      );
     }
   }
 
@@ -71,7 +73,9 @@ export async function onboard() {
   // Step 5: Create agents
   for (let i = 0; i < AGENT_TEMPLATES.length; i++) {
     const tmpl = AGENT_TEMPLATES[i];
-    console.log(`  ${pc.green("+")} ${tmpl.name} ${pc.dim(`(${agentIds[i]})`)} — ${tmpl.skills.join(", ")}`);
+    console.log(
+      `  ${pc.green("+")} ${tmpl.name} ${pc.dim(`(${agentIds[i]})`)} — ${tmpl.skills.join(", ")}`,
+    );
   }
 
   // Step 6: Save config
@@ -87,7 +91,6 @@ export async function onboard() {
   console.log();
   console.log(pc.dim("  Running test payment (dry run)..."));
   try {
-    const { createRhemify } = await import("../../../sdk/src/index.js");
     const rhemify = createRhemify({
       serverUrl: DEFAULT_SERVER_URL,
       fleetApiKey: "onboard-test",
@@ -101,7 +104,9 @@ export async function onboard() {
     const result = await rhemify.probe("https://www.x402.org/protected");
     console.log(pc.green(`  Detection: ${result.detection.protocol} on ${result.detection.network}`));
     console.log(pc.green(`  Price: ${result.detection.price}`));
-    console.log(pc.green(`  Paths: ${result.estimatedPaths.filter((p) => p.available).length} available`));
+    console.log(
+      pc.green(`  Paths: ${result.estimatedPaths.filter((p) => p.available).length} available`),
+    );
   } catch (err) {
     console.log(pc.yellow(`  Test probe skipped: ${err instanceof Error ? err.message : String(err)}`));
   }
@@ -115,20 +120,26 @@ export async function onboard() {
   console.log();
   console.log(pc.bold("  MCP config (add to your agent):"));
   console.log(pc.dim("  ─────────────────────────────────"));
-  console.log(JSON.stringify({
-    mcpServers: {
-      rhemify: {
-        command: "bunx",
-        args: ["rhemify-mcp"],
-        env: {
-          RHEMIFY_SERVER_URL: DEFAULT_SERVER_URL,
-          RHEMIFY_FLEET_API_KEY: "your-fleet-api-key",
-          RHEMIFY_AGENT_ID: agentIds[0],
-          RHEMIFY_FLEET_ID: fleetId,
+  console.log(
+    JSON.stringify(
+      {
+        mcpServers: {
+          rhemify: {
+            command: "bunx",
+            args: ["rhemify-mcp"],
+            env: {
+              RHEMIFY_SERVER_URL: DEFAULT_SERVER_URL,
+              RHEMIFY_FLEET_API_KEY: "your-fleet-api-key",
+              RHEMIFY_AGENT_ID: agentIds[0],
+              RHEMIFY_FLEET_ID: fleetId,
+            },
+          },
         },
       },
-    },
-  }, null, 2));
+      null,
+      2,
+    ),
+  );
   console.log();
 }
 

@@ -1,6 +1,25 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+const signingStatus = v.union(
+  v.literal("pending"),
+  v.literal("approved"),
+  v.literal("rejected"),
+  v.literal("signed"),
+  v.literal("broadcast"),
+  v.literal("confirmed"),
+  v.literal("failed"),
+);
+
+type SigningStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "signed"
+  | "broadcast"
+  | "confirmed"
+  | "failed";
+
 // Create a new signing request (called by Go server signing handler)
 export const create = mutation({
   args: {
@@ -11,7 +30,7 @@ export const create = mutation({
     target_address: v.string(),
     token: v.string(),
     amount: v.float64(),
-    status: v.string(),
+    status: signingStatus,
     created_at: v.float64(),
   },
   handler: async (ctx, args) => {
@@ -32,18 +51,21 @@ export const create = mutation({
 });
 
 // Valid state transitions for signing requests
-const validTransitions: Record<string, string[]> = {
+const validTransitions: Record<SigningStatus, SigningStatus[]> = {
   pending: ["approved", "rejected", "failed"],
   approved: ["signed", "failed"],
   signed: ["broadcast", "failed"],
   broadcast: ["confirmed", "failed"],
+  rejected: [],
+  confirmed: [],
+  failed: [],
 };
 
 // Update signing request status with transition validation
 export const updateStatus = mutation({
   args: {
     request_id: v.id("signing_requests"),
-    status: v.string(),
+    status: signingStatus,
     rejection_reason: v.optional(v.string()),
     ika_signature: v.optional(v.string()),
     target_tx_hash: v.optional(v.string()),
@@ -53,7 +75,7 @@ export const updateStatus = mutation({
     if (!existing) throw new Error("signing request not found");
 
     // Validate state transition
-    const allowed = validTransitions[existing.status];
+    const allowed = validTransitions[existing.status as SigningStatus];
     if (!allowed || !allowed.includes(args.status)) {
       throw new Error(`invalid transition: ${existing.status} → ${args.status}`);
     }
@@ -72,7 +94,7 @@ export const updateStatus = mutation({
     }
 
     // Set resolved_at for terminal states
-    const terminalStates = ["confirmed", "rejected", "failed"];
+    const terminalStates: SigningStatus[] = ["confirmed", "rejected", "failed"];
     if (terminalStates.includes(updates.status)) {
       patch.resolved_at = Date.now();
     }
@@ -95,16 +117,17 @@ export const listByFleet = query({
   args: {
     fleet_id: v.id("fleets"),
     limit: v.optional(v.float64()),
-    status: v.optional(v.string()),
+    status: v.optional(signingStatus),
   },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
 
     let requests;
     if (args.status) {
+      const status = args.status;
       requests = await ctx.db
         .query("signing_requests")
-        .withIndex("by_status", (q) => q.eq("status", args.status!))
+        .withIndex("by_status", (q) => q.eq("status", status))
         .order("desc")
         .take(limit);
       // Filter to fleet after index query

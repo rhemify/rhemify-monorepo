@@ -1,8 +1,8 @@
-import { env } from "@rhemify-monorepo/env/web";
+import { env } from "@rhemify-monorepo/env/server";
 import { convexBetterAuthReactStart } from "@convex-dev/better-auth/react-start";
 
 export const { handler, getToken, fetchAuthQuery, fetchAuthMutation, fetchAuthAction } =
   convexBetterAuthReactStart({
-    convexUrl: env.VITE_CONVEX_URL,
-    convexSiteUrl: env.VITE_CONVEX_SITE_URL,
+    convexUrl: env.CONVEX_URL,
+    convexSiteUrl: env.CONVEX_SITE_URL,
   });

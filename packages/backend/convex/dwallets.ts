@@ -1,16 +1,24 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+const dwalletType = v.union(v.literal("treasury"), v.literal("agent"));
+const dwalletStatus = v.union(
+  v.literal("creating"),
+  v.literal("active"),
+  v.literal("frozen"),
+  v.literal("revoked"),
+);
+
 // Insert a new dWallet into the registry
 export const insert = mutation({
   args: {
     fleet_id: v.id("fleets"),
     agent_id: v.optional(v.id("agents")),
-    dwallet_type: v.string(),
+    dwallet_type: dwalletType,
     dwallet_id: v.string(),
     dwallet_cap_id: v.string(),
     supported_chains: v.array(v.string()),
-    status: v.string(),
+    status: dwalletStatus,
   },
   handler: async (ctx, args) => {
     const id = await ctx.db.insert("dwallet_registry", {
@@ -25,11 +33,11 @@ export const insert = mutation({
 export const createFleetVault = mutation({
   args: {
     fleet_id: v.id("fleets"),
-    dwallet_type: v.string(),
+    dwallet_type: dwalletType,
     dwallet_id: v.string(),
     dwallet_cap_id: v.string(),
     supported_chains: v.array(v.string()),
-    status: v.string(),
+    status: dwalletStatus,
   },
   handler: async (ctx, args) => {
     const id = await ctx.db.insert("dwallet_registry", {
@@ -44,11 +52,11 @@ export const createAgentWallet = mutation({
   args: {
     fleet_id: v.id("fleets"),
     agent_key: v.string(),
-    dwallet_type: v.string(),
+    dwallet_type: dwalletType,
     dwallet_id: v.string(),
     dwallet_cap_id: v.string(),
     supported_chains: v.array(v.string()),
-    status: v.string(),
+    status: dwalletStatus,
   },
   handler: async (ctx, args) => {
     // Find the agent by fleet + key to get agent_id
@@ -73,7 +81,7 @@ export const updateStatus = mutation({
   args: {
     fleet_id: v.id("fleets"),
     agent_key: v.optional(v.string()),
-    status: v.string(),
+    status: dwalletStatus,
   },
   handler: async (ctx, args) => {
     const wallets = await ctx.db

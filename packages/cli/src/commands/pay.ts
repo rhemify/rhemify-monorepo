@@ -1,3 +1,4 @@
+import { createRhemify } from "@rhemify-monorepo/sdk";
 import pc from "picocolors";
 import { loadConfig, loadWallet } from "../config.js";
 
@@ -6,13 +7,12 @@ export async function pay(url: string) {
   const wallet = loadWallet();
 
   if (!config || !wallet) {
-    console.log(pc.red("  Not set up. Run: rhemos onboard"));
+    console.log(pc.red("  Not set up. Run: rhemify onboard"));
     return;
   }
 
   console.log(pc.dim(`  Paying: ${url}`));
 
-  const { createRhemify } = await import("../../../sdk/src/index.js");
   const rhemify = createRhemify({
     serverUrl: config.serverUrl,
     fleetApiKey: "cli-user",

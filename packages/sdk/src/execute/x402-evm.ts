@@ -8,6 +8,17 @@ import type { PaymentExecutor } from "./types.js";
  * wrapFetchWithPayment(fetch, walletClient, maxValue) returns a fetch
  * function that handles the full 402 → sign → pay → retry loop.
  */
+
+/** Runtime interface exported by x402-fetch (peer dep). Kept local to avoid a hard dep. */
+interface X402Fetch {
+  createSigner(network: string, privateKey: string): Promise<unknown>;
+  wrapFetchWithPayment(
+    fetch: typeof globalThis.fetch,
+    signer: unknown,
+    maxValue: bigint,
+  ): typeof globalThis.fetch;
+}
+
 export const x402EvmExecutor: PaymentExecutor = {
   protocol: "x402",
   networks: ["base", "base-sepolia", "ethereum", "arbitrum", "optimism"],
@@ -28,12 +39,10 @@ export const x402EvmExecutor: PaymentExecutor = {
       throw new NoWalletError("evm");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let x402Fetch: any;
+    let x402Fetch: X402Fetch;
 
     try {
-      // @ts-expect-error -- optional peer dep, may not be installed
-      x402Fetch = await import("x402-fetch");
+      x402Fetch = (await import("x402-fetch")) as unknown as X402Fetch;
     } catch {
       throw new ExecutionError("x402-fetch is not installed. Run: bun add x402-fetch");
     }
@@ -41,17 +50,10 @@ export const x402EvmExecutor: PaymentExecutor = {
     try {
       // x402-fetch API: createSigner(network, privateKey) → walletClient
       // wrapFetchWithPayment(fetch, walletClient, maxValue) → paymentFetch
-      const signer = await x402Fetch.createSigner(
-        detection.network,
-        wallet.evmPrivateKey,
-      );
+      const signer = await x402Fetch.createSigner(detection.network, wallet.evmPrivateKey);
 
       const maxValue = BigInt(detection.priceRaw) * 2n; // 2x buffer for safety
-      const paymentFetch = x402Fetch.wrapFetchWithPayment(
-        globalThis.fetch,
-        signer,
-        maxValue,
-      );
+      const paymentFetch = x402Fetch.wrapFetchWithPayment(globalThis.fetch, signer, maxValue);
 
       const response = await paymentFetch(url, {
         method: options.method ?? "GET",

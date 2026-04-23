@@ -7,7 +7,7 @@ export async function status() {
   const wallet = loadWallet();
 
   if (!config) {
-    console.log(pc.red("  Not set up. Run: rhemos onboard"));
+    console.log(pc.red("  Not set up. Run: rhemify onboard"));
     return;
   }
 
