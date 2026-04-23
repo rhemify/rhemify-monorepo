@@ -1,6 +1,6 @@
 interface ProgressBarProps {
-  currentStep: number
-  totalSteps: number
+  currentStep: number;
+  totalSteps: number;
 }
 
 export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
@@ -10,10 +10,10 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
         <div
           key={i}
           className={`flex-1 h-[3px] rounded-full transition-colors duration-300 ${
-            i < currentStep ? 'bg-primary' : 'bg-border'
+            i < currentStep ? "bg-primary" : "bg-border"
           }`}
         />
       ))}
     </div>
-  )
+  );
 }

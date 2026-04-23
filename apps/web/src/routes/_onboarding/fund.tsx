@@ -1,25 +1,25 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useSession, useSetSession } from '@/lib/hooks'
-import { Slider } from '@/components/onboarding/slider'
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { useSession, useSetSession } from "@/lib/hooks";
+import { Slider } from "@/components/onboarding/slider";
 
-export const Route = createFileRoute('/_onboarding/fund')({
+export const Route = createFileRoute("/_onboarding/fund")({
   component: FundScreen,
-})
+});
 
 function FundScreen() {
-  const navigate = useNavigate()
-  const { data: session } = useSession()
-  const setSession = useSetSession()
+  const navigate = useNavigate();
+  const { data: session } = useSession();
+  const setSession = useSetSession();
 
-  const [spendCap, setSpendCap] = useState(100)
+  const [spendCap, setSpendCap] = useState(100);
 
   const handleDeploy = () => {
     if (session) {
-      setSession.mutate({ ...session, monthlySpendCap: spendCap })
+      setSession.mutate({ ...session, monthlySpendCap: spendCap });
     }
-    navigate({ to: '/deploy' })
-  }
+    navigate({ to: "/deploy" });
+  };
 
   return (
     <div>
@@ -32,14 +32,10 @@ function FundScreen() {
 
       {/* Tab toggle */}
       <div className="flex mb-5">
-        <button
-          className="flex-1 h-9 text-[13px] font-medium bg-primary text-primary-foreground rounded-l-lg cursor-pointer border-none"
-        >
+        <button className="flex-1 h-9 text-[13px] font-medium bg-primary text-primary-foreground rounded-l-lg cursor-pointer border-none">
           Pay with card
         </button>
-        <button
-          className="flex-1 h-9 text-[13px] font-medium bg-card text-muted-foreground border border-border rounded-r-lg cursor-default"
-        >
+        <button className="flex-1 h-9 text-[13px] font-medium bg-card text-muted-foreground border border-border rounded-r-lg cursor-default">
           Crypto wallet
         </button>
       </div>
@@ -87,5 +83,5 @@ function FundScreen() {
         Deploy agents →
       </button>
     </div>
-  )
+  );
 }

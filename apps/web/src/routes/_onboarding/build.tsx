@@ -1,40 +1,38 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useSession, useSetSession } from '@/lib/hooks'
-import { getAlwaysOnDepartments, getToggleableDepartments } from '@/lib/templates'
-import { DepartmentCard } from '@/components/onboarding/department-card'
-import { DepartmentRow } from '@/components/onboarding/department-row'
-import { PricingBar } from '@/components/onboarding/pricing-bar'
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { useSession, useSetSession } from "@/lib/hooks";
+import { getAlwaysOnDepartments, getToggleableDepartments } from "@/lib/templates";
+import { DepartmentCard } from "@/components/onboarding/department-card";
+import { DepartmentRow } from "@/components/onboarding/department-row";
+import { PricingBar } from "@/components/onboarding/pricing-bar";
 
-export const Route = createFileRoute('/_onboarding/build')({
+export const Route = createFileRoute("/_onboarding/build")({
   component: BuildScreen,
-})
+});
 
 function BuildScreen() {
-  const navigate = useNavigate()
-  const { data: session } = useSession()
-  const setSession = useSetSession()
+  const navigate = useNavigate();
+  const { data: session } = useSession();
+  const setSession = useSetSession();
 
-  const alwaysOn = getAlwaysOnDepartments()
-  const toggleable = getToggleableDepartments()
-  const alwaysOnIds = alwaysOn.map((d) => d.id)
+  const alwaysOn = getAlwaysOnDepartments();
+  const toggleable = getToggleableDepartments();
+  const alwaysOnIds = alwaysOn.map((d) => d.id);
 
-  const [activeDepts, setActiveDepts] = useState<string[]>([...alwaysOnIds])
+  const [activeDepts, setActiveDepts] = useState<string[]>([...alwaysOnIds]);
 
   const handleToggle = (id: string) => {
-    setActiveDepts((prev) =>
-      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id],
-    )
-  }
+    setActiveDepts((prev) => (prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]));
+  };
 
   const handleContinue = () => {
     if (session) {
-      setSession.mutate({ ...session, activeDepartments: activeDepts })
+      setSession.mutate({ ...session, activeDepartments: activeDepts });
     }
-    navigate({ to: '/fund' })
-  }
+    navigate({ to: "/fund" });
+  };
 
-  const ceoDept = alwaysOn[0]
+  const ceoDept = alwaysOn[0];
 
   return (
     <div>
@@ -80,5 +78,5 @@ function BuildScreen() {
         </button>
       </div>
     </div>
-  )
+  );
 }

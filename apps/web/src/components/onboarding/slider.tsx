@@ -1,14 +1,14 @@
 interface SliderProps {
-  label: string
-  value: number
-  min: number
-  max: number
-  step?: number
-  onChange: (value: number) => void
-  formatValue?: (v: number) => string
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (value: number) => void;
+  formatValue?: (v: number) => string;
 }
 
-const defaultFormat = (v: number) => `$${v.toFixed(2)}`
+const defaultFormat = (v: number) => `$${v.toFixed(2)}`;
 
 export function Slider({
   label,
@@ -19,7 +19,7 @@ export function Slider({
   onChange,
   formatValue = defaultFormat,
 }: SliderProps) {
-  const pct = ((value - min) / (max - min)) * 100
+  const pct = ((value - min) / (max - min)) * 100;
 
   return (
     <div>
@@ -73,5 +73,5 @@ export function Slider({
         }}
       />
     </div>
-  )
+  );
 }
