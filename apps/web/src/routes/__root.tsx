@@ -28,6 +28,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { title: "Rhemify — The payment layer for agent companies" },
     ],
     links: [
+      { rel: "icon", href: "/rhemify.svg", type: "image/svg+xml" },
       { rel: "stylesheet", href: appCss },
       {
         rel: "stylesheet",
