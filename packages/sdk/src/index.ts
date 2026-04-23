@@ -1,4 +1,6 @@
 export { createRhemify } from "./client.js";
+export { discover, invalidateDiscoveryCache } from "./discovery/index.js";
+export type { ServiceCandidate } from "./discovery/index.js";
 export { detectProtocol, detectFromResponse } from "./detect/index.js";
 export type { ProtocolDetector } from "./detect/types.js";
 export { PolicyEngine } from "./policy/index.js";
@@ -53,6 +55,7 @@ export type {
   WalletConfig,
   PipelineStage,
   StageCompleteEvent,
+  DiscoverOptions,
 } from "./types.js";
 
 export { resolveIdentity, createAgentSubdomain, findAgentSubdomains } from "./identity/index.js";

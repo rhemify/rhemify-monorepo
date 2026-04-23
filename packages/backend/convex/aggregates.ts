@@ -1,4 +1,4 @@
-import { internalMutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 // ============================================================================
@@ -186,7 +186,7 @@ export const upsertEdge = internalMutation({
 
 // Combined mutation: updates all derived data (vendor, agent, fleet, edge) in one transaction.
 // Called once per ingest instead of 4 separate mutations, saving 3 HTTP round-trips.
-export const updateAllDerived = internalMutation({
+export const updateAllDerived = mutation({
   args: {
     agent_id: v.string(),
     fleet_id: v.string(),

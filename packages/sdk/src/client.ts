@@ -28,6 +28,8 @@ import { executeWithCascade } from "./execute/index.js";
 import { Trace } from "./trace/index.js";
 import { AnchorQueue } from "./anchor/queue.js";
 import { createGovernedSession } from "./session/index.js";
+import { discover as discoverServices } from "./discovery/index.js";
+import type { DiscoverOptions } from "./types.js";
 
 export function createRhemify(config: RhemifyConfig): Rhemify {
   const transport = new GoServerTransport(config.serverUrl, config.fleetApiKey);
@@ -172,12 +174,18 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       options?.taskStep,
     );
 
-    // --- Stage 1: DETECT ---
-    const detection = await detectProtocol(url, {
-      method,
-      headers: options?.headers,
-      timeout: config.timeout,
-    });
+    // --- Stage 1: DETECT + DISCOVER (parallel, discovery is best-effort) ---
+    const [detection, alternatives] = await Promise.all([
+      detectProtocol(url, {
+        method,
+        headers: options?.headers,
+        timeout: config.timeout,
+      }),
+      discoverServices(extractDomain(url), {
+        limit: 5,
+        timeoutMs: Math.min(config.timeout ?? 5000, 4000),
+      }).catch(() => [] as import("./discovery/index.js").ServiceCandidate[]),
+    ]);
     trace.recordDetection(detection);
     emitStage("detect", {
       protocol: detection.protocol,
@@ -247,6 +255,7 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
         trace: traceRecord,
         detection,
         receipt: {},
+        alternatives,
       } as PayResult<T>;
     }
 
@@ -275,6 +284,7 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
           txHash: execResult.txHash,
           protocolReceipt: execResult.protocolReceipt,
         },
+        alternatives,
       };
 
       await config.onPayment?.(result as PayResult);
@@ -320,7 +330,11 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     return transport.getFleetStatus();
   }
 
-  return { pay, probe, session, setPolicy, status };
+  function discover(intent: string, options?: DiscoverOptions) {
+    return discoverServices(intent, options);
+  }
+
+  return { pay, probe, session, discover, setPolicy, status };
 }
 
 // --- Helpers ---

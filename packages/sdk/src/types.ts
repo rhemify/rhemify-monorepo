@@ -188,6 +188,8 @@ export interface PayResult<T = unknown> {
     txHash?: string;
     protocolReceipt?: unknown;
   };
+  /** Competing services discovered from Agentic Market / Tempo at pay time */
+  alternatives?: import("./discovery/index.js").ServiceCandidate[];
 }
 
 export interface ProbeResult {
@@ -227,6 +229,13 @@ export interface FleetStatus {
   blockedDomains: string[];
 }
 
+export interface DiscoverOptions {
+  limit?: number;
+  protocol?: "x402" | "mpp";
+  estimatedRequests?: number;
+  timeoutMs?: number;
+}
+
 export interface Rhemify {
   pay: <T = unknown>(
     url: string,
@@ -234,6 +243,7 @@ export interface Rhemify {
   ) => Promise<PayResult<T>>;
   probe: (url: string, options?: ProbeOptions) => Promise<ProbeResult>;
   session: (options?: SessionOptions) => Promise<MppSession>;
+  discover: (intent: string, options?: DiscoverOptions) => Promise<import("./discovery/index.js").ServiceCandidate[]>;
   setPolicy: (policy: Partial<PolicyConfig>) => Promise<void>;
   status: () => Promise<FleetStatus>;
 }
