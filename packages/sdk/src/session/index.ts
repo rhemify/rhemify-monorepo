@@ -234,7 +234,6 @@ async function openMppSession(
   autoTopup?: boolean,
 ): Promise<{ fetch: typeof fetch; close?: () => Promise<unknown> }> {
   // Dynamic import of @solana/mpp
-  // @ts-expect-error -- optional peer dep
   const mppClient = await import("@solana/mpp/client").catch(() => null);
 
   if (!mppClient) {
@@ -246,7 +245,6 @@ async function openMppSession(
     };
   }
 
-  // @ts-expect-error -- optional peer dep
   const solanaKit = await import("@solana/kit").catch(() => null);
 
   if (!solanaKit) {

@@ -87,7 +87,22 @@ describe("PathResolver", () => {
   });
 
   describe("MPP payment", () => {
-    it("ranks AgentCard as available for MPP protocol", () => {
+    it("ranks AgentCard as unavailable without API key configured", () => {
+      const resolver = new PathResolver();
+      const detection = makeDetection({ protocol: "mpp", network: "solana-mainnet" });
+      const wallet: WalletConfig = { solanaPrivateKey: "fake-key" };
+
+      const paths = resolver.resolve(detection, wallet);
+      const agentcard = paths.find((p) => p.instrument === "agentcard");
+      expect(agentcard).toBeDefined();
+      expect(agentcard!.available).toBe(false);
+    });
+
+    it("ranks AgentCard as available for MPP when API key configured", async () => {
+      // Set the agentcard flag
+      const { setAgentCardConfigured } = await import("../src/resolve/index.js");
+      setAgentCardConfigured(true);
+
       const resolver = new PathResolver();
       const detection = makeDetection({ protocol: "mpp", network: "solana-mainnet" });
       const wallet: WalletConfig = { solanaPrivateKey: "fake-key" };
@@ -96,6 +111,9 @@ describe("PathResolver", () => {
       const agentcard = paths.find((p) => p.instrument === "agentcard");
       expect(agentcard).toBeDefined();
       expect(agentcard!.available).toBe(true);
+
+      // Reset
+      setAgentCardConfigured(false);
     });
 
     it("AgentCard is not available for x402", () => {
@@ -157,9 +175,10 @@ describe("PathResolver", () => {
   });
 
   describe("scoring", () => {
-    it("direct OWS is cheaper than Jupiter swap", () => {
+    it("direct OWS is cheaper than Jupiter swap (when swap is needed)", () => {
       const resolver = new PathResolver();
-      const detection = makeDetection({ network: "solana-mainnet" });
+      // Jupiter only available when currency is NOT USDC (token mismatch)
+      const detection = makeDetection({ network: "solana-mainnet", currency: "SOL" });
       const wallet: WalletConfig = { solanaPrivateKey: "fake-key" };
 
       const paths = resolver.resolve(detection, wallet);
@@ -169,6 +188,17 @@ describe("PathResolver", () => {
       expect(ows).toBeDefined();
       expect(jup).toBeDefined();
       expect(ows!.score).toBeLessThan(jup!.score);
+    });
+
+    it("Jupiter is unavailable when vendor wants USDC (no swap needed)", () => {
+      const resolver = new PathResolver();
+      const detection = makeDetection({ network: "solana-mainnet", currency: "USDC" });
+      const wallet: WalletConfig = { solanaPrivateKey: "fake-key" };
+
+      const paths = resolver.resolve(detection, wallet);
+      const jup = paths.find((p) => p.instrument === "jupiter");
+      expect(jup).toBeDefined();
+      expect(jup!.available).toBe(false);
     });
 
     it("CCTP bridge is more expensive than direct", () => {

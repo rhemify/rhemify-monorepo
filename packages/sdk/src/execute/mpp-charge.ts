@@ -33,7 +33,6 @@ export const mppChargeExecutor: PaymentExecutor = {
     let solanaKit: any;
 
     try {
-      // @ts-expect-error -- optional peer dep, may not be installed
       mppClient = await import("@solana/mpp/client");
     } catch {
       throw new ExecutionError(
@@ -42,7 +41,6 @@ export const mppChargeExecutor: PaymentExecutor = {
     }
 
     try {
-      // @ts-expect-error -- optional peer dep, may not be installed
       solanaKit = await import("@solana/kit");
     } catch {
       throw new ExecutionError("@solana/kit is not installed. Run: bun add @solana/kit");

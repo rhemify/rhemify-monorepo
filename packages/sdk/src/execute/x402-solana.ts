@@ -1,12 +1,47 @@
 import type { DetectionResult, ExecutionResult, PayOptions, WalletConfig } from "../types.js";
 import { ExecutionError, NoWalletError } from "../errors.js";
+import { decodeSolanaKey } from "../utils/keys.js";
 import type { PaymentExecutor } from "./types.js";
 
 /**
  * x402 executor for Solana.
  * Uses the `x402-solana` npm package (peer dep) via dynamic import.
- * Wraps its fetch-with-payment into our ExecutionResult format.
+ * createX402Client({ wallet, network }) returns a client whose .fetch()
+ * handles the full 402 → sign → pay → retry loop automatically.
+ *
+ * x402-solana expects a wallet adapter object with:
+ *   - publicKey (PublicKey instance)
+ *   - signTransaction(tx) → signed tx
  */
+
+interface SolanaTransaction {
+  sign(signers: unknown[]): void;
+}
+interface SolanaPublicKey {
+  toString(): string;
+}
+interface SolanaKeypair {
+  publicKey: SolanaPublicKey;
+  secretKey: Uint8Array;
+}
+interface X402SolanaClient {
+  fetch: (url: string, init?: RequestInit) => Promise<Response>;
+}
+interface X402Solana {
+  createX402Client(opts: {
+    wallet: {
+      publicKey: SolanaPublicKey;
+      signTransaction(tx: SolanaTransaction): Promise<SolanaTransaction>;
+    };
+    network: string;
+  }): X402SolanaClient;
+}
+interface SolanaWeb3 {
+  Keypair: {
+    fromSecretKey(bytes: Uint8Array): SolanaKeypair;
+  };
+}
+
 export const x402SolanaExecutor: PaymentExecutor = {
   protocol: "x402",
   networks: ["solana-mainnet", "solana-devnet", "solana"],
@@ -29,32 +64,42 @@ export const x402SolanaExecutor: PaymentExecutor = {
       throw new NoWalletError("solana");
     }
 
-    // Dynamic import — fails gracefully if peer dep not installed
-    let x402Solana: {
-      payWithSolana: (
-        url: string,
-        options: {
-          privateKey: string;
-          network?: string;
-          method?: string;
-          headers?: Record<string, string>;
-          body?: string;
-        },
-      ) => Promise<Response>;
-    };
+    let x402Solana: X402Solana;
+    let web3: SolanaWeb3;
 
     try {
-      // @ts-expect-error -- optional peer dep, may not be installed
-      x402Solana = await import("x402-solana");
+      x402Solana = (await import("x402-solana")) as unknown as X402Solana;
     } catch {
       throw new ExecutionError("x402-solana is not installed. Run: bun add x402-solana");
     }
 
     try {
-      const response = await x402Solana.payWithSolana(url, {
-        privateKey: wallet.solanaPrivateKey,
-        network: detection.network,
-        method: options.method,
+      web3 = (await import("@solana/web3.js")) as unknown as SolanaWeb3;
+    } catch {
+      throw new ExecutionError("@solana/web3.js is not installed. Run: bun add @solana/web3.js");
+    }
+
+    try {
+      // Build a wallet adapter from the private key
+      const keyBytes = decodeSolanaKey(wallet.solanaPrivateKey);
+      const keypair = web3.Keypair.fromSecretKey(keyBytes);
+
+      // x402-solana expects { publicKey, signTransaction }
+      const walletAdapter = {
+        publicKey: keypair.publicKey,
+        signTransaction: async (tx: SolanaTransaction) => {
+          tx.sign([keypair]);
+          return tx;
+        },
+      };
+
+      const client = x402Solana.createX402Client({
+        wallet: walletAdapter,
+        network: detection.network === "solana-devnet" ? "solana-devnet" : "solana-mainnet",
+      });
+
+      const response = await client.fetch(url, {
+        method: options.method ?? "GET",
         headers: options.headers,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
@@ -66,14 +111,13 @@ export const x402SolanaExecutor: PaymentExecutor = {
         );
       }
 
-      // Parse response
       const contentType = response.headers.get("content-type") ?? "";
       const data = contentType.includes("json") ? await response.json() : await response.text();
 
-      // Extract receipt from headers
       const txHash =
+        response.headers.get("payment-response") ??
+        response.headers.get("x-payment-response") ??
         response.headers.get("x-payment-receipt") ??
-        response.headers.get("x-transaction-hash") ??
         undefined;
 
       return {

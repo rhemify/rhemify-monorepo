@@ -1,63 +1,74 @@
 import { Toaster } from "@rhemify-monorepo/ui/components/sonner";
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import type { ConvexQueryClient } from "@convex-dev/react-query";
+import type { QueryClient } from "@tanstack/react-query";
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useRouteContext } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
-import { ConvexClientProvider } from "@/lib/convex";
+import { authClient } from "@/lib/auth-client";
+import { getToken } from "@/lib/auth-server";
+import { FleetProvider } from "@/lib/convex";
 
 import appCss from "../index.css?url";
 
+const getAuth = createServerFn({ method: "GET" }).handler(async () => {
+  return await getToken();
+});
+
 export interface RouterAppContext {
   queryClient: QueryClient;
+  convexQueryClient: ConvexQueryClient;
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
-      {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "Rhemify — The payment layer for agent companies",
-      },
-      {
-        name: "description",
-        content:
-          "Deploy autonomous agents that pay for tools, manage budgets, and delegate — all on your card.",
-      },
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Rhemify — The payment layer for agent companies" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap",
       },
     ],
   }),
 
   component: RootDocument,
+  beforeLoad: async (ctx) => {
+    const token = await getAuth();
+    if (token) {
+      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
+    }
+    return {
+      isAuthenticated: !!token,
+    };
+  },
 });
 
 function RootDocument() {
-  const { queryClient } = Route.useRouteContext();
+  const context = useRouteContext({ from: Route.id });
   return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <ConvexClientProvider>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider>
+    <ConvexBetterAuthProvider
+      client={context.convexQueryClient.convexClient}
+      authClient={authClient}
+    >
+      <html lang="en">
+        <head>
+          <HeadContent />
+        </head>
+        <body>
+          <ThemeProvider>
+            <FleetProvider>
               <Outlet />
-            </ThemeProvider>
-          </QueryClientProvider>
-        </ConvexClientProvider>
-        <Toaster richColors />
-        <Scripts />
-      </body>
-    </html>
+            </FleetProvider>
+          </ThemeProvider>
+          <Toaster richColors />
+          <Scripts />
+        </body>
+      </html>
+    </ConvexBetterAuthProvider>
   );
 }
