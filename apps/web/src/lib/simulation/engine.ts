@@ -56,10 +56,9 @@ export class SimulationEngine {
     if (!this.fleetId) return;
 
     try {
-      const agents: ConvexAgent[] = await this.client.query(
-        api.agents.list,
-        { fleet_id: this.fleetId },
-      );
+      const agents: ConvexAgent[] = await this.client.query(api.agents.list, {
+        fleet_id: this.fleetId,
+      });
       const running = agents.filter((a) => a.status === "running");
       if (running.length === 0) return;
 
@@ -67,10 +66,9 @@ export class SimulationEngine {
       const deptId = agent.department_id;
       const vendors = VENDOR_POOL[deptId] ?? VENDOR_POOL.ceo;
 
-      const policy: ConvexPolicy = await this.client.query(
-        api.policies.getByAgent,
-        { agent_id: agent._id },
-      );
+      const policy: ConvexPolicy = await this.client.query(api.policies.getByAgent, {
+        agent_id: agent._id,
+      });
       const tryBlocked = Math.random() < 0.1;
 
       let vendor: string;
@@ -81,8 +79,7 @@ export class SimulationEngine {
       let isBlocked = false;
 
       if (tryBlocked) {
-        const blockedDomain =
-          BLOCKED_DOMAINS[Math.floor(Math.random() * BLOCKED_DOMAINS.length)];
+        const blockedDomain = BLOCKED_DOMAINS[Math.floor(Math.random() * BLOCKED_DOMAINS.length)];
         vendor = blockedDomain;
         domain = blockedDomain;
         amount = 0;
@@ -93,10 +90,9 @@ export class SimulationEngine {
         const entry = vendors[Math.floor(Math.random() * vendors.length)];
         vendor = entry.vendor;
         domain = entry.domain;
-        amount = +(
-          entry.minAmount +
-          Math.random() * (entry.maxAmount - entry.minAmount)
-        ).toFixed(3);
+        amount = +(entry.minAmount + Math.random() * (entry.maxAmount - entry.minAmount)).toFixed(
+          3,
+        );
         standard = agent.allowed_standards[
           Math.floor(Math.random() * agent.allowed_standards.length)
         ] as PaymentStandard;
@@ -117,11 +113,7 @@ export class SimulationEngine {
           amount = 0;
         }
 
-        if (
-          !isBlocked &&
-          policy &&
-          agent.spent_today + amount > policy.daily_limit
-        ) {
+        if (!isBlocked && policy && agent.spent_today + amount > policy.daily_limit) {
           isBlocked = true;
           blockedReason = "daily limit exceeded";
           amount = 0;

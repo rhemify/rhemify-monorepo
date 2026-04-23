@@ -1,37 +1,33 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
-type Theme = 'light' | 'dark'
+type Theme = "light" | "dark";
 
 type ThemeContextValue = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-}
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+};
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'light',
+  theme: "light",
   setTheme: () => {},
-})
+});
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'light',
+  defaultTheme = "light",
 }: {
-  children: ReactNode
-  defaultTheme?: Theme
+  children: ReactNode;
+  defaultTheme?: Theme;
 }) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme)
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  )
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
-  return useContext(ThemeContext)
+  return useContext(ThemeContext);
 }

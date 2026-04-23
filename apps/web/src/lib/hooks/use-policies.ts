@@ -27,26 +27,17 @@ export function useUpdatePolicy() {
   const updatePolicy = useMutation(api.policies.update);
 
   return {
-    mutate: ({
-      agentId,
-      updates,
-    }: {
-      agentId: string;
-      updates: Partial<Policy>;
-    }) => {
+    mutate: ({ agentId, updates }: { agentId: string; updates: Partial<Policy> }) => {
       const args: Record<string, unknown> = {
         agent_id: agentId as Id<"agents">,
       };
-      if (updates.dailyLimit !== undefined)
-        args.daily_limit = updates.dailyLimit;
+      if (updates.dailyLimit !== undefined) args.daily_limit = updates.dailyLimit;
       if (updates.maxPerTransaction !== undefined)
         args.max_per_transaction = updates.maxPerTransaction;
       if (updates.approvalThreshold !== undefined)
         args.approval_threshold = updates.approvalThreshold;
-      if (updates.allowedStandards !== undefined)
-        args.allowed_standards = updates.allowedStandards;
-      if (updates.domainAllowlist !== undefined)
-        args.domain_allowlist = updates.domainAllowlist;
+      if (updates.allowedStandards !== undefined) args.allowed_standards = updates.allowedStandards;
+      if (updates.domainAllowlist !== undefined) args.domain_allowlist = updates.domainAllowlist;
 
       return updatePolicy(args as Parameters<typeof updatePolicy>[0]);
     },

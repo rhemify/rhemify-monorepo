@@ -50,9 +50,7 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
 
   return (
     <ConvexProvider client={getConvexClient()}>
-      <FleetContext value={{ fleetId, setFleetId }}>
-        {children}
-      </FleetContext>
+      <FleetContext value={{ fleetId, setFleetId }}>{children}</FleetContext>
     </ConvexProvider>
   );
 }
