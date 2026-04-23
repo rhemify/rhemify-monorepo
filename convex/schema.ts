@@ -68,6 +68,8 @@ export default defineSchema({
     outcome: v.string(), // success | rejected | failed
     instrument_type: v.string(),
     trace_id: v.string(),
+    chain_from: v.optional(v.string()),
+    chain_to: v.optional(v.string()),
   })
     .index("by_agent", ["agent_id"])
     .index("by_fleet", ["fleet_id"])
