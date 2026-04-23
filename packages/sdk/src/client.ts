@@ -31,11 +31,7 @@ import { createGovernedSession } from "./session/index.js";
 
 export function createRhemify(config: RhemifyConfig): Rhemify {
   const transport = new GoServerTransport(config.serverUrl, config.fleetApiKey);
-  const policyEngine = new PolicyEngine(
-    transport,
-    config.agentId,
-    config.policyCacheTtl ?? 30_000,
-  );
+  const policyEngine = new PolicyEngine(transport, config.agentId, config.policyCacheTtl ?? 30_000);
   const pathResolver = new PathResolver();
 
   // Layer 1: Memo anchoring queue (enabled if Solana wallet + RPC available)
@@ -102,9 +98,22 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       task_outcome: null,
       task_outcome_linked_at: null,
       replay_snapshot: {
-        policy_state: snapshot.policyDecision.rulesFired.length > 0
-          ? { dailyLimit: 0, maxPerTransaction: 0, approvalThreshold: 0, allowedStandards: [], domainAllowlist: [] }
-          : { dailyLimit: 0, maxPerTransaction: 0, approvalThreshold: 0, allowedStandards: [], domainAllowlist: [] },
+        policy_state:
+          snapshot.policyDecision.rulesFired.length > 0
+            ? {
+                dailyLimit: 0,
+                maxPerTransaction: 0,
+                approvalThreshold: 0,
+                allowedStandards: [],
+                domainAllowlist: [],
+              }
+            : {
+                dailyLimit: 0,
+                maxPerTransaction: 0,
+                approvalThreshold: 0,
+                allowedStandards: [],
+                domainAllowlist: [],
+              },
         detection: snapshot.detection,
         all_paths: snapshot.allPaths,
         policy_decision: snapshot.policyDecision,
@@ -114,8 +123,8 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       merkle_proof: null,
     };
 
-    const policyDecisions: PolicyDecisionEvent[] =
-      snapshot.policyDecision.rulesFired.map((r, i) => ({
+    const policyDecisions: PolicyDecisionEvent[] = snapshot.policyDecision.rulesFired.map(
+      (r, i) => ({
         id: `pdec_${traceRecord.id.replace("trc_", "")}_${i}`,
         payment_event_id: event.id,
         agent_id: snapshot.agentId,
@@ -126,15 +135,12 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
         domain,
         standard: snapshot.detection.protocol,
         human_approval_required: r.decision === "flag",
-      }));
+      }),
+    );
 
-    transport
-      .ingestPayment({ event, trace: paymentTrace, policyDecisions })
-      .catch((err) => {
-        config.onError?.(
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      });
+    transport.ingestPayment({ event, trace: paymentTrace, policyDecisions }).catch((err) => {
+      config.onError?.(err instanceof Error ? err : new Error(String(err)));
+    });
 
     // Layer 1: Enqueue Memo anchoring (async, non-blocking)
     if (anchorQueue && snapshot.executionSuccess) {
@@ -155,10 +161,7 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     }
   }
 
-  async function pay<T = unknown>(
-    url: string,
-    options?: PayOptions,
-  ): Promise<PayResult<T>> {
+  async function pay<T = unknown>(url: string, options?: PayOptions): Promise<PayResult<T>> {
     const method = options?.method ?? "GET";
     const trace = new Trace(
       url,
@@ -176,13 +179,14 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       timeout: config.timeout,
     });
     trace.recordDetection(detection);
-    emitStage("detect", { protocol: detection.protocol, confidence: detection.confidence, network: detection.network });
+    emitStage("detect", {
+      protocol: detection.protocol,
+      confidence: detection.confidence,
+      network: detection.network,
+    });
 
     if (detection.protocol === "unknown") {
-      throw new DetectionError(
-        `No payment protocol detected at ${url}`,
-        url,
-      );
+      throw new DetectionError(`No payment protocol detected at ${url}`, url);
     }
 
     // --- Client-side budget check (safety net before policy) ---
@@ -198,7 +202,11 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     const domain = extractDomain(url);
     const policyDecision = await policyEngine.evaluate(detection, domain);
     trace.recordPolicyDecision(policyDecision);
-    emitStage("policy", { action: policyDecision.action, reason: policyDecision.reason ?? null, rulesCount: policyDecision.rulesFired.length });
+    emitStage("policy", {
+      action: policyDecision.action,
+      reason: policyDecision.reason ?? null,
+      rulesCount: policyDecision.rulesFired.length,
+    });
 
     if (policyDecision.action === "block") {
       trace.recordExecution(false, undefined, policyDecision.reason);
@@ -214,7 +222,11 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     const allPaths = pathResolver.resolve(detection, config.wallet);
     const chosenPath = allPaths.find((p) => p.available) ?? null;
     trace.recordPathSelection(allPaths, chosenPath);
-    emitStage("resolve", { pathsEvaluated: allPaths.length, chosen: chosenPath?.instrument ?? null, estimatedCost: chosenPath?.estimatedCost ?? null });
+    emitStage("resolve", {
+      pathsEvaluated: allPaths.length,
+      chosen: chosenPath?.instrument ?? null,
+      estimatedCost: chosenPath?.estimatedCost ?? null,
+    });
 
     if (!chosenPath) {
       trace.recordExecution(false, undefined, "No available payment path");
@@ -240,12 +252,7 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
 
     // Real execution with cascade fallback
     try {
-      const execResult = await executeWithCascade(
-        url,
-        detection,
-        config.wallet,
-        options ?? {},
-      );
+      const execResult = await executeWithCascade(url, detection, config.wallet, options ?? {});
 
       emitStage("execute", { success: true, txHash: execResult.txHash ?? null });
 
@@ -273,20 +280,13 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       await config.onPayment?.(result as PayResult);
       return result;
     } catch (err) {
-      trace.recordExecution(
-        false,
-        undefined,
-        err instanceof Error ? err.message : String(err),
-      );
+      trace.recordExecution(false, undefined, err instanceof Error ? err.message : String(err));
       emitTrace(trace);
       throw err;
     }
   }
 
-  async function probe(
-    url: string,
-    options?: ProbeOptions,
-  ): Promise<ProbeResult> {
+  async function probe(url: string, options?: ProbeOptions): Promise<ProbeResult> {
     const detection = await detectProtocol(url, {
       method: options?.method,
       headers: options?.headers,
@@ -308,13 +308,7 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
   }
 
   async function session(sessionOptions?: SessionOptions): Promise<MppSession> {
-    return createGovernedSession(
-      sessionOptions,
-      config,
-      transport,
-      policyEngine,
-      anchorQueue,
-    );
+    return createGovernedSession(sessionOptions, config, transport, policyEngine, anchorQueue);
   }
 
   async function setPolicy(policy: Partial<PolicyConfig>): Promise<void> {

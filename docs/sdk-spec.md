@@ -9,6 +9,7 @@ Build the core payment runtime that powers `rhemify.pay(url)` — the single API
 **Why it matters:** VUP shipped a ~500-line payment pipe (detect → budget check → pay). Rhemify differentiates with a 6-stage pipeline: detect → **policy engine** → **path resolver** → execute → **trace** → **intelligence emit**. The policy engine, traces, and intelligence feed are the moat.
 
 **Success criteria:**
+
 - [ ] `createRhemify(config)` returns `{ pay, probe, session, setPolicy, status }`
 - [ ] `pay(url)` detects x402 and MPP from real 402 responses and executes payment on Solana
 - [ ] `session()` opens an MPP streaming session via `@solana/mpp` for recurring vendor payments
@@ -214,22 +215,22 @@ Factory function. Returns the SDK client.
 ```typescript
 interface RhemifyConfig {
   // Required
-  serverUrl: string;              // Go server URL (e.g. "http://localhost:8080")
-  fleetApiKey: string;            // Shared fleet API key (sent as Authorization: Bearer <key>)
-  agentId: string;                // This agent's ID in the fleet
-  fleetId: string;                // Fleet this agent belongs to
+  serverUrl: string; // Go server URL (e.g. "http://localhost:8080")
+  fleetApiKey: string; // Shared fleet API key (sent as Authorization: Bearer <key>)
+  agentId: string; // This agent's ID in the fleet
+  fleetId: string; // Fleet this agent belongs to
 
   // Wallet (at least one required)
   wallet: {
-    solanaPrivateKey?: string;    // Base58 Solana private key
-    evmPrivateKey?: string;       // Hex EVM private key
+    solanaPrivateKey?: string; // Base58 Solana private key
+    evmPrivateKey?: string; // Hex EVM private key
   };
 
   // Optional
-  defaultMaxBudget?: string;      // e.g. "$1.00" — per-call budget cap (client-side safety net)
-  timeout?: number;               // Detection timeout in ms (default 10_000)
-  policyCacheTtl?: number;        // Policy cache TTL in ms (default 30_000)
-  solanaRpcUrl?: string;          // Solana RPC endpoint (default: Helius mainnet)
+  defaultMaxBudget?: string; // e.g. "$1.00" — per-call budget cap (client-side safety net)
+  timeout?: number; // Detection timeout in ms (default 10_000)
+  policyCacheTtl?: number; // Policy cache TTL in ms (default 30_000)
+  solanaRpcUrl?: string; // Solana RPC endpoint (default: Helius mainnet)
   onPayment?: (result: PayResult) => void | Promise<void>;
   onError?: (error: RhemifyError) => void;
 }
@@ -249,32 +250,32 @@ The core method. Runs the full 6-stage pipeline.
 
 ```typescript
 interface PayOptions {
-  method?: string;                // HTTP method (default "GET")
+  method?: string; // HTTP method (default "GET")
   headers?: Record<string, string>;
-  body?: unknown;                 // Request body for POST/PUT
-  maxBudget?: string;             // Override per-call budget
-  dryRun?: boolean;               // Run detect + policy + resolve, but don't execute
-  taskContext?: string;           // Agent's task description (for trace)
-  taskStep?: number;              // Current step in agent's task
+  body?: unknown; // Request body for POST/PUT
+  maxBudget?: string; // Override per-call budget
+  dryRun?: boolean; // Run detect + policy + resolve, but don't execute
+  taskContext?: string; // Agent's task description (for trace)
+  taskStep?: number; // Current step in agent's task
 }
 
 interface PayResult<T = unknown> {
   success: boolean;
-  data: T | null;                 // Response body from the paid request
+  data: T | null; // Response body from the paid request
   trace: {
-    id: string;                   // Trace ID (trc_...)
+    id: string; // Trace ID (trc_...)
     protocol: PaymentProtocol;
     amount: string;
     network: string;
     policyRulesFired: PolicyDecisionRecord[];
     alternativesEvaluated: ScoredPath[];
     chosenPath: ScoredPath;
-    traceHash: string;            // SHA-256 of canonical trace fields
+    traceHash: string; // SHA-256 of canonical trace fields
   };
   detection: DetectionResult;
   receipt: {
-    txHash?: string;              // On-chain transaction hash
-    protocolReceipt?: unknown;    // Protocol-specific receipt data
+    txHash?: string; // On-chain transaction hash
+    protocolReceipt?: unknown; // Protocol-specific receipt data
   };
 }
 ```
@@ -285,11 +286,11 @@ Detect + policy evaluate without paying. Useful for pre-flight checks.
 
 ```typescript
 interface ProbeResult {
-  canPay: boolean;                // Would policy allow this payment?
+  canPay: boolean; // Would policy allow this payment?
   detection: DetectionResult;
   policyDecision: PolicyDecision;
-  estimatedPaths: ScoredPath[];   // Ranked instruments
-  estimatedCost: string;          // Best path cost
+  estimatedPaths: ScoredPath[]; // Ranked instruments
+  estimatedCost: string; // Best path cost
 }
 ```
 
@@ -320,24 +321,24 @@ The session is wrapped by the Rhemify pipeline: policy is evaluated on `open()`,
 
 ```typescript
 interface SessionOptions {
-  maxDeposit?: string;            // Max deposit in USDC (default "1.00")
-  ttlSeconds?: number;            // Session TTL (default 3600 = 1hr)
-  autoTopup?: boolean;            // Auto top-up when deposit runs low (default false)
-  taskContext?: string;           // Agent's task description (for traces)
+  maxDeposit?: string; // Max deposit in USDC (default "1.00")
+  ttlSeconds?: number; // Session TTL (default 3600 = 1hr)
+  autoTopup?: boolean; // Auto top-up when deposit runs low (default false)
+  taskContext?: string; // Agent's task description (for traces)
 }
 
 interface MppSession {
-  fetch: (url: string, init?: RequestInit) => Promise<Response>;  // Drop-in fetch replacement
-  close: () => Promise<SessionCloseResult>;                       // Settle and close channel
-  spent: () => number;                                            // Current cumulative spend
-  remaining: () => number;                                        // Remaining deposit
+  fetch: (url: string, init?: RequestInit) => Promise<Response>; // Drop-in fetch replacement
+  close: () => Promise<SessionCloseResult>; // Settle and close channel
+  spent: () => number; // Current cumulative spend
+  remaining: () => number; // Remaining deposit
 }
 
 interface SessionCloseResult {
   totalSpent: number;
-  txHash: string;                 // Settlement transaction
+  txHash: string; // Settlement transaction
   requestCount: number;
-  traceIds: string[];             // All traces emitted during session
+  traceIds: string[]; // All traces emitted during session
 }
 ```
 
@@ -390,6 +391,7 @@ A minimal Solana program (Anchor framework) with a single instruction: `anchor_t
 ### Verification
 
 Anyone with the trace data can:
+
 1. Recompute the SHA-256 hash from the trace fields
 2. Derive the PDA from `["rhemify-trace", fleetId, traceId]`
 3. Read the on-chain account and compare hashes
@@ -414,12 +416,13 @@ interface ProtocolDetector {
 interface DetectionResult {
   protocol: PaymentProtocol;
   confidence: "high" | "medium" | "low";
-  network: string;              // "solana-mainnet" | "base" | "base-sepolia" | etc.
-  price: string;                // Human-readable: "$0.50"
-  priceRaw: bigint | number;    // Raw amount in smallest unit
-  currency: string;             // "USDC" | "SOL" | etc.
-  payTo: string;                // Recipient address
-  raw: {                        // Protocol-specific fields
+  network: string; // "solana-mainnet" | "base" | "base-sepolia" | etc.
+  price: string; // Human-readable: "$0.50"
+  priceRaw: bigint | number; // Raw amount in smallest unit
+  currency: string; // "USDC" | "SOL" | etc.
+  payTo: string; // Recipient address
+  raw: {
+    // Protocol-specific fields
     headers: Record<string, string>;
     body?: unknown;
   };
@@ -432,15 +435,15 @@ interface DetectionResult {
 interface PolicyDecision {
   action: "allow" | "flag" | "block";
   rulesFired: PolicyDecisionRecord[];
-  reason?: string;              // Human-readable reason (for block/flag)
-  suggestion?: string;          // Actionable suggestion for agent
+  reason?: string; // Human-readable reason (for block/flag)
+  suggestion?: string; // Actionable suggestion for agent
 }
 
 interface PolicyDecisionRecord {
-  rule: string;                 // "daily_limit" | "max_per_tx" | "domain_allowlist" | etc.
+  rule: string; // "daily_limit" | "max_per_tx" | "domain_allowlist" | etc.
   decision: "allow" | "flag" | "block";
-  threshold: string;            // What the limit is
-  actual: string;               // What the value was
+  threshold: string; // What the limit is
+  actual: string; // What the value was
 }
 ```
 
@@ -451,12 +454,12 @@ type InstrumentType = "ows" | "privy" | "agentcard" | "squads" | "jupiter" | "cc
 
 interface ScoredPath {
   instrument: InstrumentType;
-  estimatedCost: number;        // In USD
-  estimatedLatency: number;     // In ms
+  estimatedCost: number; // In USD
+  estimatedLatency: number; // In ms
   risk: "low" | "medium" | "high";
-  score: number;                // Composite score (lower = better)
-  available: boolean;           // Does the wallet support this?
-  rejectedReason?: string;      // Why this path wasn't chosen
+  score: number; // Composite score (lower = better)
+  available: boolean; // Does the wallet support this?
+  rejectedReason?: string; // Why this path wasn't chosen
 }
 ```
 
@@ -489,14 +492,20 @@ interface ExecutionResult {
 
 ```typescript
 class RhemifyError extends Error {
-  constructor(message: string, public code: string) {
+  constructor(
+    message: string,
+    public code: string,
+  ) {
     super(message);
     this.name = "RhemifyError";
   }
 }
 
 class DetectionError extends RhemifyError {
-  constructor(message: string, public url: string) {
+  constructor(
+    message: string,
+    public url: string,
+  ) {
     super(message, "DETECTION_FAILED");
   }
 }
@@ -571,13 +580,13 @@ GET  /api/fleet/status          # Fleet-level stats for this agent's fleet
 
 ### Test levels:
 
-| Level | What | How |
-|---|---|---|
-| **Unit** | Detectors parse 402 responses correctly | Recorded HTTP responses in `test/fixtures/` |
-| **Unit** | Policy engine evaluates rules correctly | Mock policy configs + detection results |
-| **Unit** | Path resolver scores instruments correctly | Mock wallet configs + detection results |
-| **Integration** | Full `pay()` pipeline with mock server | msw or custom HTTP mock for 402 endpoints + Go server |
-| **E2E** | Real payment against testnet | Manual / CI with devnet keys (stretch goal) |
+| Level           | What                                       | How                                                   |
+| --------------- | ------------------------------------------ | ----------------------------------------------------- |
+| **Unit**        | Detectors parse 402 responses correctly    | Recorded HTTP responses in `test/fixtures/`           |
+| **Unit**        | Policy engine evaluates rules correctly    | Mock policy configs + detection results               |
+| **Unit**        | Path resolver scores instruments correctly | Mock wallet configs + detection results               |
+| **Integration** | Full `pay()` pipeline with mock server     | msw or custom HTTP mock for 402 endpoints + Go server |
+| **E2E**         | Real payment against testnet               | Manual / CI with devnet keys (stretch goal)           |
 
 ### Fixture-driven detection tests:
 
@@ -612,6 +621,7 @@ it("detects x402 on Solana from body.accepts", async () => {
 ## Boundaries
 
 ### Always:
+
 - Run the full pipeline (detect → policy → resolve → execute → trace → emit) — never skip stages
 - Emit a trace for every `pay()` call, including failed/blocked ones
 - Enforce policy BEFORE execution — money never moves if policy blocks
@@ -620,12 +630,14 @@ it("detects x402 on Solana from body.accepts", async () => {
 - SHA-256 hash every trace for tamper detection
 
 ### Ask first:
+
 - Adding a new payment protocol or instrument
 - Changing the Go server API contract
 - Adding a new runtime dependency
 - Changing the policy evaluation order
 
 ### Never:
+
 - Execute payment without policy evaluation
 - Skip trace emission (even on failure)
 - Store private keys in traces or logs
@@ -674,6 +686,7 @@ it("detects x402 on Solana from body.accepts", async () => {
 ## Hackathon Scope (5 weeks — started Apr 6, 2026)
 
 ### Week 1: Foundation (match VUP)
+
 - [ ] Package scaffolding (tsup, vitest, workspace config)
 - [ ] Detector chain: x402 + MPP working, L402/AP2/ACP stubs
 - [ ] Error hierarchy
@@ -681,6 +694,7 @@ it("detects x402 on Solana from body.accepts", async () => {
 - [ ] Go server: POST /api/ingest/payment + GET /api/policy/:agentId endpoints
 
 ### Week 2: Moat features
+
 - [ ] Policy engine: daily_limit, max_per_tx, allowed_domains, allowed_standards
 - [ ] Policy cache (30s TTL, invalidate on setPolicy())
 - [ ] Path resolver: score OWS vs AgentCard (basic)
@@ -689,6 +703,7 @@ it("detects x402 on Solana from body.accepts", async () => {
 - [ ] `createRhemify()` factory wiring everything together
 
 ### Week 3: Execution
+
 - [ ] x402 Solana executor via `x402-solana` peer dep
 - [ ] x402 EVM executor via `x402-fetch` peer dep
 - [ ] MPP charge executor via `@solana/mpp` charge method
@@ -697,12 +712,14 @@ it("detects x402 on Solana from body.accepts", async () => {
 - [ ] `probe()` method
 
 ### Week 4: Integration
+
 - [ ] MCP server wrapper (rhemify.pay, rhemify.session, rhemify.status, rhemify.set_policy tools)
 - [ ] Wire to dashboard (Go server → Convex → frontend reads)
 - [ ] Real 402 endpoint testing (at least 2 real endpoints)
 - [ ] `session()` method with governance wrapper
 
 ### Week 5: Polish + Demo
+
 - [ ] Decision replay (Go server endpoint + dashboard UI)
 - [ ] AgentCard integration (stretch)
 - [ ] CCTP bridge (stretch)
@@ -712,10 +729,10 @@ it("detects x402 on Solana from body.accepts", async () => {
 
 ## Resolved Decisions
 
-| # | Decision | Choice | Rationale |
-|---|---|---|---|
-| 1 | **Go server auth** | Shared fleet API key (`Authorization: Bearer <key>`) | Simplest for hackathon. One key per fleet, passed in `RhemifyConfig.fleetApiKey`. |
-| 2 | **Policy caching** | Cache 30s, invalidate on `setPolicy()` | Balances freshness vs latency. Config via `policyCacheTtl`. |
-| 3 | **Trace anchoring** | In scope — Solana PDA via Anchor program | Core differentiator. "Verifiable" is in the tagline. Minimal program (~100 lines Rust). |
-| 4 | **x402 execution** | Use `x402-fetch` + `x402-solana` peer deps | Ship fast. Wrap their output to capture trace context. |
-| 5 | **MPP implementation** | `@solana/mpp` (Solana Foundation SDK) + streaming sessions | Official Solana Foundation MPP. Supports charge (one-shot) AND session (streaming). Built on `mppx` by wevm. |
+| #   | Decision               | Choice                                                     | Rationale                                                                                                    |
+| --- | ---------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1   | **Go server auth**     | Shared fleet API key (`Authorization: Bearer <key>`)       | Simplest for hackathon. One key per fleet, passed in `RhemifyConfig.fleetApiKey`.                            |
+| 2   | **Policy caching**     | Cache 30s, invalidate on `setPolicy()`                     | Balances freshness vs latency. Config via `policyCacheTtl`.                                                  |
+| 3   | **Trace anchoring**    | In scope — Solana PDA via Anchor program                   | Core differentiator. "Verifiable" is in the tagline. Minimal program (~100 lines Rust).                      |
+| 4   | **x402 execution**     | Use `x402-fetch` + `x402-solana` peer deps                 | Ship fast. Wrap their output to capture trace context.                                                       |
+| 5   | **MPP implementation** | `@solana/mpp` (Solana Foundation SDK) + streaming sessions | Official Solana Foundation MPP. Supports charge (one-shot) AND session (streaming). Built on `mppx` by wevm. |

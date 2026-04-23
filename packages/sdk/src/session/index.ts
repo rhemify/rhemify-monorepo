@@ -119,12 +119,14 @@ export async function createGovernedSession(
 
     trace.recordPolicyDecision({
       action: "allow",
-      rulesFired: [{
-        rule: "session_budget",
-        decision: "allow",
-        threshold: `$${maxDepositUsd}`,
-        actual: `$${projectedSpend.toFixed(4)}`,
-      }],
+      rulesFired: [
+        {
+          rule: "session_budget",
+          decision: "allow",
+          threshold: `$${maxDepositUsd}`,
+          actual: `$${projectedSpend.toFixed(4)}`,
+        },
+      ],
     });
 
     trace.recordPathSelection([], {
@@ -154,11 +156,7 @@ export async function createGovernedSession(
 
       return response;
     } catch (err) {
-      trace.recordExecution(
-        false,
-        undefined,
-        err instanceof Error ? err.message : String(err),
-      );
+      trace.recordExecution(false, undefined, err instanceof Error ? err.message : String(err));
       const traceRecord = trace.finalize();
       traceIds.push(traceRecord.id);
       emitSessionTrace(trace, transport, anchorQueue);
@@ -173,7 +171,7 @@ export async function createGovernedSession(
     let txHash = "";
     try {
       if (mppxSession.close) {
-        const result = await mppxSession.close() as { signature?: string } | undefined;
+        const result = (await mppxSession.close()) as { signature?: string } | undefined;
         txHash = result?.signature ?? "";
       }
     } catch {
@@ -181,13 +179,7 @@ export async function createGovernedSession(
     }
 
     // Emit a final session-close trace
-    const trace = new Trace(
-      "session-close",
-      "CLOSE",
-      config.agentId,
-      config.fleetId,
-      taskContext,
-    );
+    const trace = new Trace("session-close", "CLOSE", config.agentId, config.fleetId, taskContext);
 
     trace.recordDetection({
       protocol: "mpp",
@@ -202,12 +194,14 @@ export async function createGovernedSession(
 
     trace.recordPolicyDecision({
       action: "allow",
-      rulesFired: [{
-        rule: "session_close",
-        decision: "allow",
-        threshold: `${requestCount} requests`,
-        actual: `$${cumulativeSpentUsd.toFixed(4)} total`,
-      }],
+      rulesFired: [
+        {
+          rule: "session_close",
+          decision: "allow",
+          threshold: `${requestCount} requests`,
+          actual: `$${cumulativeSpentUsd.toFixed(4)} total`,
+        },
+      ],
     });
 
     trace.recordPathSelection([], null);
@@ -256,9 +250,7 @@ async function openMppSession(
   const solanaKit = await import("@solana/kit").catch(() => null);
 
   if (!solanaKit) {
-    throw new ExecutionError(
-      "@solana/kit is required for MPP sessions. Run: bun add @solana/kit",
-    );
+    throw new ExecutionError("@solana/kit is required for MPP sessions. Run: bun add @solana/kit");
   }
 
   // Build signer
@@ -341,7 +333,13 @@ function emitSessionTrace(
     task_outcome: null,
     task_outcome_linked_at: null,
     replay_snapshot: {
-      policy_state: { dailyLimit: 0, maxPerTransaction: 0, approvalThreshold: 0, allowedStandards: [], domainAllowlist: [] },
+      policy_state: {
+        dailyLimit: 0,
+        maxPerTransaction: 0,
+        approvalThreshold: 0,
+        allowedStandards: [],
+        domainAllowlist: [],
+      },
       detection: snapshot.detection,
       all_paths: [],
       policy_decision: snapshot.policyDecision,
@@ -351,32 +349,24 @@ function emitSessionTrace(
     merkle_proof: null,
   };
 
-  const policyDecisions: PolicyDecisionEvent[] =
-    snapshot.policyDecision.rulesFired.map((r, i) => ({
-      id: `pdec_${traceRecord.id.replace("trc_", "")}_${i}`,
-      payment_event_id: event.id,
-      agent_id: snapshot.agentId,
-      rule_triggered: r.rule,
-      decision: r.decision,
-      threshold: r.threshold,
-      actual_value: r.actual,
-      domain,
-      standard: "mpp" as const,
-      human_approval_required: r.decision === "flag",
-    }));
+  const policyDecisions: PolicyDecisionEvent[] = snapshot.policyDecision.rulesFired.map((r, i) => ({
+    id: `pdec_${traceRecord.id.replace("trc_", "")}_${i}`,
+    payment_event_id: event.id,
+    agent_id: snapshot.agentId,
+    rule_triggered: r.rule,
+    decision: r.decision,
+    threshold: r.threshold,
+    actual_value: r.actual,
+    domain,
+    standard: "mpp" as const,
+    human_approval_required: r.decision === "flag",
+  }));
 
-  transport
-    .ingestPayment({ event, trace: paymentTrace, policyDecisions })
-    .catch(() => {});
+  transport.ingestPayment({ event, trace: paymentTrace, policyDecisions }).catch(() => {});
 
   // Anchor the trace
   if (anchorQueue && snapshot.executionSuccess) {
-    anchorQueue.enqueue(
-      traceRecord.id,
-      traceRecord.traceHash,
-      snapshot.fleetId,
-      snapshot.agentId,
-    );
+    anchorQueue.enqueue(traceRecord.id, traceRecord.traceHash, snapshot.fleetId, snapshot.agentId);
   }
 }
 

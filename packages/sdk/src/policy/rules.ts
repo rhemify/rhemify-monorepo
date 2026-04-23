@@ -1,8 +1,4 @@
-import type {
-  DetectionResult,
-  PolicyContext,
-  PolicyDecisionRecord,
-} from "../types.js";
+import type { DetectionResult, PolicyContext, PolicyDecisionRecord } from "../types.js";
 
 export interface PolicyRule {
   name: string;

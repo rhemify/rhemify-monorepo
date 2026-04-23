@@ -82,6 +82,7 @@ packages/sdk → apps/server (HTTP, fleet API key auth)
 The core payment SDK. Powers `rhemify.pay(url)` — 6-stage pipeline: detect → policy → resolve → execute → trace → emit.
 
 **Shared Intelligence Layer Contracts** (`packages/sdk/src/types.ts`):
+
 - `PaymentEvent` — the facts of what happened (every field from `docs/intelligence-layer-spec.md`)
 - `PaymentTrace` — the reasoning behind each decision (alternatives, policy rules, replay snapshot)
 - `PolicyDecisionEvent` — every rule evaluation with `human_approval_required`
@@ -89,6 +90,7 @@ The core payment SDK. Powers `rhemify.pay(url)` — 6-stage pipeline: detect →
 These are the canonical interfaces between Sean's payment runtime and Zhe Hong's intelligence layer. Both the SDK emit pipeline and the Go server ingest must match these shapes. Spec: `docs/intelligence-layer-spec.md`.
 
 **Key modules:**
+
 - `src/detect/` — Protocol detection chain (x402, MPP, L402, AP2, ACP), 60s domain cache
 - `src/policy/` — 6 rules, 30s server-side cache
 - `src/resolve/` — 7 instruments scored by cost/latency/risk
@@ -145,30 +147,30 @@ Agent calls rhemify.pay(url)
 
 ### Architecture Decision Records (in `docs/decisions/`)
 
-| ADR | Decision |
-|-----|----------|
-| [001](docs/decisions/001-solana-go-local-dependency.md) | solana-go as local module via `replace` directive |
-| [002](docs/decisions/002-ika-typescript-sidecar.md) | Ika integration via TypeScript sidecar (no Go SDK available) |
-| [003](docs/decisions/003-signing-pipeline-architecture.md) | 7-stage signing pipeline with chain-of-responsibility |
-| [004](docs/decisions/004-anchor-hand-built-instructions.md) | Hand-built Anchor instructions with Borsh encoding |
-| [005](docs/decisions/005-plaintext-policy-enforcement.md) | Plaintext on-chain policy enforcement (FHE deferred) |
+| ADR                                                         | Decision                                                     |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| [001](docs/decisions/001-solana-go-local-dependency.md)     | solana-go as local module via `replace` directive            |
+| [002](docs/decisions/002-ika-typescript-sidecar.md)         | Ika integration via TypeScript sidecar (no Go SDK available) |
+| [003](docs/decisions/003-signing-pipeline-architecture.md)  | 7-stage signing pipeline with chain-of-responsibility        |
+| [004](docs/decisions/004-anchor-hand-built-instructions.md) | Hand-built Anchor instructions with Borsh encoding           |
+| [005](docs/decisions/005-plaintext-policy-enforcement.md)   | Plaintext on-chain policy enforcement (FHE deferred)         |
 
 ### Reference Docs (in `docs/`)
 
 **For development — read these:**
 
-| Doc | What | Who Needs It |
-|---|---|---|
-| `docs/hackathon-positioning.md` | Product positioning, one-liner, pitch framing, demo narrative, judge talking points. **Source of truth for what we're building and why.** | Everyone |
-| `docs/intelligence-layer-spec.md` | Full spec for intelligence layer: event ingestion, rules engine (12 rules across 5 categories), auto-actions, decision replay, configuration, data retention. **Build bible for the backend.** | Backend (Zhe Hong) |
-| `docs/intelligence-layer-diagram.md` | Mermaid diagrams: full system flow, rules engine detail, action lifecycle, single payment sequence. | Everyone |
-| `docs/competitive-analysis.md` | Deep analysis of MCPay, Latinum, CORBITS, Mercantill, Sponge, AgentCash, Observer Protocol. Micropayment criticism response. Ecosystem validation quotes. | Everyone (for pitch context) |
-| `docs/vendor-instrument-analysis.md` | Every external service that integrates with Rhemify: signing (OWS, Privy, Squads), payment instruments (AgentCard, AgentCash, Squads sessions), swaps (Jupiter), bridges (CCTP), RPC (Helius), identity. | Sean, Wei Hup |
+| Doc                                  | What                                                                                                                                                                                                     | Who Needs It                 |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `docs/hackathon-positioning.md`      | Product positioning, one-liner, pitch framing, demo narrative, judge talking points. **Source of truth for what we're building and why.**                                                                | Everyone                     |
+| `docs/intelligence-layer-spec.md`    | Full spec for intelligence layer: event ingestion, rules engine (12 rules across 5 categories), auto-actions, decision replay, configuration, data retention. **Build bible for the backend.**           | Backend (Zhe Hong)           |
+| `docs/intelligence-layer-diagram.md` | Mermaid diagrams: full system flow, rules engine detail, action lifecycle, single payment sequence.                                                                                                      | Everyone                     |
+| `docs/competitive-analysis.md`       | Deep analysis of MCPay, Latinum, CORBITS, Mercantill, Sponge, AgentCash, Observer Protocol. Micropayment criticism response. Ecosystem validation quotes.                                                | Everyone (for pitch context) |
+| `docs/vendor-instrument-analysis.md` | Every external service that integrates with Rhemify: signing (OWS, Privy, Squads), payment instruments (AgentCard, AgentCash, Squads sessions), swaps (Jupiter), bridges (CCTP), RPC (Helius), identity. | Sean, Wei Hup                |
 
 **Deprecated — do not use as source of truth:**
 
-| Doc | Why |
-|---|---|
+| Doc                        | Why                                                                                                                        |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `docs/team-workstreams.md` | Outdated team size (was 3, now 4). Old "treasury" framing. **Use Linear board (linear.app/rhemify) for task assignments.** |
 
 ### Task Management
@@ -176,6 +178,7 @@ Agent calls rhemify.pay(url)
 All tasks are in Linear: https://linear.app/rhemify (team: Rhemify, issues RHE-5 through RHE-50).
 
 **Team:**
+
 - **Sean** — Payment runtime: MCP server, standard detector, policy engine, OWS signing, path resolver, direct-pay execution
 - **Zhe Hong** — Intelligence layer: Go backend, PostgreSQL schema, event ingestion, API endpoints, rules engine, replay engine
 - **Wei Hup (Aaron)** — External integrations: AgentCard, Jupiter swap, CCTP bridge, onboarding CLI, real 402 endpoints
@@ -183,17 +186,17 @@ All tasks are in Linear: https://linear.app/rhemify (team: Rhemify, issues RHE-5
 
 ### Key External Services & APIs
 
-| Service | Purpose | Docs |
-|---|---|---|
-| **@modelcontextprotocol/sdk** | MCP server for agent runtimes | modelcontextprotocol.io/docs |
-| **OWS** | Local-first signing (BIP-39, AES-256-GCM) | github.com/open-wallet-standard |
-| **Privy** | Cloud signing (SOC 2, embedded wallets) | privy.io |
-| **Squads Smart Accounts** | Session-based payments, on-chain policies | docs.squads.so |
-| **AgentCard** | Virtual Visa for agents (MPP SPT) | agentcard.ai |
-| **AgentCash** | Curated API marketplace (338 endpoints) | agentcash.dev |
-| **Jupiter** | Solana swap aggregator | dev.jup.ag/docs/apis/swap-api |
-| **CCTP (Circle)** | Cross-chain USDC bridge (20+ chains) | circle.com/cross-chain-transfer-protocol |
-| **Helius** | Solana RPC, Sender, Webhooks, DAS | helius.dev |
+| Service                       | Purpose                                   | Docs                                     |
+| ----------------------------- | ----------------------------------------- | ---------------------------------------- |
+| **@modelcontextprotocol/sdk** | MCP server for agent runtimes             | modelcontextprotocol.io/docs             |
+| **OWS**                       | Local-first signing (BIP-39, AES-256-GCM) | github.com/open-wallet-standard          |
+| **Privy**                     | Cloud signing (SOC 2, embedded wallets)   | privy.io                                 |
+| **Squads Smart Accounts**     | Session-based payments, on-chain policies | docs.squads.so                           |
+| **AgentCard**                 | Virtual Visa for agents (MPP SPT)         | agentcard.ai                             |
+| **AgentCash**                 | Curated API marketplace (338 endpoints)   | agentcash.dev                            |
+| **Jupiter**                   | Solana swap aggregator                    | dev.jup.ag/docs/apis/swap-api            |
+| **CCTP (Circle)**             | Cross-chain USDC bridge (20+ chains)      | circle.com/cross-chain-transfer-protocol |
+| **Helius**                    | Solana RPC, Sender, Webhooks, DAS         | helius.dev                               |
 
 ### Payment Standard Detection
 
@@ -234,30 +237,37 @@ Priority order for detectStandard():
 These rules apply to ALL code in this repo. Violations found in audit — do not repeat.
 
 ### Secrets & Keys
+
 - **Never use `Must*` panic functions** for parsing keys from env vars (`MustPrivateKeyFromBase58`, `MustPublicKeyFromBase58`). Use the error-returning variants and `log.Fatalf` with a clean message.
 - **Never log private keys, secret keys, or tokens.** Log the derived public key/address only.
 - **Never expose raw error messages** from internal systems (Convex, Solana RPC, Ika) to HTTP clients. Return generic errors (`"internal error"`) and log details server-side.
 
 ### HTTP Services
+
 - **Every internal HTTP service must have auth.** Sidecar services (like `apps/ika-sidecar`) use a shared `Bearer` token from env vars (`IKA_SIDECAR_SECRET`). Never expose signing/DKG endpoints without auth.
 - **Cap concurrent goroutines** for async pipeline execution. Use a semaphore (`chan struct{}`) to prevent unbounded goroutine creation from HTTP requests.
 - **Validate state transitions** at the persistence layer (Convex mutations), not just in application code. The canonical transition map must be enforced where data is written.
 
 ### Solana / Anchor Programs
+
 - **Always use `checked_add`/`checked_sub` with `.ok_or(error!(...))?`** — never `.unwrap()` on arithmetic in Anchor programs. Silent panics become DoS vectors.
 - **Use correct error variants** in Anchor constraints. The `@ ErrorVariant` in `constraint = ...` must describe the actual failure (e.g., `UnauthorizedCoSigner`, not `AgentFrozen`).
 
 ### Convex
+
 - **Validate enum fields** in Convex mutations. Use `v.union(v.literal("a"), v.literal("b"))` instead of `v.string()` for status/type fields.
 - **Convex `v.id("table")` expects a real Convex document ID**, not an arbitrary string. Validate existence before passing client-supplied IDs to mutations.
 
 ### EVM / Chain Adapters
+
 - **Use `math/big.Int` for wei/balance parsing**, not `uint64`. ETH balances overflow `uint64` above ~18.44 ETH.
 
 <!-- convex-ai-start -->
+
 This project uses [Convex](https://convex.dev) as its backend.
 
 When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
 
 Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+
 <!-- convex-ai-end -->

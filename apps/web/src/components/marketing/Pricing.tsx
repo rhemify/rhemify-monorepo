@@ -1,54 +1,69 @@
-const features = [
-  { text: 'CEO agent always included', free: true },
-  { text: '2 departments on free tier', free: true },
-  { text: 'Real-time transaction feed', free: false },
-  { text: 'Per-agent spend policies', free: false },
-  { text: 'Multi-chain payments', free: false },
-  { text: 'SDK access', free: false },
-]
-
-function FreeBadge() {
-  return (
-    <span className="bg-rhm-accent-tint text-rhm-accent-dark font-mono text-[10px] px-[7px] py-[2px] rounded ml-1.5">
-      free
-    </span>
-  )
-}
+import { ScrollReveal } from "@/components/marketing/ScrollReveal";
+import { PricingCard } from "@/components/ui/pricing";
 
 export function Pricing() {
   return (
-    <section id="pricing" className="bg-white py-24">
-      <div className="max-w-5xl mx-auto px-6 text-center">
-        <p className="font-mono text-xs uppercase text-muted-foreground tracking-[0.1em] mb-2">PRICING</p>
-        <h2 className="text-[clamp(28px,5vw,38px)] font-bold mb-3">Simple, per-agent pricing</h2>
-        <p className="text-base text-muted-foreground">No platform fees. No hidden costs. Cancel anytime.</p>
+    <section id="pricing" className="scroll-mt-24 border-t border-border px-6 py-16 md:py-32">
+      <div className="mx-auto max-w-3xl">
+        <div className="mx-auto flex max-w-3xl flex-col text-left md:text-center">
+          <ScrollReveal fadeOnly x={32} durationMs={1050} delayMs={0} className="block">
+            <h2 className="mb-3 text-3xl font-semibold text-text md:mb-4 lg:mb-6 lg:text-4xl">
+              Plans made for every agent fleet
+            </h2>
+          </ScrollReveal>
 
-        <div className="max-w-[400px] mx-auto mt-8">
-          <div className="bg-background rounded-xl border-[0.5px] border-border p-10 text-left">
-            <div>
-              <span className="text-5xl font-bold">$9.00</span>
-              <span className="text-base text-muted-foreground font-normal">/agent/mo</span>
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">Only active agents are billed. Pause anytime.</p>
-
-            <div className="border-t-[0.5px] border-border mt-6 pt-5">
-              <div className="space-y-3">
-                {features.map((feature) => (
-                  <div key={feature.text} className="text-sm text-foreground">
-                    <span className="text-rhm-accent-dark mr-2">✓</span>
-                    {feature.text}
-                    {feature.free && <FreeBadge />}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button className="bg-rhm-accent text-[#1A1F00] w-full py-3 rounded-lg text-sm font-medium hover:opacity-[0.88] transition-opacity mt-6 cursor-pointer">
-              Start free →
-            </button>
-          </div>
+          <ScrollReveal fadeOnly durationMs={990} delayMs={120} className="block">
+            <p className="mb-6 text-muted md:mb-8 lg:mb-12 lg:text-lg">
+              Start with a free CEO agent and two departments. Scale to unlimited agents with full
+              spend policies when you&apos;re ready.
+            </p>
+          </ScrollReveal>
         </div>
+
+        <ScrollReveal y={16} durationMs={1120} delayMs={125} className="block">
+          <div className="flex flex-col justify-between rounded-xl border border-border p-1">
+            <div className="flex flex-col gap-4 md:flex-row">
+              <PricingCard
+                title="Free"
+                price="$0 /month"
+                description="Kick the tires with a single CEO agent and two departments."
+                buttonVariant="outline"
+                ctaLabel="Get Started"
+                ctaHref="/signup"
+                features={[
+                  "CEO agent always included",
+                  "2 department agents",
+                  "Real-time transaction feed",
+                  "Basic spend guardrails",
+                  "Community support",
+                ]}
+              />
+
+              <PricingCard
+                title="Pro"
+                price="$9 /agent /month"
+                description="For teams running production agent fleets with full delegation."
+                buttonVariant="default"
+                highlight
+                ctaLabel="Get Started"
+                ctaHref="/signup"
+                features={[
+                  "Unlimited agents & departments",
+                  "Per-agent spend policies",
+                  "Multi-chain payments",
+                  "Approved vendors & daily limits",
+                  "Agent-to-agent delegation",
+                  "SDK access",
+                  "Real-time audit logs",
+                  "Auto-freeze on policy breach",
+                  "Priority support",
+                  "Only active agents are billed",
+                ]}
+              />
+            </div>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
-  )
+  );
 }

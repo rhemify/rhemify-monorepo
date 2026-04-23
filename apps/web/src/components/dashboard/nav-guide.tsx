@@ -1,6 +1,6 @@
-import { StatusDot } from '@/components/dashboard/status-dot'
+import { StatusDot } from "@/components/dashboard/status-dot";
 
-const completedSteps = ['Sign up', 'Build', 'Fund', 'Deploy']
+const completedSteps = ["Sign up", "Build", "Fund", "Deploy"];
 
 export function NavGuide() {
   return (
@@ -16,5 +16,5 @@ export function NavGuide() {
         Fleet live
       </span>
     </div>
-  )
+  );
 }

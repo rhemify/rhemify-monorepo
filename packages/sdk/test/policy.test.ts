@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { PolicyEngine } from "../src/policy/index.js";
-import type {
-  DetectionResult,
-  PolicyContext,
-} from "../src/types.js";
+import type { DetectionResult, PolicyContext } from "../src/types.js";
 
 // Helper: create a detection result with a given price in base units (USDC 6 decimals)
-function makeDetection(priceRaw: number, protocol = "x402" as const, network = "solana-mainnet"): DetectionResult {
+function makeDetection(
+  priceRaw: number,
+  protocol = "x402" as const,
+  network = "solana-mainnet",
+): DetectionResult {
   return {
     protocol,
     confidence: "high",
@@ -217,7 +218,7 @@ describe("PolicyEngine", () => {
 
       const result = engine.evaluateWithContext(detection, "api.example.com", context);
       // max_per_tx will block this ($100 > $50), but approval_threshold won't
-      const approvalRule = result.rulesFired.find(r => r.rule === "approval_threshold");
+      const approvalRule = result.rulesFired.find((r) => r.rule === "approval_threshold");
       expect(approvalRule?.decision).toBe("allow");
     });
 

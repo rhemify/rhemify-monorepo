@@ -91,10 +91,7 @@ describe("AnchorQueue", () => {
 
     expect(queue.pending()).toBe(0);
     expect(anchored).toHaveBeenCalledWith("trc_1", "mock_tx_signature_base58");
-    expect(transport.updateTraceAnchor).toHaveBeenCalledWith(
-      "trc_1",
-      "mock_tx_signature_base58",
-    );
+    expect(transport.updateTraceAnchor).toHaveBeenCalledWith("trc_1", "mock_tx_signature_base58");
   });
 
   it("drops oldest when queue is full", () => {

@@ -32,57 +32,57 @@ Every call to `rhemify.pay()` emits three categories of data, regardless of outc
 
 **Payment Event** — the facts of what happened.
 
-| Field | Source | Example |
-|---|---|---|
-| id | Generated UUID | `evt_a1b2c3` |
-| timestamp | System clock (ISO 8601) | `2026-04-15T14:32:01Z` |
-| agent_id | From fleet registry | `agent-7` |
-| fleet_id | From fleet registry | `fleet-rhemify-prod` |
-| standard | Standard Detector | `x402` |
-| standard_version | From 402 headers | `1.0.0` |
-| amount | From PaymentIntent | `0.50` |
-| token | From PaymentIntent | `USDC` |
-| chain_from | From wallet manifest | `solana` |
-| chain_to | From 402 response | `solana` |
-| domain | Parsed from URL | `api.bloomberg.com` |
-| outcome | From executor | `success` / `rejected` / `failed` |
-| parent_event_id | If delegated payment | `evt_x9y8z7` or null |
-| delegation_depth | Computed | `0` |
-| instrument_type | From path resolver | `ows` / `privy` / `agentcard` |
-| trace_id | Links to trace | `trc_d4e5f6` |
+| Field            | Source                  | Example                           |
+| ---------------- | ----------------------- | --------------------------------- |
+| id               | Generated UUID          | `evt_a1b2c3`                      |
+| timestamp        | System clock (ISO 8601) | `2026-04-15T14:32:01Z`            |
+| agent_id         | From fleet registry     | `agent-7`                         |
+| fleet_id         | From fleet registry     | `fleet-rhemify-prod`              |
+| standard         | Standard Detector       | `x402`                            |
+| standard_version | From 402 headers        | `1.0.0`                           |
+| amount           | From PaymentIntent      | `0.50`                            |
+| token            | From PaymentIntent      | `USDC`                            |
+| chain_from       | From wallet manifest    | `solana`                          |
+| chain_to         | From 402 response       | `solana`                          |
+| domain           | Parsed from URL         | `api.bloomberg.com`               |
+| outcome          | From executor           | `success` / `rejected` / `failed` |
+| parent_event_id  | If delegated payment    | `evt_x9y8z7` or null              |
+| delegation_depth | Computed                | `0`                               |
+| instrument_type  | From path resolver      | `ows` / `privy` / `agentcard`     |
+| trace_id         | Links to trace          | `trc_d4e5f6`                      |
 
 **Decision Trace** — the reasoning behind the payment.
 
-| Field | Source | Purpose |
-|---|---|---|
-| id | Generated UUID | Primary key |
-| payment_event_id | Links to event | Join key |
-| agent_task_description | From agent context | "Researching market data for Q1 report" |
-| agent_task_step | From agent context | `3` |
-| trigger_402_raw | Captured HTTP response | Full headers + body of the 402 |
-| standard_detected | Standard Detector | `x402` |
-| standard_confidence | Standard Detector | `high` / `medium` / `low` |
-| alternatives_evaluated | Path Resolver | `[{path: "agentcard_mpp_spt", rejected_reason: "insufficient_balance"}, ...]` |
-| policy_rules_fired | Policy Engine | `[{rule: "daily_limit", value: "$340/$500", result: "pass"}, ...]` |
-| instrument_selection_log | Path Resolver | "OWS Solana selected: cheapest path, direct chain match" |
-| bridge_scoring | Path Resolver | `{cctp: {cost: 0.002, time: 5s}, relay: {cost: 0.05, time: 30s}}` or null |
-| economic_rationality_check | Path Resolver | `{bridge_cost_pct: 0.4, threshold: 20, passed: true}` or null |
-| task_outcome | Linked later | `success` / `failure` / `pending` / null |
-| task_outcome_linked_at | Linked later | ISO 8601 or null |
-| replay_snapshot | Snapshot at decision time | `{wallet_manifest, policy_state, vendor_registry_snapshot, agent_context}` |
+| Field                      | Source                    | Purpose                                                                       |
+| -------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| id                         | Generated UUID            | Primary key                                                                   |
+| payment_event_id           | Links to event            | Join key                                                                      |
+| agent_task_description     | From agent context        | "Researching market data for Q1 report"                                       |
+| agent_task_step            | From agent context        | `3`                                                                           |
+| trigger_402_raw            | Captured HTTP response    | Full headers + body of the 402                                                |
+| standard_detected          | Standard Detector         | `x402`                                                                        |
+| standard_confidence        | Standard Detector         | `high` / `medium` / `low`                                                     |
+| alternatives_evaluated     | Path Resolver             | `[{path: "agentcard_mpp_spt", rejected_reason: "insufficient_balance"}, ...]` |
+| policy_rules_fired         | Policy Engine             | `[{rule: "daily_limit", value: "$340/$500", result: "pass"}, ...]`            |
+| instrument_selection_log   | Path Resolver             | "OWS Solana selected: cheapest path, direct chain match"                      |
+| bridge_scoring             | Path Resolver             | `{cctp: {cost: 0.002, time: 5s}, relay: {cost: 0.05, time: 30s}}` or null     |
+| economic_rationality_check | Path Resolver             | `{bridge_cost_pct: 0.4, threshold: 20, passed: true}` or null                 |
+| task_outcome               | Linked later              | `success` / `failure` / `pending` / null                                      |
+| task_outcome_linked_at     | Linked later              | ISO 8601 or null                                                              |
+| replay_snapshot            | Snapshot at decision time | `{wallet_manifest, policy_state, vendor_registry_snapshot, agent_context}`    |
 
 **Policy Decisions** — every rule evaluation, whether it passed or blocked.
 
-| Field | Source | Example |
-|---|---|---|
-| id | Generated UUID | `pdec_g7h8i9` |
-| payment_event_id | Links to event | `evt_a1b2c3` |
-| rule_triggered | Policy Engine | `daily_limit` |
-| decision | Policy Engine | `allow` / `flag` / `block` |
-| threshold | Policy config | `500.00` |
-| domain | From PaymentIntent | `api.bloomberg.com` |
-| standard | From PaymentIntent | `x402` |
-| human_approval_required | Policy Engine | `false` |
+| Field                   | Source             | Example                    |
+| ----------------------- | ------------------ | -------------------------- |
+| id                      | Generated UUID     | `pdec_g7h8i9`              |
+| payment_event_id        | Links to event     | `evt_a1b2c3`               |
+| rule_triggered          | Policy Engine      | `daily_limit`              |
+| decision                | Policy Engine      | `allow` / `flag` / `block` |
+| threshold               | Policy config      | `500.00`                   |
+| domain                  | From PaymentIntent | `api.bloomberg.com`        |
+| standard                | From PaymentIntent | `x402`                     |
+| human_approval_required | Policy Engine      | `false`                    |
 
 ### Ingestion Guarantees
 
@@ -100,21 +100,21 @@ These tables are updated as a side effect of every ingested payment event. They 
 
 Updated on every payment event. No manual curation — purely auto-built from transaction data.
 
-| Field | Computation | Example |
-|---|---|---|
-| domain | From payment event | `api.bloomberg.com` |
-| supported_standards | Set of all standards seen | `["x402", "mpp"]` |
-| success_rate | `successes / total` (last 100 events or 30 days, whichever is smaller) | `0.92` |
-| avg_latency_ms | Rolling average of execution time | `340` |
-| uptime_pct | `(1 - failure_rate) * 100` | `98.5` |
-| last_seen | Timestamp of most recent event | `2026-04-15T14:32:01Z` |
-| total_spend | Sum of all successful payment amounts | `127.50` |
-| event_count | Total events (all outcomes) | `156` |
-| cost_per_success | `total_spend / successful_task_outcomes` | `0.85` |
-| is_blocked | Set by intelligence rules or operator | `false` |
-| blocked_reason | Why it was blocked | `"auto_blocked: success_rate 38% < 50%"` |
-| blocked_at | When it was blocked | ISO 8601 or null |
-| source | Origin of vendor data | `"observed"` / `"agentcash_seed"` |
+| Field               | Computation                                                            | Example                                  |
+| ------------------- | ---------------------------------------------------------------------- | ---------------------------------------- |
+| domain              | From payment event                                                     | `api.bloomberg.com`                      |
+| supported_standards | Set of all standards seen                                              | `["x402", "mpp"]`                        |
+| success_rate        | `successes / total` (last 100 events or 30 days, whichever is smaller) | `0.92`                                   |
+| avg_latency_ms      | Rolling average of execution time                                      | `340`                                    |
+| uptime_pct          | `(1 - failure_rate) * 100`                                             | `98.5`                                   |
+| last_seen           | Timestamp of most recent event                                         | `2026-04-15T14:32:01Z`                   |
+| total_spend         | Sum of all successful payment amounts                                  | `127.50`                                 |
+| event_count         | Total events (all outcomes)                                            | `156`                                    |
+| cost_per_success    | `total_spend / successful_task_outcomes`                               | `0.85`                                   |
+| is_blocked          | Set by intelligence rules or operator                                  | `false`                                  |
+| blocked_reason      | Why it was blocked                                                     | `"auto_blocked: success_rate 38% < 50%"` |
+| blocked_at          | When it was blocked                                                    | ISO 8601 or null                         |
+| source              | Origin of vendor data                                                  | `"observed"` / `"agentcash_seed"`        |
 
 **Seed data:** AgentCash's 338 endpoints are seeded on Day 1 with `source: "agentcash_seed"`. Their fields populate from observed data as real transactions flow.
 
@@ -122,43 +122,43 @@ Updated on every payment event. No manual curation — purely auto-built from tr
 
 Updated on every payment event. Tracks the payment graph: who pays whom.
 
-| Field | Computation |
-|---|---|
-| from_agent_id | Agent that made the payment |
-| to_service | Domain that received payment |
-| to_agent_id | If payment was to another agent (delegation) |
-| delegation_depth | How deep in the delegation chain |
-| event_count | Number of payments on this edge |
-| cumulative_spend | Total amount on this edge |
-| last_event_at | Most recent payment on this edge |
+| Field            | Computation                                  |
+| ---------------- | -------------------------------------------- |
+| from_agent_id    | Agent that made the payment                  |
+| to_service       | Domain that received payment                 |
+| to_agent_id      | If payment was to another agent (delegation) |
+| delegation_depth | How deep in the delegation chain             |
+| event_count      | Number of payments on this edge              |
+| cumulative_spend | Total amount on this edge                    |
+| last_event_at    | Most recent payment on this edge             |
 
 ### Agent Aggregates
 
 Computed on every event. Powers anomaly detection.
 
-| Field | Computation |
-|---|---|
-| agent_id | Agent identifier |
-| daily_spend | Sum of today's successful payments (resets midnight UTC) |
-| 7d_avg_daily | Average daily spend over last 7 days |
-| avg_tx_amount | Rolling average transaction amount (last 50 txs) |
-| total_events | Total lifetime events |
-| success_rate | Agent's overall success rate |
-| last_active | Timestamp of most recent event |
+| Field         | Computation                                              |
+| ------------- | -------------------------------------------------------- |
+| agent_id      | Agent identifier                                         |
+| daily_spend   | Sum of today's successful payments (resets midnight UTC) |
+| 7d_avg_daily  | Average daily spend over last 7 days                     |
+| avg_tx_amount | Rolling average transaction amount (last 50 txs)         |
+| total_events  | Total lifetime events                                    |
+| success_rate  | Agent's overall success rate                             |
+| last_active   | Timestamp of most recent event                           |
 
 ### Fleet Aggregates
 
 Computed on every event. Powers fleet-level monitoring.
 
-| Field | Computation |
-|---|---|
-| fleet_id | Fleet identifier |
-| hourly_spend | Sum of last 60 minutes of successful payments |
-| 7d_avg_hourly | Average hourly spend over last 7 days |
-| active_agents | Count of agents with events in last hour |
-| total_spend_today | Fleet-wide spend since midnight UTC |
-| total_spend_alltime | Fleet-wide lifetime spend |
-| blocked_count_today | Policy rejections today |
+| Field               | Computation                                   |
+| ------------------- | --------------------------------------------- |
+| fleet_id            | Fleet identifier                              |
+| hourly_spend        | Sum of last 60 minutes of successful payments |
+| 7d_avg_hourly       | Average hourly spend over last 7 days         |
+| active_agents       | Count of agents with events in last hour      |
+| total_spend_today   | Fleet-wide spend since midnight UTC           |
+| total_spend_alltime | Fleet-wide lifetime spend                     |
+| blocked_count_today | Policy rejections today                       |
 
 ---
 
@@ -369,20 +369,20 @@ REVERSIBLE: N/A (alert only)
 
 Every action the rules engine takes is recorded in the `intelligence_actions` table:
 
-| Field | Description |
-|---|---|
-| id | Generated UUID |
-| timestamp | When the action was taken |
-| action_type | `auto_block` / `auto_flag` / `auto_alert` / `recommend` / `auto_route` / `log` |
-| severity | `LOG` / `FLAG` / `ALERT` / `AUTO_ACT` |
-| trigger_rule | Which rule fired (e.g., `VH-1`) |
-| trigger_event_id | The payment event that triggered it |
-| evidence | JSON blob with all supporting data |
-| action_detail | What specifically was done (e.g., "blocked domain api.example.com") |
-| outcome | `executed` / `pending_review` / `dismissed` / `reversed` |
-| operator_override | null / `confirmed` / `reversed` / `dismissed` |
-| operator_override_at | Timestamp of operator action |
-| operator_note | Optional note from operator |
+| Field                | Description                                                                    |
+| -------------------- | ------------------------------------------------------------------------------ |
+| id                   | Generated UUID                                                                 |
+| timestamp            | When the action was taken                                                      |
+| action_type          | `auto_block` / `auto_flag` / `auto_alert` / `recommend` / `auto_route` / `log` |
+| severity             | `LOG` / `FLAG` / `ALERT` / `AUTO_ACT`                                          |
+| trigger_rule         | Which rule fired (e.g., `VH-1`)                                                |
+| trigger_event_id     | The payment event that triggered it                                            |
+| evidence             | JSON blob with all supporting data                                             |
+| action_detail        | What specifically was done (e.g., "blocked domain api.example.com")            |
+| outcome              | `executed` / `pending_review` / `dismissed` / `reversed`                       |
+| operator_override    | null / `confirmed` / `reversed` / `dismissed`                                  |
+| operator_override_at | Timestamp of operator action                                                   |
+| operator_note        | Optional note from operator                                                    |
 
 ### Action Severity Behaviors
 
@@ -474,16 +474,16 @@ Each item in the feed links to the underlying payment event and trace.
 
 A table of all known vendors with computed intelligence:
 
-| Column | Source | Visual Treatment |
-|---|---|---|
-| Domain | vendor_registry | Text |
-| Success Rate | Computed | Color-coded: green (>80%), yellow (50-80%), red (<50%) |
-| Avg Latency | Computed | Color-coded: green (<1s), yellow (1-5s), red (>5s) |
-| Standards | Observed | Badges (x402, MPP, L402) |
-| Total Spend | Computed | Currency formatted |
-| Cost/Success | Computed from task outcomes | Currency formatted |
-| Status | is_blocked flag | Badge: Active / Blocked / Stale |
-| Last Seen | vendor_registry | Relative time ("2h ago") |
+| Column       | Source                      | Visual Treatment                                       |
+| ------------ | --------------------------- | ------------------------------------------------------ |
+| Domain       | vendor_registry             | Text                                                   |
+| Success Rate | Computed                    | Color-coded: green (>80%), yellow (50-80%), red (<50%) |
+| Avg Latency  | Computed                    | Color-coded: green (<1s), yellow (1-5s), red (>5s)     |
+| Standards    | Observed                    | Badges (x402, MPP, L402)                               |
+| Total Spend  | Computed                    | Currency formatted                                     |
+| Cost/Success | Computed from task outcomes | Currency formatted                                     |
+| Status       | is_blocked flag             | Badge: Active / Blocked / Stale                        |
+| Last Seen    | vendor_registry             | Relative time ("2h ago")                               |
 
 Blocked vendors are highlighted red with the blocked reason visible on hover. Operator can unblock with one click.
 
@@ -537,7 +537,7 @@ When the intelligence layer blocks a payment, the rejection includes actionable 
   "evidence": {
     "domain": "api.flaky-vendor.com",
     "success_rate": 0.38,
-    "threshold": 0.50,
+    "threshold": 0.5,
     "blocked_since": "2026-04-14T10:00:00Z"
   },
   "suggestion": "Try an alternative vendor for this data. Known alternatives: api.reliable-vendor.com (success_rate: 94%)"
@@ -563,33 +563,33 @@ rhemify.set_policy({
     auto_route_optimization: true,
 
     // Vendor health thresholds
-    vendor_block_threshold: 0.50,       // success_rate below this → auto-block
-    vendor_block_min_sample: 10,        // minimum events before auto-block
-    vendor_slow_threshold: 5000,        // ms — flag as slow
-    vendor_stale_days: 7,               // days without events → mark stale
+    vendor_block_threshold: 0.5, // success_rate below this → auto-block
+    vendor_block_min_sample: 10, // minimum events before auto-block
+    vendor_slow_threshold: 5000, // ms — flag as slow
+    vendor_stale_days: 7, // days without events → mark stale
 
     // Spend anomaly thresholds
-    agent_spend_anomaly_multiplier: 2,  // daily spend > 2x 7-day avg → alert
-    unusual_payment_multiplier: 5,      // single tx > 5x avg → flag
-    fleet_spike_multiplier: 3,          // hourly spend > 3x 7-day avg → alert
+    agent_spend_anomaly_multiplier: 2, // daily spend > 2x 7-day avg → alert
+    unusual_payment_multiplier: 5, // single tx > 5x avg → flag
+    fleet_spike_multiplier: 3, // hourly spend > 3x 7-day avg → alert
 
     // Route optimization
-    bridge_cost_alert_pct: 20,          // bridge cost > 20% of payment → alert
-    auto_route_min_sample: 10,          // minimum data points before auto-routing
-    auto_route_savings_threshold: 10,   // % savings required to auto-route
+    bridge_cost_alert_pct: 20, // bridge cost > 20% of payment → alert
+    auto_route_min_sample: 10, // minimum data points before auto-routing
+    auto_route_savings_threshold: 10, // % savings required to auto-route
 
     // Policy effectiveness
-    overtight_block_rate: 50,           // rule blocking > 50% of payments → alert
-    unused_rule_days: 30,               // no fires in 30 days → suggest cleanup
+    overtight_block_rate: 50, // rule blocking > 50% of payments → alert
+    unused_rule_days: 30, // no fires in 30 days → suggest cleanup
 
     // Task outcome
-    inefficient_vendor_multiplier: 2,   // cost/success > 2x fleet avg → flag
-    low_roi_agent_threshold: 50,        // success ratio < 50% → alert
+    inefficient_vendor_multiplier: 2, // cost/success > 2x fleet avg → flag
+    low_roi_agent_threshold: 50, // success ratio < 50% → alert
 
     // Guardrails
-    max_auto_actions_per_hour: 5,       // rate limit on auto-actions
-  }
-})
+    max_auto_actions_per_hour: 5, // rate limit on auto-actions
+  },
+});
 ```
 
 Defaults are designed to be conservative. Operators tighten or loosen as they gain confidence in the system.
@@ -598,16 +598,16 @@ Defaults are designed to be conservative. Operators tighten or loosen as they ga
 
 ## 9. Data Retention
 
-| Data Type | Retention | Rationale |
-|---|---|---|
-| payment_events | Permanent | Core audit trail, small per-record |
-| payment_traces | 90 days full, then compressed summary | Full traces are large (replay_snapshot). After 90 days, compress to summary (drop snapshot, keep all other fields). |
-| policy_decisions | Permanent | Small per-record, needed for policy effectiveness analysis |
-| vendor_registry | Permanent (current state) | Single row per vendor, updated in place |
-| payment_edges | Permanent | Small, needed for graph queries |
-| intelligence_actions | Permanent | Audit trail for all auto-actions |
-| agent_aggregates | Rolling 30 days | Only needed for anomaly detection baselines |
-| fleet_aggregates | Rolling 30 days | Only needed for spike detection |
+| Data Type            | Retention                             | Rationale                                                                                                           |
+| -------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| payment_events       | Permanent                             | Core audit trail, small per-record                                                                                  |
+| payment_traces       | 90 days full, then compressed summary | Full traces are large (replay_snapshot). After 90 days, compress to summary (drop snapshot, keep all other fields). |
+| policy_decisions     | Permanent                             | Small per-record, needed for policy effectiveness analysis                                                          |
+| vendor_registry      | Permanent (current state)             | Single row per vendor, updated in place                                                                             |
+| payment_edges        | Permanent                             | Small, needed for graph queries                                                                                     |
+| intelligence_actions | Permanent                             | Audit trail for all auto-actions                                                                                    |
+| agent_aggregates     | Rolling 30 days                       | Only needed for anomaly detection baselines                                                                         |
+| fleet_aggregates     | Rolling 30 days                       | Only needed for spike detection                                                                                     |
 
 ---
 
@@ -630,7 +630,7 @@ Defaults are designed to be conservative. Operators tighten or loosen as they ga
 
 1. Agent-7 has been averaging $120/day for the past week.
 2. Agent-7 starts a new task that requires many API calls. By noon, it's spent $280.
-3. $280 > 2 * $120 = $240. Rule SA-1 fires.
+3. $280 > 2 \* $120 = $240. Rule SA-1 fires.
 4. Dashboard: alert pushed via WebSocket. "Agent-7 spend anomaly: $280 today vs $120 7-day average."
 5. Operator investigates: opens Agent-7 detail page, sees the burst of payments, reviews the traces.
 6. Operator decides: this is expected (new task requires more data). Dismisses the alert.

@@ -62,11 +62,7 @@ export function verifyTrace(
 
   let merkleValid: boolean | null = null;
   if (merkle) {
-    merkleValid = verifyMerkleProof(
-      merkle.traceHash,
-      merkle.proof,
-      merkle.merkleRoot,
-    );
+    merkleValid = verifyMerkleProof(merkle.traceHash, merkle.proof, merkle.merkleRoot);
   }
 
   return { hashValid, merkleValid, computedHash };

@@ -57,28 +57,17 @@ server.registerTool(
         .enum(["GET", "POST", "PUT", "DELETE"])
         .optional()
         .describe("HTTP method (default GET)"),
-      body: z
-        .string()
-        .optional()
-        .describe("Request body as JSON string (for POST/PUT)"),
-      maxBudget: z
-        .string()
-        .optional()
-        .describe('Maximum budget for this payment (e.g. "$1.00")'),
+      body: z.string().optional().describe("Request body as JSON string (for POST/PUT)"),
+      maxBudget: z.string().optional().describe('Maximum budget for this payment (e.g. "$1.00")'),
       dryRun: z
         .boolean()
         .optional()
-        .describe(
-          "If true, run detect + policy + resolve without executing payment",
-        ),
+        .describe("If true, run detect + policy + resolve without executing payment"),
       taskContext: z
         .string()
         .optional()
         .describe("Description of the agent task requiring this payment"),
-      taskStep: z
-        .number()
-        .optional()
-        .describe("Current step number in the agent task"),
+      taskStep: z.number().optional().describe("Current step number in the agent task"),
     },
   },
   async (args) => {
@@ -204,21 +193,13 @@ server.registerTool(
       "Returns a session ID. Use rhemify_session_fetch to make requests within the session, " +
       "and rhemify_session_close to settle and close.",
     inputSchema: {
-      action: z
-        .enum(["open", "fetch", "close", "status"])
-        .describe("Session action to perform"),
-      url: z
-        .string()
-        .optional()
-        .describe("URL to fetch within the session (for 'fetch' action)"),
+      action: z.enum(["open", "fetch", "close", "status"]).describe("Session action to perform"),
+      url: z.string().optional().describe("URL to fetch within the session (for 'fetch' action)"),
       maxDeposit: z
         .string()
         .optional()
         .describe('Maximum deposit for the session (e.g. "$5.00", for "open" action)'),
-      taskContext: z
-        .string()
-        .optional()
-        .describe("Agent task description (for 'open' action)"),
+      taskContext: z.string().optional().describe("Agent task description (for 'open' action)"),
     },
   },
   async (args) => {
@@ -267,9 +248,7 @@ server.registerTool(
           }
           if (!args.url) {
             return {
-              content: [
-                { type: "text" as const, text: "URL is required for fetch action." },
-              ],
+              content: [{ type: "text" as const, text: "URL is required for fetch action." }],
               isError: true,
             };
           }
@@ -292,9 +271,7 @@ server.registerTool(
         case "close": {
           if (!activeSession) {
             return {
-              content: [
-                { type: "text" as const, text: "No active session to close." },
-              ],
+              content: [{ type: "text" as const, text: "No active session to close." }],
               isError: true,
             };
           }
@@ -393,17 +370,10 @@ server.registerTool(
   "rhemify_set_policy",
   {
     title: "Rhemify Set Policy",
-    description:
-      "Update the agent's payment policy. Changes take effect on the next payment.",
+    description: "Update the agent's payment policy. Changes take effect on the next payment.",
     inputSchema: {
-      dailyLimit: z
-        .number()
-        .optional()
-        .describe("Maximum daily spend in USD"),
-      maxPerTransaction: z
-        .number()
-        .optional()
-        .describe("Maximum per-transaction spend in USD"),
+      dailyLimit: z.number().optional().describe("Maximum daily spend in USD"),
+      maxPerTransaction: z.number().optional().describe("Maximum per-transaction spend in USD"),
       approvalThreshold: z
         .number()
         .optional()

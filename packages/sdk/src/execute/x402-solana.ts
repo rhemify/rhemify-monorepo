@@ -47,9 +47,7 @@ export const x402SolanaExecutor: PaymentExecutor = {
       // @ts-expect-error -- optional peer dep, may not be installed
       x402Solana = await import("x402-solana");
     } catch {
-      throw new ExecutionError(
-        'x402-solana is not installed. Run: bun add x402-solana',
-      );
+      throw new ExecutionError("x402-solana is not installed. Run: bun add x402-solana");
     }
 
     try {
@@ -70,9 +68,7 @@ export const x402SolanaExecutor: PaymentExecutor = {
 
       // Parse response
       const contentType = response.headers.get("content-type") ?? "";
-      const data = contentType.includes("json")
-        ? await response.json()
-        : await response.text();
+      const data = contentType.includes("json") ? await response.json() : await response.text();
 
       // Extract receipt from headers
       const txHash =

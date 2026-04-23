@@ -1,52 +1,52 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useAgents, usePolicies, useUpdatePolicy } from '@/lib/hooks'
-import { PolicySliders } from '@/components/dashboard/policy-sliders'
-import { StandardChips } from '@/components/dashboard/standard-chips'
-import { DomainTags } from '@/components/dashboard/domain-tags'
-import type { PaymentStandard, Policy } from '@/lib/types'
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useAgents, usePolicies, useUpdatePolicy } from "@/lib/hooks";
+import { PolicySliders } from "@/components/dashboard/policy-sliders";
+import { StandardChips } from "@/components/dashboard/standard-chips";
+import { DomainTags } from "@/components/dashboard/domain-tags";
+import type { PaymentStandard, Policy } from "@/lib/types";
 
-export const Route = createFileRoute('/dashboard/policies')({
+export const Route = createFileRoute("/dashboard/policies")({
   component: PoliciesScreen,
-})
+});
 
 function PoliciesScreen() {
-  const { data: agents } = useAgents()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { data: agents } = useAgents();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const agentId = selectedId ?? agents?.[0]?.id ?? ''
-  const selectedAgent = agents?.find((a) => a.id === agentId)
+  const agentId = selectedId ?? agents?.[0]?.id ?? "";
+  const selectedAgent = agents?.find((a) => a.id === agentId);
 
-  const { data: policy } = usePolicies(agentId)
-  const { mutate: updatePolicy } = useUpdatePolicy()
+  const { data: policy } = usePolicies(agentId);
+  const { mutate: updatePolicy } = useUpdatePolicy();
 
   const handleUpdate = (updates: Partial<Policy>) => {
-    if (!agentId) return
-    updatePolicy({ agentId, updates })
-  }
+    if (!agentId) return;
+    updatePolicy({ agentId, updates });
+  };
 
   const handleToggleStandard = (standard: PaymentStandard) => {
-    if (!policy) return
-    const current = policy.allowedStandards
+    if (!policy) return;
+    const current = policy.allowedStandards;
     const next = current.includes(standard)
       ? current.filter((s) => s !== standard)
-      : [...current, standard]
-    handleUpdate({ allowedStandards: next })
-  }
+      : [...current, standard];
+    handleUpdate({ allowedStandards: next });
+  };
 
   const handleAddDomain = (domain: string) => {
-    if (!policy) return
-    if (policy.domainAllowlist.includes(domain)) return
-    handleUpdate({ domainAllowlist: [...policy.domainAllowlist, domain] })
-  }
+    if (!policy) return;
+    if (policy.domainAllowlist.includes(domain)) return;
+    handleUpdate({ domainAllowlist: [...policy.domainAllowlist, domain] });
+  };
 
   const handleRemoveDomain = (domain: string) => {
-    if (!policy) return
-    handleUpdate({ domainAllowlist: policy.domainAllowlist.filter((d) => d !== domain) })
-  }
+    if (!policy) return;
+    handleUpdate({ domainAllowlist: policy.domainAllowlist.filter((d) => d !== domain) });
+  };
 
   if (!agents?.length) {
-    return <div className="text-foreground/20 p-10">No agents available.</div>
+    return <div className="text-foreground/20 p-10">No agents available.</div>;
   }
 
   return (
@@ -64,7 +64,7 @@ function PoliciesScreen() {
       </select>
 
       <div className="text-lg font-semibold text-foreground mb-6">
-        {selectedAgent?.name ?? 'Agent'} agent — policy controls
+        {selectedAgent?.name ?? "Agent"} agent — policy controls
       </div>
 
       {policy && (
@@ -84,5 +84,5 @@ function PoliciesScreen() {
         </div>
       )}
     </div>
-  )
+  );
 }

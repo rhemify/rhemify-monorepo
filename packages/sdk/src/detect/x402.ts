@@ -24,22 +24,15 @@ interface X402Requirement {
 export const x402Detector: ProtocolDetector = {
   name: "x402",
 
-  detect(
-    status: number,
-    _headers: Record<string, string>,
-    body: unknown,
-  ): DetectionResult | null {
+  detect(status: number, _headers: Record<string, string>, body: unknown): DetectionResult | null {
     if (status !== 402 || !body || typeof body !== "object") return null;
 
     const req = extractRequirement(body);
     if (!req) return null;
 
-    const amount = String(
-      req.maxAmountRequired ?? req.amount ?? req.price ?? "0",
-    );
+    const amount = String(req.maxAmountRequired ?? req.amount ?? req.price ?? "0");
     const network = req.network ?? "base";
-    const currency =
-      req.extra?.name ?? req.extra?.currency ?? guessCurrency(network);
+    const currency = req.extra?.name ?? req.extra?.currency ?? guessCurrency(network);
 
     return {
       protocol: "x402",
@@ -63,10 +56,7 @@ function extractRequirement(body: unknown): X402Requirement | null {
   }
 
   // { paymentRequirements: [...] }
-  if (
-    Array.isArray(obj.paymentRequirements) &&
-    obj.paymentRequirements.length > 0
-  ) {
+  if (Array.isArray(obj.paymentRequirements) && obj.paymentRequirements.length > 0) {
     return obj.paymentRequirements[0] as X402Requirement;
   }
 

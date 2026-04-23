@@ -1,22 +1,22 @@
-import { Link, useLocation } from '@tanstack/react-router'
-import { useAgents } from '@/lib/hooks'
-import { StatusDot } from '@/components/dashboard/status-dot'
+import { Link, useLocation } from "@tanstack/react-router";
+import { useAgents } from "@/lib/hooks";
+import { StatusDot } from "@/components/dashboard/status-dot";
 
 const navItems = [
-  { label: 'Overview', path: '/dashboard', icon: '◫' },
-  { label: 'Policies', path: '/dashboard/policies', icon: '◈' },
-  { label: 'Wallets', path: '/dashboard/wallets', icon: '▤' },
-  { label: 'Approvals', path: '/dashboard/approvals', icon: '✓' },
-]
+  { label: "Overview", path: "/dashboard", icon: "◫" },
+  { label: "Policies", path: "/dashboard/policies", icon: "◈" },
+  { label: "Wallets", path: "/dashboard/wallets", icon: "▤" },
+  { label: "Approvals", path: "/dashboard/approvals", icon: "✓" },
+];
 
 export function Sidebar() {
-  const location = useLocation()
-  const { data: agents } = useAgents()
+  const location = useLocation();
+  const { data: agents } = useAgents();
 
   const isActive = (path: string) => {
-    if (path === '/dashboard') return location.pathname === '/dashboard'
-    return location.pathname.startsWith(path)
-  }
+    if (path === "/dashboard") return location.pathname === "/dashboard";
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <aside className="w-[220px] min-w-[220px] h-screen bg-background border-r border-border flex flex-col">
@@ -31,21 +31,19 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex flex-col gap-0.5 px-1.5">
         {navItems.map((item) => {
-          const active = isActive(item.path)
+          const active = isActive(item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
               className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] no-underline transition-colors duration-150 ${
-                active
-                  ? 'text-[#fafafa] bg-white/[0.06]'
-                  : 'text-white/50 hover:bg-white/[0.04]'
+                active ? "text-[#fafafa] bg-white/[0.06]" : "text-white/50 hover:bg-white/[0.04]"
               }`}
             >
               <span className="text-sm w-[18px] text-center">{item.icon}</span>
               {item.label}
             </Link>
-          )
+          );
         })}
       </nav>
 
@@ -77,5 +75,5 @@ export function Sidebar() {
         <div>uptime: --</div>
       </div>
     </aside>
-  )
+  );
 }

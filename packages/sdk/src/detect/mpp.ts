@@ -14,16 +14,11 @@ import type { ProtocolDetector } from "./types.js";
 export const mppDetector: ProtocolDetector = {
   name: "mpp",
 
-  detect(
-    status: number,
-    headers: Record<string, string>,
-    body: unknown,
-  ): DetectionResult | null {
+  detect(status: number, headers: Record<string, string>, body: unknown): DetectionResult | null {
     if (status !== 402) return null;
 
     // Signal 1: WWW-Authenticate: Payment ...
-    const wwwAuth =
-      headers["www-authenticate"] ?? headers["WWW-Authenticate"] ?? "";
+    const wwwAuth = headers["www-authenticate"] ?? headers["WWW-Authenticate"] ?? "";
     if (wwwAuth.toLowerCase().startsWith("payment")) {
       return parseWwwAuthChallenge(wwwAuth, headers, body);
     }
@@ -39,10 +34,7 @@ export const mppDetector: ProtocolDetector = {
 
       // Direct challenge object
       if (obj.challenge && typeof obj.challenge === "object") {
-        return parseMppBodyChallenge(
-          obj.challenge as Record<string, unknown>,
-          headers,
-        );
+        return parseMppBodyChallenge(obj.challenge as Record<string, unknown>, headers);
       }
 
       // mppx structured challenge: { amount, currency, recipient, methodDetails }

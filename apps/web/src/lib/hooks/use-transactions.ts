@@ -34,10 +34,7 @@ function mapTransaction(doc: TxDoc): Transaction {
 
 export function useTransactions(limit = 50) {
   const fleetId = useFleetId();
-  const data = useQuery(
-    api.transactions.list,
-    fleetId ? { fleet_id: fleetId, limit } : "skip",
-  );
+  const data = useQuery(api.transactions.list, fleetId ? { fleet_id: fleetId, limit } : "skip");
 
   return {
     data: data?.map(mapTransaction),

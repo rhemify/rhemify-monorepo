@@ -14,8 +14,7 @@
 const PORT = Number(process.env.PORT ?? 3402);
 
 // Replace with your own devnet recipient address
-const SOLANA_RECIPIENT =
-  process.env.RECIPIENT_ADDRESS ?? "11111111111111111111111111111111";
+const SOLANA_RECIPIENT = process.env.RECIPIENT_ADDRESS ?? "11111111111111111111111111111111";
 
 const server = Bun.serve({
   port: PORT,
@@ -43,7 +42,10 @@ const server = Bun.serve({
 
     switch (url.pathname) {
       case "/health":
-        return Response.json({ status: "ok", endpoints: ["/stock-data", "/weather", "/analytics"] });
+        return Response.json({
+          status: "ok",
+          endpoints: ["/stock-data", "/weather", "/analytics"],
+        });
 
       case "/stock-data":
         return Response.json(

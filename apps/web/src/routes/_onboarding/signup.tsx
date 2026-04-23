@@ -1,31 +1,31 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useSetSession } from '@/lib/hooks'
-import type { UserRole } from '@/lib/types'
-import { SegmentedControl } from '@/components/onboarding/segmented-control'
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { useSetSession } from "@/lib/hooks";
+import type { UserRole } from "@/lib/types";
+import { SegmentedControl } from "@/components/onboarding/segmented-control";
 
-export const Route = createFileRoute('/_onboarding/signup')({
+export const Route = createFileRoute("/_onboarding/signup")({
   component: SignupScreen,
-})
+});
 
 function SignupScreen() {
-  const navigate = useNavigate()
-  const setSession = useSetSession()
-  const [email, setEmail] = useState('')
-  const [companyName, setCompanyName] = useState('')
-  const [role, setRole] = useState<UserRole>('solo-founder')
+  const navigate = useNavigate();
+  const setSession = useSetSession();
+  const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [role, setRole] = useState<UserRole>("solo-founder");
 
   const handleSubmit = () => {
     setSession.mutate({
-      email: email || 'alex@mybrand.com',
-      companyName: companyName || 'My Brand Co.',
+      email: email || "alex@mybrand.com",
+      companyName: companyName || "My Brand Co.",
       role,
-      activeDepartments: ['ceo'],
+      activeDepartments: ["ceo"],
       monthlySpendCap: 100,
       isDeployed: false,
-    })
-    navigate({ to: '/build' })
-  }
+    });
+    navigate({ to: "/build" });
+  };
 
   return (
     <div>
@@ -48,7 +48,9 @@ function SignupScreen() {
       </div>
 
       <div className="mb-[18px]">
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Company name</label>
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+          Company name
+        </label>
         <input
           type="text"
           placeholder="My Brand Co."
@@ -62,9 +64,9 @@ function SignupScreen() {
         <SegmentedControl
           label="I am a..."
           options={[
-            { value: 'solo-founder', label: 'Solo founder' },
-            { value: 'small-team', label: 'Small team' },
-            { value: 'enterprise', label: 'Enterprise' },
+            { value: "solo-founder", label: "Solo founder" },
+            { value: "small-team", label: "Small team" },
+            { value: "enterprise", label: "Enterprise" },
           ]}
           value={role}
           onChange={(v) => setRole(v as UserRole)}
@@ -73,10 +75,10 @@ function SignupScreen() {
 
       <button
         onClick={handleSubmit}
-        className="w-full h-9 px-4 rounded-lg text-[13px] font-medium bg-primary text-primary-foreground hover:opacity-[0.88] transition-opacity duration-150 cursor-pointer"
+        className="w-full h-9 cursor-pointer rounded-lg border border-(--onboarding-accent) bg-(--onboarding-accent) px-4 text-[13px] font-medium text-(--onboarding-accent-foreground) transition-opacity duration-150 hover:opacity-[0.88]"
       >
         Set up my company →
       </button>
     </div>
-  )
+  );
 }

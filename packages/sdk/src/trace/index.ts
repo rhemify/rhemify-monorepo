@@ -1,10 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import type {
-  DetectionResult,
-  PolicyDecision,
-  ScoredPath,
-  TraceRecord,
-} from "../types.js";
+import type { DetectionResult, PolicyDecision, ScoredPath, TraceRecord } from "../types.js";
 import type { TraceSnapshot } from "./types.js";
 
 export type { TraceSnapshot } from "./types.js";

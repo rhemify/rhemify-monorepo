@@ -1,8 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/dashboard/approvals')({
+export const Route = createFileRoute("/dashboard/approvals")({
   component: ApprovalsPlaceholder,
-})
+});
 
 function ApprovalsPlaceholder() {
   return (
@@ -14,5 +14,5 @@ function ApprovalsPlaceholder() {
         </p>
       </div>
     </div>
-  )
+  );
 }

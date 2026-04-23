@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 import { PathResolver } from "../src/resolve/index.js";
 import type { DetectionResult, WalletConfig } from "../src/types.js";
 
-function makeDetection(
-  overrides?: Partial<DetectionResult>,
-): DetectionResult {
+function makeDetection(overrides?: Partial<DetectionResult>): DetectionResult {
   return {
     protocol: "x402",
     confidence: "high",
