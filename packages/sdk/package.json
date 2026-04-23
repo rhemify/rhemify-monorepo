@@ -2,7 +2,13 @@
   "name": "@rhemify-monorepo/sdk",
   "version": "0.0.1",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -10,10 +16,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -34,13 +36,13 @@
     "vitest": "^3.0.0"
   },
   "peerDependencies": {
-    "x402-fetch": ">=0.1.0",
-    "x402-solana": ">=0.1.0",
+    "@solana/codecs": ">=2.0.0",
+    "@solana/kit": ">=6.5.0",
     "@solana/mpp": ">=0.2.0",
     "mppx": ">=0.3.15",
-    "@solana/kit": ">=6.5.0",
-    "@solana/codecs": ">=2.0.0",
-    "viem": ">=2.0.0"
+    "viem": ">=2.0.0",
+    "x402-fetch": ">=0.1.0",
+    "x402-solana": ">=0.1.0"
   },
   "peerDependenciesMeta": {
     "x402-fetch": {

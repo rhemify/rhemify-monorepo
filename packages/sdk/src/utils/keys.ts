@@ -32,7 +32,5 @@ export function decodeSolanaKey(key: string): Uint8Array {
     return bytes;
   }
 
-  throw new Error(
-    "Invalid Solana private key format. Expected JSON array, base64, or hex.",
-  );
+  throw new Error("Invalid Solana private key format. Expected JSON array, base64, or hex.");
 }

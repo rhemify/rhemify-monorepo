@@ -39,7 +39,7 @@ const policyResponse = {
 
 const tightPolicyResponse = {
   policy: {
-    dailyLimit: 0.10, // Only $0.10 daily limit
+    dailyLimit: 0.1, // Only $0.10 daily limit
     maxPerTransaction: 50,
     approvalThreshold: 0,
     allowedStandards: ["mpp"], // Only MPP allowed
@@ -53,11 +53,16 @@ const ingestResponse = { eventId: "evt_test", traceId: "trc_test" };
 
 function mockFetch(policyResp = policyResponse) {
   return vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const url =
+      typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const method = init?.method ?? "GET";
     let body: unknown;
     if (init?.body && typeof init.body === "string") {
-      try { body = JSON.parse(init.body); } catch { body = init.body; }
+      try {
+        body = JSON.parse(init.body);
+      } catch {
+        body = init.body;
+      }
     }
     fetchCalls.push({ url, method, body });
 
@@ -173,9 +178,9 @@ describe("pay() pipeline integration", () => {
     const rhemify = makeRhemify();
 
     // x402 is not in allowedStandards (only mpp allowed)
-    await expect(
-      rhemify.pay("https://api.example.com/paid", { dryRun: true }),
-    ).rejects.toThrow(PolicyBlockedError);
+    await expect(rhemify.pay("https://api.example.com/paid", { dryRun: true })).rejects.toThrow(
+      PolicyBlockedError,
+    );
   });
 
   it("throws BudgetExceededError when price exceeds budget", async () => {
@@ -192,9 +197,9 @@ describe("pay() pipeline integration", () => {
     globalThis.fetch = mockFetch();
     const rhemify = makeRhemify({ wallet: {} }); // No wallet keys
 
-    await expect(
-      rhemify.pay("https://api.example.com/paid", { dryRun: true }),
-    ).rejects.toThrow(NoWalletError);
+    await expect(rhemify.pay("https://api.example.com/paid", { dryRun: true })).rejects.toThrow(
+      NoWalletError,
+    );
   });
 
   it("still emits trace on policy block", async () => {
@@ -224,9 +229,7 @@ describe("pay() pipeline integration", () => {
     await rhemify.pay("https://api.example.com/paid", { dryRun: true });
 
     // Find a Go server call (policy fetch)
-    const policyCallIndex = fetchCalls.findIndex((c) =>
-      c.url.includes("/api/policy/"),
-    );
+    const policyCallIndex = fetchCalls.findIndex((c) => c.url.includes("/api/policy/"));
     expect(policyCallIndex).toBeGreaterThanOrEqual(0);
 
     // Check the raw fetch mock call for headers

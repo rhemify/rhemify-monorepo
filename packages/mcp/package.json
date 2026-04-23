@@ -2,10 +2,10 @@
   "name": "@rhemify-monorepo/mcp",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
   "bin": {
     "rhemify-mcp": "./dist/index.js"
   },
+  "type": "module",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -9,13 +9,7 @@
 
 // --- Payment Protocols ---
 
-export type PaymentProtocol =
-  | "x402"
-  | "mpp"
-  | "l402"
-  | "ap2"
-  | "acp"
-  | "unknown";
+export type PaymentProtocol = "x402" | "mpp" | "l402" | "ap2" | "acp" | "unknown";
 
 // --- Payment Event ---
 

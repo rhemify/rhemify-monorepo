@@ -1,12 +1,6 @@
 // --- Protocol Detection ---
 
-export type PaymentProtocol =
-  | "x402"
-  | "mpp"
-  | "l402"
-  | "ap2"
-  | "acp"
-  | "unknown";
+export type PaymentProtocol = "x402" | "mpp" | "l402" | "ap2" | "acp" | "unknown";
 
 export interface DetectionResult {
   protocol: PaymentProtocol;
@@ -59,13 +53,7 @@ export interface PolicyContext {
 
 // --- Path Resolver ---
 
-export type InstrumentType =
-  | "ows"
-  | "privy"
-  | "agentcard"
-  | "squads"
-  | "jupiter"
-  | "cctp";
+export type InstrumentType = "ows" | "privy" | "agentcard" | "squads" | "jupiter" | "cctp";
 
 export interface ScoredPath {
   instrument: InstrumentType;
@@ -226,10 +214,7 @@ export interface FleetStatus {
 }
 
 export interface Rhemify {
-  pay: <T = unknown>(
-    url: string,
-    options?: PayOptions,
-  ) => Promise<PayResult<T>>;
+  pay: <T = unknown>(url: string, options?: PayOptions) => Promise<PayResult<T>>;
   probe: (url: string, options?: ProbeOptions) => Promise<ProbeResult>;
   session: (options?: SessionOptions) => Promise<MppSession>;
   setPolicy: (policy: Partial<PolicyConfig>) => Promise<void>;

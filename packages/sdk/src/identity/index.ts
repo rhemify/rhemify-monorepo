@@ -73,9 +73,7 @@ export async function findAgentSubdomains(
   const { getDomainKeySync } = await import("@bonfida/spl-name-service");
   const connection = new Connection(rpcUrl);
 
-  const normalized = parentDomain.endsWith(".sol")
-    ? parentDomain.slice(0, -4)
-    : parentDomain;
+  const normalized = parentDomain.endsWith(".sol") ? parentDomain.slice(0, -4) : parentDomain;
 
   try {
     const subdomains = await findSubdomains(connection, getDomainKeySync(normalized).pubkey);

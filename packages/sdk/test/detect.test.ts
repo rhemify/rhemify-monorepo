@@ -89,7 +89,7 @@ describe("mpp detector", () => {
   it("MPP takes priority over x402 when WWW-Authenticate is present", () => {
     const result = detectFromResponse(
       402,
-      { "www-authenticate": "Payment scheme=\"solana\" amount=\"100\"" },
+      { "www-authenticate": 'Payment scheme="solana" amount="100"' },
       { accepts: [{ scheme: "exact", network: "base" }] },
     );
     // MPP detector runs first and matches on WWW-Authenticate
@@ -109,7 +109,7 @@ describe("l402 detector (stub)", () => {
   it("detects LSAT variant", () => {
     const result = detectFromResponse(
       402,
-      { "www-authenticate": "LSAT macaroon=\"abc\", invoice=\"lnbc\"" },
+      { "www-authenticate": 'LSAT macaroon="abc", invoice="lnbc"' },
       null,
     );
     expect(result.protocol).toBe("l402");
@@ -139,11 +139,7 @@ describe("acp detector (stub)", () => {
 
 describe("detector chain priority", () => {
   it("returns unknown for 402 with no recognizable signals", () => {
-    const result = detectFromResponse(
-      402,
-      { "content-type": "text/plain" },
-      null,
-    );
+    const result = detectFromResponse(402, { "content-type": "text/plain" }, null);
     expect(result.protocol).toBe("unknown");
     expect(result.confidence).toBe("low");
   });
@@ -151,7 +147,7 @@ describe("detector chain priority", () => {
   it("L402 header takes priority over x402 body", () => {
     const result = detectFromResponse(
       402,
-      { "www-authenticate": "L402 macaroon=\"x\"" },
+      { "www-authenticate": 'L402 macaroon="x"' },
       { accepts: [{ scheme: "exact" }] },
     );
     // L402 detector runs after x402 in chain, but x402 needs body.accepts

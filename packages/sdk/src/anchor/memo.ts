@@ -39,9 +39,7 @@ export interface SendMemoOptions {
  *
  * Uses dynamic import of @solana/kit — fails gracefully if not installed.
  */
-export async function sendMemoTransaction(
-  options: SendMemoOptions,
-): Promise<string> {
+export async function sendMemoTransaction(options: SendMemoOptions): Promise<string> {
   const payload: MemoPayload = {
     op: "rhemify-trace",
     id: options.traceId,
@@ -85,26 +83,22 @@ export async function sendMemoTransaction(
   };
 
   // Build and send transaction
-  const { value: latestBlockhash } = await rpc
-    .getLatestBlockhash()
-    .send();
+  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
   const transaction = solanaKit.pipe(
     solanaKit.createTransactionMessage({ version: 0 }),
     (message: unknown) => solanaKit.setTransactionMessageFeePayer(signer.address, message),
     (message: unknown) =>
       solanaKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
-    (message: unknown) =>
-      solanaKit.appendTransactionMessageInstruction(memoInstruction, message),
+    (message: unknown) => solanaKit.appendTransactionMessageInstruction(memoInstruction, message),
   );
 
   const signedTransaction = await solanaKit.signTransactionMessageWithSigners(transaction);
 
-  const signature = await solanaKit
-    .sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(
-      signedTransaction,
-      { commitment: "confirmed" },
-    );
+  const signature = await solanaKit.sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(
+    signedTransaction,
+    { commitment: "confirmed" },
+  );
 
   // Encode signature to base58
   const { getBase58Decoder } = await import("@solana/codecs");
@@ -130,4 +124,3 @@ export function buildMemoPayload(
     ts: timestamp,
   };
 }
-

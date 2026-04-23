@@ -1,8 +1,4 @@
-import type {
-  DetectionResult,
-  PolicyDecision,
-  ScoredPath,
-} from "../types.js";
+import type { DetectionResult, PolicyDecision, ScoredPath } from "../types.js";
 
 export interface TraceSnapshot {
   url: string;

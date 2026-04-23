@@ -91,10 +91,7 @@ export async function detectProtocol(
   }
 
   if (response.status !== 402) {
-    throw new DetectionError(
-      `Expected 402, got ${response.status}`,
-      url,
-    );
+    throw new DetectionError(`Expected 402, got ${response.status}`, url);
   }
 
   // Collect headers into a plain object

@@ -4,9 +4,7 @@ import { ExecutionError } from "../src/errors.js";
 import type { DetectionResult, WalletConfig, ExecutionResult, PayOptions } from "../src/types.js";
 import type { PaymentExecutor } from "../src/execute/types.js";
 
-function makeDetection(
-  overrides?: Partial<DetectionResult>,
-): DetectionResult {
+function makeDetection(overrides?: Partial<DetectionResult>): DetectionResult {
   return {
     protocol: "x402",
     confidence: "high",
@@ -152,13 +150,9 @@ describe("executeWithCascade", () => {
     const exec1 = mockExecutor("none", false);
 
     await expect(
-      executeWithCascade(
-        "https://example.com",
-        makeDetection(),
-        { solanaPrivateKey: "fake" },
-        {},
-        [exec1],
-      ),
+      executeWithCascade("https://example.com", makeDetection(), { solanaPrivateKey: "fake" }, {}, [
+        exec1,
+      ]),
     ).rejects.toThrow(ExecutionError);
   });
 
@@ -167,13 +161,10 @@ describe("executeWithCascade", () => {
     const exec2 = mockExecutor("fail2", true, {}, true);
 
     await expect(
-      executeWithCascade(
-        "https://example.com",
-        makeDetection(),
-        { solanaPrivateKey: "fake" },
-        {},
-        [exec1, exec2],
-      ),
+      executeWithCascade("https://example.com", makeDetection(), { solanaPrivateKey: "fake" }, {}, [
+        exec1,
+        exec2,
+      ]),
     ).rejects.toThrow("All executors failed");
   });
 

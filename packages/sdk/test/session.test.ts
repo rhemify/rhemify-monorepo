@@ -19,8 +19,8 @@ const policyResponse = {
 
 const tightPolicyResponse = {
   policy: {
-    dailyLimit: 0.50,
-    maxPerTransaction: 0.10,
+    dailyLimit: 0.5,
+    maxPerTransaction: 0.1,
     approvalThreshold: 0,
     allowedStandards: ["x402"], // MPP not allowed
     domainAllowlist: [],
@@ -31,7 +31,8 @@ const tightPolicyResponse = {
 
 function mockFetch(policyResp = policyResponse) {
   return vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const url =
+      typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const method = init?.method ?? "GET";
     fetchCalls.push({ url, method });
 
@@ -157,9 +158,7 @@ describe("session() governance wrapper", () => {
 
     await session.close();
 
-    await expect(
-      session.fetch("https://api.vendor.com/data"),
-    ).rejects.toThrow("closed");
+    await expect(session.fetch("https://api.vendor.com/data")).rejects.toThrow("closed");
   });
 
   it("throws PolicyBlockedError when policy blocks the session deposit", async () => {
@@ -167,9 +166,7 @@ describe("session() governance wrapper", () => {
     const rhemify = makeRhemify();
 
     // MPP not in allowedStandards (only x402 allowed)
-    await expect(
-      rhemify.session({ maxDeposit: "$5.00" }),
-    ).rejects.toThrow(PolicyBlockedError);
+    await expect(rhemify.session({ maxDeposit: "$5.00" })).rejects.toThrow(PolicyBlockedError);
   });
 
   it("throws when deposit exceeds remaining daily limit", async () => {
@@ -181,7 +178,7 @@ describe("session() governance wrapper", () => {
         allowedStandards: [],
         domainAllowlist: [],
       },
-      spentToday: 1.50,
+      spentToday: 1.5,
       blockedDomains: [],
     };
 
@@ -189,18 +186,16 @@ describe("session() governance wrapper", () => {
     const rhemify = makeRhemify();
 
     // $5 deposit but only $0.50 remaining in daily limit
-    await expect(
-      rhemify.session({ maxDeposit: "$5.00" }),
-    ).rejects.toThrow(PolicyBlockedError);
+    await expect(rhemify.session({ maxDeposit: "$5.00" })).rejects.toThrow(PolicyBlockedError);
   });
 
   it("throws on invalid deposit amount", async () => {
     globalThis.fetch = mockFetch();
     const rhemify = makeRhemify();
 
-    await expect(
-      rhemify.session({ maxDeposit: "not-a-number" }),
-    ).rejects.toThrow("Invalid deposit");
+    await expect(rhemify.session({ maxDeposit: "not-a-number" })).rejects.toThrow(
+      "Invalid deposit",
+    );
   });
 
   it("close emits a session-close trace", async () => {
