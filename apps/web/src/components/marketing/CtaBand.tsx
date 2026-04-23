@@ -19,15 +19,15 @@ export function CtaBand() {
               decoding="async"
             />
 
-            {/* Mobile: scrim — same hue as `bg-bg` (#060607); avoid `black/*` which skews cooler vs the page */}
+            {/* Mobile: scrim — same hue as `bg-bg` (#0A0B0B); avoid `black/*` which skews cooler vs the page */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 z-2 bg-linear-to-b from-transparent from-28% via-[#060607]/52 via-55% to-[#060607] lg:hidden"
+              className="pointer-events-none absolute inset-0 z-2 bg-linear-to-b from-transparent from-28% via-[#0A0B0B]/52 via-55% to-[#0A0B0B] lg:hidden"
             />
             {/* Desktop: scrim toward copy column */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 z-2 hidden bg-linear-to-tr from-[#060607]/90 from-26% via-[#060607]/38 via-46% to-transparent lg:block"
+              className="pointer-events-none absolute inset-0 z-2 hidden bg-linear-to-tr from-[#0A0B0B]/90 from-26% via-[#0A0B0B]/38 via-46% to-transparent lg:block"
             />
 
             {/* Copy sits on the darkened side — flex-1 + min-h-0 so justify-end has real height (min-h alone does not satisfy h-full). */}
@@ -57,7 +57,7 @@ export function CtaBand() {
                   </Button>
                   <Button
                     href="mailto:team@rhemify.com?subject=Rhemify%20%E2%80%94%20partnership%20inquiry"
-                    className="h-auto min-h-[44px] cursor-pointer rounded-xl border border-white/20 bg-[#060607]/75 px-8 py-3.5 text-[15px] font-semibold text-text shadow-none transition-colors hover:border-white/35 hover:bg-[#060607]/90"
+                    className="h-auto min-h-[44px] cursor-pointer rounded-xl border border-white/20 bg-[#0A0B0B]/75 px-8 py-3.5 text-[15px] font-semibold text-text shadow-none transition-colors hover:border-white/35 hover:bg-[#0A0B0B]/90"
                   >
                     Talk to our team
                   </Button>

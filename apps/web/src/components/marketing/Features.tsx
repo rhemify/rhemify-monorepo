@@ -91,7 +91,7 @@ export function Features() {
   return (
     <section
       id="features"
-      className="relative z-10 scroll-mt-24 border-t border-border bg-[#0A0A0B] px-8 py-24 md:px-10 lg:px-20"
+      className="relative z-10 scroll-mt-24 border-t border-border bg-bg px-8 py-24 md:px-10 lg:px-20"
     >
       <div className="mx-auto w-full max-w-full">
         <SectionHeader />

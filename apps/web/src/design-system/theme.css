@@ -9,7 +9,7 @@
   --font-mono: var(--font-geist-mono), monospace;
 
   /* Canvas & surfaces */
-  --color-bg: #060607;
+  --color-bg: #0a0b0b;
   --color-bg-elevated: #0c0c0e;
   --color-surface: #111114;
   --color-surface2: #18181c;
@@ -20,7 +20,7 @@
   --color-muted-deep: #71717a;
 
   /* Semantic aliases (use alongside legacy names) */
-  --color-background: #060607;
+  --color-background: #0a0b0b;
   --color-foreground: #fafafa;
   --color-card: #111114;
   --color-card-foreground: #fafafa;
@@ -34,16 +34,16 @@
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-strong: rgba(255, 255, 255, 0.14);
   --color-input: rgba(255, 255, 255, 0.1);
-  --color-ring: rgba(190, 242, 100, 0.45);
+  --color-ring: rgba(77, 186, 138, 0.45);
 
-  /* Brand / actions */
-  --color-accent: #bef264;
+  /* Brand / actions — mint #4DBA8A (aligned with onboarding accent) */
+  --color-accent: #4dba8a;
   --color-accent-foreground: #0a0a0b;
-  --color-accent-hover: #d9f99d;
-  --color-accent-dark: #84cc16;
-  --color-accent-tint: rgba(190, 242, 100, 0.12);
+  --color-accent-hover: #5ed4a0;
+  --color-accent-dark: #2f8f68;
+  --color-accent-tint: rgba(77, 186, 138, 0.12);
   --color-accent-blue: #38bdf8;
-  --color-primary: #bef264;
+  --color-primary: #4dba8a;
   --color-primary-foreground: #0a0a0b;
   --color-btn-primary-text: #0a0a0b;
 
@@ -68,9 +68,9 @@
   --color-tag-muted-text: #a1a1aa;
   --color-tag-muted-border: rgba(255, 255, 255, 0.08);
 
-  --color-tag-accent: rgba(190, 242, 100, 0.14);
-  --color-tag-accent-text: #d9f99d;
-  --color-tag-accent-border: rgba(190, 242, 100, 0.28);
+  --color-tag-accent: rgba(77, 186, 138, 0.14);
+  --color-tag-accent-text: #7dccb0;
+  --color-tag-accent-border: rgba(77, 186, 138, 0.28);
 
   --color-tag-success: rgba(74, 222, 128, 0.12);
   --color-tag-success-text: #86efac;
