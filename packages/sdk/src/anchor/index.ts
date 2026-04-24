@@ -1,4 +1,4 @@
-export { sendMemoTransaction, buildMemoPayload } from "./memo.js";
+export { sendMemoTransaction, sendBatchMemoTransaction, buildMemoPayload } from "./memo.js";
 export type { MemoPayload, SendMemoOptions } from "./memo.js";
 export { AnchorQueue } from "./queue.js";
 export type { AnchorQueueConfig } from "./queue.js";

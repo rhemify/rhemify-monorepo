@@ -38,10 +38,44 @@ export interface SendMemoOptions {
 }
 
 /**
+ * Cached RPC resources — created once per (rpcUrl, privateKey) pair and
+ * reused across all memo transactions to avoid per-call connection overhead.
+ */
+interface RpcResources {
+  rpc: unknown;
+  rpcSubscriptions: unknown;
+  signer: unknown & { address: unknown };
+}
+const rpcCache = new Map<string, RpcResources>();
+
+async function getOrCreateRpcResources(
+  solanaPrivateKey: string,
+  rpcUrl: string,
+): Promise<RpcResources> {
+  const cacheKey = `${rpcUrl}:${solanaPrivateKey.slice(0, 8)}`;
+  const cached = rpcCache.get(cacheKey);
+  if (cached) return cached;
+
+  // @ts-expect-error -- optional peer dep
+  const solanaKit = await import("@solana/kit");
+  const { decodeSolanaKey } = await import("../utils/keys.js");
+
+  const keyBytes = decodeSolanaKey(solanaPrivateKey);
+  const keypair = await solanaKit.createKeyPairFromBytes(keyBytes);
+  const signer = await solanaKit.createSignerFromKeyPair(keypair);
+  const rpc = solanaKit.createSolanaRpc(rpcUrl);
+  const rpcSubscriptions = solanaKit.createSolanaRpcSubscriptions(
+    rpcUrl.replace("https://", "wss://").replace("http://", "ws://"),
+  );
+
+  const resources = { rpc, rpcSubscriptions, signer };
+  rpcCache.set(cacheKey, resources);
+  return resources;
+}
+
+/**
  * Send a Solana Memo transaction anchoring a trace hash onchain.
  * Returns the transaction signature (base58).
- *
- * Uses dynamic import of @solana/kit — fails gracefully if not installed.
  */
 export async function sendMemoTransaction(options: SendMemoOptions): Promise<string> {
   const payload: MemoPayload = {
@@ -53,64 +87,59 @@ export async function sendMemoTransaction(options: SendMemoOptions): Promise<str
     ts: options.timestamp,
   };
 
-  const memoData = JSON.stringify(payload);
-  if (memoData.length > 566) {
-    throw new Error(`Memo payload exceeds 566 byte limit: ${memoData.length} bytes`);
-  }
+  return sendBatchMemoTransaction([payload], options.solanaPrivateKey, options.rpcUrl);
+}
 
-  // Dynamic import of @solana/kit
+/**
+ * Send one Solana transaction with multiple Memo instructions.
+ * N memos in one tx costs the same ~$0.00075 as a single memo — true 5x savings.
+ * All payloads must fit within the 1232-byte transaction size limit.
+ */
+export async function sendBatchMemoTransaction(
+  payloads: MemoPayload[],
+  solanaPrivateKey: string,
+  rpcUrl: string,
+): Promise<string> {
+  if (payloads.length === 0) throw new Error("sendBatchMemoTransaction: no payloads");
+
   // @ts-expect-error -- optional peer dep
   const solanaKit = await import("@solana/kit");
+  const { rpc, rpcSubscriptions, signer } = await getOrCreateRpcResources(solanaPrivateKey, rpcUrl);
 
-  // Create keypair signer from private key bytes
-  const { decodeSolanaKey } = await import("../utils/keys.js");
-  const keyBytes = decodeSolanaKey(options.solanaPrivateKey);
-  const keypair = await solanaKit.createKeyPairFromBytes(keyBytes);
-  const signer = await solanaKit.createSignerFromKeyPair(keypair);
+  const encoder = new TextEncoder();
 
-  // Create RPC connection
-  const rpc = solanaKit.createSolanaRpc(options.rpcUrl);
-  const rpcSubscriptions = solanaKit.createSolanaRpcSubscriptions(
-    options.rpcUrl.replace("https://", "wss://").replace("http://", "ws://"),
-  );
+  const memoInstructions = payloads.map((payload) => {
+    const memoData = JSON.stringify(payload);
+    if (memoData.length > 566) {
+      throw new Error(`Memo payload exceeds 566 byte limit: ${memoData.length} bytes`);
+    }
+    return {
+      programAddress: solanaKit.address(MEMO_PROGRAM_ID),
+      accounts: [{ address: (signer as { address: unknown }).address, role: solanaKit.AccountRole.WRITABLE_SIGNER }],
+      data: encoder.encode(memoData),
+    };
+  });
 
-  // Build memo instruction
-  const memoInstruction = {
-    programAddress: solanaKit.address(MEMO_PROGRAM_ID),
-    accounts: [
-      {
-        address: signer.address,
-        role: solanaKit.AccountRole.WRITABLE_SIGNER,
-      },
-    ],
-    data: new TextEncoder().encode(memoData),
-  };
+  const { value: latestBlockhash } = await (rpc as { getLatestBlockhash: () => { send: () => Promise<{ value: unknown }> } }).getLatestBlockhash().send();
 
-  // Build and send transaction
-  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-
-  const transaction = solanaKit.pipe(
+  let txMessage = solanaKit.pipe(
     solanaKit.createTransactionMessage({ version: 0 }),
-    (message: unknown) => solanaKit.setTransactionMessageFeePayer(signer.address, message),
-    (message: unknown) =>
-      solanaKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
-    (message: unknown) => solanaKit.appendTransactionMessageInstruction(memoInstruction, message),
+    (msg: unknown) => solanaKit.setTransactionMessageFeePayer((signer as { address: unknown }).address, msg),
+    (msg: unknown) => solanaKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, msg),
   );
+  for (const ix of memoInstructions) {
+    txMessage = solanaKit.appendTransactionMessageInstruction(ix, txMessage);
+  }
 
-  const signedTransaction = await solanaKit.signTransactionMessageWithSigners(transaction);
-
+  const signedTransaction = await solanaKit.signTransactionMessageWithSigners(txMessage);
   await solanaKit.sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(signedTransaction, {
     commitment: "confirmed",
   });
 
-  // Extract and encode signature to base58. signTransactionMessageWithSigners returns
-  // a signed tx whose `.signatures` map holds the signature bytes keyed by pubkey.
   const { getBase58Decoder } = await import("@solana/codecs");
-  const signatures = (signedTransaction as unknown as { signatures: Record<string, Uint8Array> }).signatures;
+  const signatures = (signedTransaction as { signatures: Record<string, Uint8Array> }).signatures;
   const firstSig = Object.values(signatures)[0];
-  if (!firstSig) {
-    throw new Error("anchor memo: signed transaction has no signatures");
-  }
+  if (!firstSig) throw new Error("anchor memo: signed transaction has no signatures");
   return getBase58Decoder().decode(firstSig);
 }
 

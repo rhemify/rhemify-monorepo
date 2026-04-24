@@ -1,4 +1,5 @@
-import { sendMemoTransaction } from "./memo.js";
+import { sendMemoTransaction, sendBatchMemoTransaction } from "./memo.js";
+import type { MemoPayload } from "./memo.js";
 import type { GoServerTransport } from "../transport/index.js";
 
 export interface AnchorQueueConfig {
@@ -147,17 +148,32 @@ export class AnchorQueue {
       return this.processSingle(batch[0]!);
     }
 
-    // For batched memos: send one tx with multiple Memo instructions
-    // Currently sendMemoTransaction sends one memo per tx.
-    // TODO: Implement multi-memo tx builder for true batching.
-    // For now, send them individually but in sequence (still saves on
-    // blockhash fetching by reusing the same recent blockhash).
-    let allSuccess = true;
-    for (const item of batch) {
-      const success = await this.processSingle(item);
-      if (!success) allSuccess = false;
+    // True multi-memo batching: all N payloads in one Solana tx.
+    // N memos cost the same ~$0.00075 as a single memo tx.
+    try {
+      const payloads: MemoPayload[] = batch.map((item) => ({
+        op: "rhemify-trace",
+        id: item.traceId,
+        hash: item.traceHash,
+        fleet: item.fleetId,
+        agent: item.agentId,
+        ts: item.timestamp,
+      }));
+
+      const txSignature = await sendBatchMemoTransaction(
+        payloads,
+        this.config.solanaPrivateKey,
+        this.config.rpcUrl,
+      );
+
+      for (const item of batch) {
+        this.config.transport?.updateTraceAnchor(item.traceId, txSignature).catch(() => {});
+        this.config.onAnchored?.(item.traceId, txSignature);
+      }
+      return true;
+    } catch {
+      return false;
     }
-    return allSuccess;
   }
 
   private async processSingle(item: QueueItem): Promise<boolean> {
@@ -173,7 +189,6 @@ export class AnchorQueue {
       });
 
       this.config.transport?.updateTraceAnchor(item.traceId, txSignature).catch(() => {});
-
       this.config.onAnchored?.(item.traceId, txSignature);
       return true;
     } catch {
