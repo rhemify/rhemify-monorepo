@@ -1,5 +1,5 @@
 {
-  "buildCommand": "bun run build --filter=web",
+  "buildCommand": "bun run build --filter=web && mv apps/web/.vercel/output .vercel/output",
   "installCommand": "bun install",
   "framework": null
 }
