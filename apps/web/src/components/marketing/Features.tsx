@@ -29,12 +29,12 @@ function SectionHeader() {
       </ScrollReveal>
       <ScrollReveal fadeOnly x={32} durationMs={1050} delayMs={110} className="flex justify-center">
         <h2 className="mt-2 text-[clamp(1.65rem,4vw,2.35rem)] font-bold text-text">
-          One fleet. Full control.
+          The execution infrastructure agents are missing.
         </h2>
       </ScrollReveal>
       <ScrollReveal fadeOnly durationMs={1020} delayMs={200} className="flex justify-center">
         <p className="mt-3 w-full max-w-full text-[17px] leading-relaxed text-muted">
-          Deploy agents that act autonomously — with guardrails you define and spending you can see.
+          Structured intent routing, policy enforcement at the call layer, and unified payment rails — so agents can act safely and verifiably on Ethereum.
         </p>
       </ScrollReveal>
     </div>
@@ -98,9 +98,9 @@ export function Features() {
 
         <FeatureRow
           staggerBase={0}
-          overline="// Payments"
-          headline="Agents pay with your card"
-          body="Every agent gets delegated access to your payment method. Set per-agent budgets, daily limits, and approved vendors. Every charge is logged in real time."
+          overline="// Payment Rails"
+          headline="Unified x402 + MPP payment abstraction"
+          body="One SDK primitive abstracts x402 crypto micropayments, MPP web2 rails, and onchain gas. The runtime selects the right rail per action transparently — no manual wiring."
           visual={
             <FeatureVisualImage
               src="/payments.png"
@@ -111,9 +111,9 @@ export function Features() {
 
         <FeatureRow
           staggerBase={65}
-          overline="// Policies"
-          headline="Budgets that enforce themselves"
-          body="Define spend policies per agent, per department, per vendor. When limits hit, agents freeze automatically. No surprises."
+          overline="// Policy Engine"
+          headline="Enforcement at the tool layer, not spawn time"
+          body="OPA-style rules evaluated at every tool call. Actions are risk-tiered — LOW auto-executes, CRITICAL requires passkey sign. Prompt injection can't bypass it because the constraint lives in the execution layer."
           reversed
           visual={
             <FeatureVisualImage
@@ -125,9 +125,9 @@ export function Features() {
 
         <FeatureRow
           staggerBase={130}
-          overline="// Delegation"
-          headline="Agents that hire agents"
-          body="Your CEO agent delegates tasks to department agents. Research calls Marketing. Marketing calls Engineering. A mesh of autonomous work."
+          overline="// Intent Taxonomy"
+          headline="Deterministic routing across 20+ intent classes"
+          body="A structured schema of Ethereum retail intents — from simple swaps to multi-agent LP rebalancing — each mapped to params, protocol templates, risk tier, and payment rails. No hallucinated tool calls."
           visual={
             <FeatureVisualImage
               src="/delegation.png"

@@ -102,3 +102,4 @@ skills/
 .test-wallet.json
 .env.test
 local.db
+.vercel

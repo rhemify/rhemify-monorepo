@@ -8,20 +8,20 @@ type Step = {
 
 const STEPS: readonly Step[] = [
   {
-    title: "Onboarding",
-    body: "Create agents, set policies, and connect funding.",
+    title: "Classify intent",
+    body: "User intent is parsed into a structured class — swap, liquidity, send, rebalance — with extracted params, risk tier, and protocol rails.",
   },
   {
-    title: "Agents are running",
-    body: "Agents discover services, initiate payments, and act on your behalf.",
+    title: "Scoped execution context",
+    body: "Each agent run gets a passkey-bound, TTL-limited ExecutionContext. Sub-agents can only narrow scope — never expand it.",
   },
   {
-    title: "Something goes wrong",
-    body: "Built-in controls, approvals, and rules protect you and your business.",
+    title: "Policy check at the tool layer",
+    body: "Every tool call is evaluated against OPA rules before execution. HIGH and CRITICAL actions require explicit confirmation or passkey sign.",
   },
   {
-    title: "Optimizing the fleet",
-    body: "Monitor, analyze, and optimize agent spend and performance.",
+    title: "Execute and verify",
+    body: "Action routes through the correct protocol template. Every step is signed, logged, and anchored on-chain.",
   },
 ] as const;
 
@@ -90,13 +90,13 @@ export function Lifecycle() {
                 id="lifecycle-heading"
                 className="mt-5 text-[clamp(1.85rem,3.4vw,2.85rem)] font-bold leading-[1.12] tracking-tight text-text"
               >
-                The agent economic lifecycle on Rhemify.
+                From intent to on-chain execution.
               </h2>
             </ScrollReveal>
 
             <ScrollReveal fadeOnly durationMs={1020} delayMs={200} className="block">
               <p className="mt-5 max-w-md text-[clamp(1rem,1.3vw,1.15rem)] leading-relaxed text-muted">
-                From onboarding to optimization, Rhemify provides the rails for every agent transaction.
+                Every agent action flows through intent classification, scoped context, policy enforcement, and verified execution — in that order.
               </p>
             </ScrollReveal>
 

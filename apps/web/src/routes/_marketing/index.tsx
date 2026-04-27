@@ -1,28 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Navbar } from "@/components/marketing/Navbar";
+import { Hero } from "@/components/marketing/Hero";
+// import { StatsSection } from "@/components/marketing/StatsSection";
+import { Features } from "@/components/marketing/Features";
+import { Lifecycle } from "@/components/marketing/Lifecycle";
+import { AudienceTabs } from "@/components/marketing/AudienceTabs";
+import { Pricing } from "@/components/marketing/Pricing";
+import { CtaBand } from "@/components/marketing/CtaBand";
+import { Footer } from "@/components/marketing/Footer";
 
 export const Route = createFileRoute("/_marketing/")({
-  component: ComingSoon,
+  component: HomePage,
 });
 
-function ComingSoon() {
+function HomePage() {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-        background: "#09090b",
-        color: "#fafafa",
-        fontFamily: "Inter, sans-serif",
-      }}
-    >
-      <div style={{ textAlign: "center" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: -0.5 }}>
-          Rhem<span style={{ color: "#C8F03A" }}>ify</span>
-        </h1>
-        <p style={{ color: "#71717a", fontSize: 14, marginTop: 8 }}>Coming soon.</p>
-      </div>
+    <div className="overflow-x-hidden">
+      <Navbar />
+      <Hero />
+      {/*<StatsSection />*/}
+      <Features />
+      <Lifecycle />
+      <AudienceTabs />
+      <Pricing />
+      <CtaBand />
+      <Footer />
     </div>
   );
 }

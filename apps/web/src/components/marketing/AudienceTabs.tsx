@@ -8,20 +8,20 @@ const tabs = [
   {
     id: "founders",
     label: "Founders",
-    headline: "Your agents pay with your card. You see everything in dollars.",
-    body: "Toggle departments on or off. Each active department is one agent, billed monthly at $9.00/agent. Free tier includes CEO agent + 2 departments. No card required to start.",
+    headline: "Ship agents that execute on Ethereum — safely, out of the box.",
+    body: "The SDK handles scoped contexts, policy enforcement, and payment rails. You define the intents and risk tiers. Agents do the rest with guardrails built in.",
   },
   {
     id: "web3",
     label: "Web3 teams",
-    headline: "Multi-chain. MPP-native. Non-custodial.",
-    body: "npm install @rhemify/sdk — everything you need to integrate agent payments into your protocol. Solana, EVM, and stablecoin rails built in.",
+    headline: "x402, MPP, and onchain gas — one SDK primitive.",
+    body: "npm install @zhgg/sdk — ExecutionContext, OPA policy engine, Uniswap v3/v4 templates, and ENS identity wired together. Ethereum-native, TypeScript-first.",
   },
   {
     id: "enterprise",
     label: "Enterprise",
-    headline: "Fleet controls. SOC 2. Approval workflows. Audit logs.",
-    body: "Manage hundreds of agents with role-based access, custom policies, and compliance-ready audit trails. Built for teams that need control at scale.",
+    headline: "Signed audit trail. Attenuation guarantee. SOC 2 story.",
+    body: "Every action is logged and signed forensically. Sub-agents can only narrow scope — never expand it. Role-based approval queues for HIGH and CRITICAL risk actions at scale.",
   },
 ];
 

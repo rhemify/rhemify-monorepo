@@ -71,7 +71,7 @@ export function TrustStrip({ variant = "default" }: TrustStripProps) {
         <p
           className={`w-full max-w-full text-sm leading-snug md:text-base ${isHero ? "text-zinc-400" : "text-muted"}`}
         >
-          Partnered with leading institutions, chains, and open payment standards.
+          Integrated with
         </p>
       </ScrollReveal>
 

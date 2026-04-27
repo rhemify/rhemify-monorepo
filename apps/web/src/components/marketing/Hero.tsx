@@ -92,7 +92,7 @@ export function Hero() {
                   aria-hidden
                   className="inline-block h-1.5 w-1.5 rounded-full bg-[#52c390] shadow-[0_0_8px_rgba(82,195,144,0.85)]"
                 />
-                The Agentic Capital Market
+                Agent Execution Runtime
               </span>
             </ScrollReveal>
             <ScrollReveal
@@ -104,14 +104,14 @@ export function Hero() {
               className="block"
             >
               <h1 className="w-full max-w-full text-3xl font-bold leading-[1.02] tracking-tight text-white md:text-5xl lg:text-6xl text-center md:text-left">
-                Give your AI agents a{" "}
-                <span className="text-[#52c390]">wallet, a budget, and the rails</span> to spend on
-                their own.
+                Scoped permissions,{" "}
+                <span className="text-[#52c390]">enforced policies, and unified payment rails</span>{" "}
+                for Ethereum agents.
               </h1>
             </ScrollReveal>
             <ScrollReveal y={14} durationMs={1420} delayMs={420} revealOnMount className="block">
               <p className="text-sm leading-relaxed text-zinc-300 md:leading-relaxed lg:text-[17px]">
-                Per-agent budgets, real-time logging, and policies that enforce themselves.
+                ExecutionContext, policy engine at the tool layer, and a unified x402 + MPP payment rail — packaged as a TypeScript SDK.
               </p>
             </ScrollReveal>
             <ScrollReveal y={12} durationMs={1280} delayMs={580} revealOnMount className="block">
