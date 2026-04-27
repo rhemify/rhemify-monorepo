@@ -54,7 +54,7 @@ await esbuild.build({
   target: "node20",
   external: virtualExternals,
   outfile: resolve(funcDir, "server.bundle.cjs"),
-  logLevel: "warning",
+  logLevel: "error",
 });
 
 // 3. Handler adapter — wraps the H3 fetch interface for the Vercel Node runtime.
@@ -77,7 +77,7 @@ await esbuild.build({
   format: "esm",
   target: "node20",
   outfile: resolve(funcDir, "index.js"),
-  logLevel: "warning",
+  logLevel: "error",
 });
 
 // 5. Vercel function config
