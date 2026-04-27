@@ -1,5 +1,5 @@
 {
-  "buildCommand": "bun run build --filter=web && node scripts/build-vercel.mjs",
+  "buildCommand": "bun run build --filter=web",
   "installCommand": "bun install",
   "framework": null
 }

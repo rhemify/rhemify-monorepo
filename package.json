@@ -41,7 +41,6 @@
   "devDependencies": {
     "@rhemify-monorepo/config": "workspace:*",
     "@types/node": "catalog:",
-    "esbuild": "^0.28.0",
     "oxfmt": "^0.26.0",
     "oxlint": "^1.41.0",
     "turbo": "^2.8.12",
