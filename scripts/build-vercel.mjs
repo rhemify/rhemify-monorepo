@@ -10,8 +10,8 @@
  *   3. Write routing rules → .vercel/output/config.json
  */
 
-import { execSync } from "node:child_process";
 import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
@@ -34,28 +34,28 @@ cpSync(clientDist, staticDir, { recursive: true });
 //    Vite resolves TanStack's virtual modules at build time, so we mark the
 //    raw virtual module identifiers as external — they're never called at runtime.
 console.log("Bundling SSR server…");
-const esbuild = resolve(root, "node_modules/.bin/esbuild");
+// Use the esbuild JS API so we don't rely on a specific binary path.
+const req = createRequire(import.meta.url);
+const esbuild = req("esbuild");
+
 const virtualExternals = [
   "#tanstack-router-entry",
   "#tanstack-start-entry",
   "#tanstack-start-plugin-adapters",
   "tanstack-start-manifest:v",
   "tanstack-start-injected-head-scripts:v",
-].map((m) => `--external:${m}`);
-execSync(
-  [
-    esbuild,
-    resolve(serverDist, "server.js"),
-    "--bundle",
-    "--platform=node",
-    "--format=cjs",
-    "--target=node20",
-    ...virtualExternals,
-    `--outfile=${resolve(funcDir, "server.bundle.cjs")}`,
-    "--log-level=warning",
-  ].join(" "),
-  { stdio: "inherit" }
-);
+];
+
+await esbuild.build({
+  entryPoints: [resolve(serverDist, "server.js")],
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node20",
+  external: virtualExternals,
+  outfile: resolve(funcDir, "server.bundle.cjs"),
+  logLevel: "warning",
+});
 
 // 3. Handler adapter — wraps the H3 fetch interface for the Vercel Node runtime.
 writeFileSync(
@@ -70,19 +70,15 @@ export default toNodeHandler(server.fetch);
 );
 
 // 4. Bundle handler (ESM with srvx) to the final index.js
-execSync(
-  [
-    esbuild,
-    resolve(funcDir, "handler.js"),
-    "--bundle",
-    "--platform=node",
-    "--format=esm",
-    "--target=node20",
-    `--outfile=${resolve(funcDir, "index.js")}`,
-    "--log-level=warning",
-  ].join(" "),
-  { stdio: "inherit" }
-);
+await esbuild.build({
+  entryPoints: [resolve(funcDir, "handler.js")],
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  target: "node20",
+  outfile: resolve(funcDir, "index.js"),
+  logLevel: "warning",
+});
 
 // 5. Vercel function config
 writeFileSync(
