@@ -1,6 +1,7 @@
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 
 const LOGOS = [
+  { src: "/logo/base.svg", label: "Base" },
   { src: "/logo/agentcard.svg", label: "AgentCard" },
   { src: "/logo/circle.svg", label: "Circle" },
   { src: "/logo/l402.svg", label: "L402" },

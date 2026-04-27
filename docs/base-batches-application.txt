@@ -1,0 +1,256 @@
+BASE BATCHES APPLICATION — RHEMIFY
+=====================================
+
+────────────────────────────────────
+COMPANY & PRODUCT
+────────────────────────────────────
+
+Company Name:
+  Rhemify
+
+Website / Product URL:
+  rhemify.com
+
+Demo URL (video, prototype, etc.):
+  [ADD VIDEO LINK]
+
+Describe what your company does (≤50 characters):
+  Verifiable payment layer for AI agents.
+
+What is your product's unique value proposition?
+  Rhemify is the treasury intelligence layer for agentic commerce.
+  One call — rhemos.pay(url) — routes payments across any standard
+  (x402, MPP, L402, AP2), enforces fleet-wide policy before any
+  transaction touches a chain, and permanently anchors every decision
+  trace on Solana. Every competitor logs WHAT an agent paid. Rhemify
+  captures WHY: agent task context, alternatives evaluated, policy
+  rules fired, and confidence on standard detection — replayable in
+  a sandbox. That's the difference between a transaction log and a
+  flight recorder.
+
+  Core primitives:
+  • Multi-standard routing — detects payment standard from HTTP 402
+    headers, resolves cheapest instrument + chain path, executes.
+  • Fleet policy engine — per-agent spend limits, domain allowlists,
+    approval thresholds, standard restrictions. Enforced client-side
+    before any on-chain tx.
+  • Decision trace layer — full reasoning context per payment.
+    Given any payment_trace_id, replay the exact agent state in a
+    sandbox and run counterfactual policy analysis.
+  • Intelligence that compounds — vendor reliability scores, payment
+    graph memory, and subscription recommendations auto-built from
+    transaction data.
+
+What part of your product is onchain?
+  Every payment decision is hashed and anchored to Solana via PDAs
+  (Program Derived Addresses) using a custom Anchor program. This
+  creates a provable, immutable, replayable trace for every agent
+  action — not just what was paid, but the full reasoning context.
+  Cross-chain routing uses CCTP (Solana ↔ Base) and relay.link for
+  multi-chain instrument selection.
+
+What is your ideal customer profile?
+  Two segments, same product at different zoom levels:
+
+  Solo founders / indie developers:
+    Running 3–10 AI agents that spend money on APIs and services.
+    Pain: "My agents are spending and I have no idea if it's working."
+    Entry via npx rhemify onboard + free tier (3 agents forever).
+
+  Enterprise teams:
+    Deploying agent fleets (50–500+ agents) where legal and compliance
+    need to sign off before agents touch payment rails.
+    Pain: "We can't deploy agents with payment access without audit
+    trails and governance controls."
+    Entry via SDK integration + fleet policy config + SOC 2 path.
+
+Which category best describes your company?
+  Infrastructure / Developer Tooling (AI + Payments)
+
+Where are you located now, and where would the company be based after the program?
+  [ADD LOCATION]
+
+────────────────────────────────────
+BASE & TOKEN
+────────────────────────────────────
+
+Do you already have a token?
+  No token.
+
+What part of your product uses Base? Specify what's exclusive to Base vs other networks.
+  Base is one of the primary EVM execution chains in Rhemify's
+  multi-standard payment routing layer:
+
+  • x402 routing — Rhemify detects x402 payment headers and routes
+    USDC payments on Base natively via @x402/fetch. Base's low fees
+    make it the preferred EVM chain for per-call micropayments.
+
+  • CCTP bridging — Cross-chain instrument selection routes Solana
+    USDC → Base USDC via Circle's CCTP when a vendor's cheapest path
+    is on Base. This is the only cross-chain bridge in the stack
+    (Solana ↔ Base exclusively via CCTP; other EVM paths use
+    relay.link).
+
+  • EVM policy enforcement — Per-agent spend limits and domain
+    allowlists enforce before any Base transaction is broadcast.
+    Policy rejections never touch the chain.
+
+  What's exclusive to Base vs other networks:
+  Base is the exclusive EVM destination for CCTP-bridged payments
+  from Solana. Other EVM chains (Avalanche, IoTeX) are reachable via
+  relay.link but not via CCTP. Base also has the deepest x402
+  endpoint coverage in the current vendor registry (seeded from
+  AgentCash's 338 endpoints, majority on Base).
+
+────────────────────────────────────
+FOUNDERS & TEAM
+────────────────────────────────────
+
+Founder(s) names and contact information:
+  Sean Hoe — sean@teelapp.io
+  [ADD remaining founders and contacts]
+
+Describe each founder's background + LinkedIn profile(s):
+  Sean — Core runtime engineer. Built the payment routing schemas,
+  standard detection, policy engine, MCP server, and SDK.
+  LinkedIn: [ADD]
+
+  Aaron — Payment execution engineer. Built transaction signing,
+  AgentCard integration, Jupiter Swap routing, CCTP bridge, 402
+  endpoints, and CLI tooling.
+  LinkedIn: [ADD]
+
+  Zhe Hong — Backend + intelligence engineer. Built the Go REST API,
+  database layer, event ingestion, rules engine, and decision replay.
+  LinkedIn: [ADD]
+
+  Jun Shen — Frontend + dashboard engineer. Built fleet overview,
+  trace viewer, intelligence chat, and onboarding flow.
+  LinkedIn: [ADD]
+
+URL of ~1-minute unlisted video introducing founder(s) and what you're building:
+  [ADD VIDEO URL]
+
+Who writes code or handles technical development?
+  All four founders write code. No work done by non-founders.
+  Sean: runtime + SDK. Aaron: execution + CLI. Zhe Hong: backend.
+  Jun Shen: dashboard + UI.
+
+How long have the founders known each other and how did you meet?
+  [ADD]
+
+────────────────────────────────────
+PROGRESS & TRACTION
+────────────────────────────────────
+
+How far along are you?
+  MVP — functional end-to-end stack with live dashboard.
+
+How long have you been working on this? How much full-time vs part-time?
+  [ADD — building for Colosseum Frontier hackathon, Apr 6 – May 11 2026]
+
+What part of your product is magic or impressive?
+  The decision trace replay. Given any payment_trace_id, Rhemify
+  reconstructs the exact agent state at the moment of decision and
+  re-runs it in a sandbox. You can change one policy variable (raise
+  the threshold, block a domain) and see how the outcome changes.
+  No competitor — hackathon or external (MCPay, Latinum, Sponge,
+  Mercantill) — has demonstrated this. It turns "agent spent $340
+  at 2am" into "agent spent $340 because it was executing step 3 of
+  a market research task, x402 was detected with high confidence,
+  AgentCard was rejected for insufficient balance, and the daily
+  limit still had $660 remaining." That's a flight recorder, not a
+  transaction log.
+
+What is your unique insight or advantage in your market?
+  Every agent payment competitor solves one piece:
+  • MCPay monetizes MCP tools via x402 (single standard, no governance)
+  • Latinum gives agents a wallet (custodial, no policy engine)
+  • Sponge (YC W26) routes x402 payments (single standard, no intelligence)
+  • Mercantill adds governance via on-chain multi-sig (heavy, no standard
+    detection, no replay)
+
+  Nobody has combined multi-standard routing + fleet governance +
+  decision intelligence + non-custodial architecture. That's the gap
+  Rhemify fills. And the intelligence layer compounds: every payment
+  builds vendor reliability scores, payment graph memory, and decision
+  patterns that get harder to replicate the longer Rhemify runs.
+
+Do you have users or customers?
+  Pre-launch. Colosseum Frontier submission (deadline May 11, 2026).
+  No paying customers yet.
+
+Revenue:
+  None yet.
+
+Dune analytics dashboards and/or public smart contract addresses:
+  Anchor program: [ADD deployed program ID on Solana devnet/mainnet]
+  Dune dashboard: [ADD if available]
+
+────────────────────────────────────
+FUNDRAISING
+────────────────────────────────────
+
+Do you plan on raising capital from VCs?
+  Yes — post-hackathon, targeting seed round. The intelligence layer
+  and multi-standard routing are infrastructure primitives the entire
+  agent economy needs. VC-backable moat: data compounds with every
+  payment routed through the system.
+
+Do you plan to launch a token?
+  Not in near term. Focused on product and distribution first.
+  Token could make sense later for governance of the policy registry
+  or vendor routing preferences.
+
+────────────────────────────────────
+PROGRAM FIT
+────────────────────────────────────
+
+Why do you want to join Base Batches?
+  Base is the primary EVM execution layer in Rhemify's payment routing
+  stack. x402 payments route to Base by default for EVM endpoints,
+  and our CCTP integration makes Base the exclusive Solana↔EVM bridge
+  in the current stack. As agent payment volume scales, Base benefits
+  directly — more agent-originated USDC transactions, more protocol
+  usage, more developer adoption.
+
+  We want to join Base Batches to:
+  1. Deepen the Base integration — expand x402 endpoint coverage,
+     optimize gas routing, and build Base-native policy tooling.
+  2. Tap Coinbase's agent developer network — AgentKit users,
+     OnchainKit builders, and the CDP ecosystem are the exact
+     operators Rhemify serves.
+  3. Accelerate distribution — the Base ecosystem's distribution
+     advantages (press, cohort network, builder community) solve the
+     single hardest problem for infrastructure: getting developers to
+     plug in before the moat is built.
+
+Anything else you'd like us to know?
+  Rhemify is built as open infrastructure, not a proprietary silo.
+  The SDK and MCP server are open-source — any agent runtime (Claude
+  Code, Codex, Cursor, OpenClaw) can call rhemos.pay(url) without a
+  Rhemify account. The fleet dashboard and intelligence layer are the
+  commercial product; the routing layer is the public good.
+
+  The business model scales with Base usage:
+  • Free tier: 3 agents, no revenue — growth engine
+  • Builder: $9/agent/mo — scales with agent count
+  • Enterprise: $49/mo base + custom — scales with governance needs
+  • Volume fee: 0.8% on routed spend above $500/mo — scales with Base tx volume
+
+  The more agents pay on Base through Rhemify, the better the
+  intelligence layer gets — which brings more agents, which brings
+  more Base transactions. That's the flywheel.
+
+Who referred you to this program?
+  [ADD referral name / social link]
+
+────────────────────────────────────
+GITHUB
+────────────────────────────────────
+
+GitHub repo link:
+  [ADD — must be public or add devfolio-judge as collaborator]
+
+If repo is private, have you added "devfolio-judge"?
+  [Yes / No / Not Applicable]
