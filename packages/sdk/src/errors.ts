@@ -57,3 +57,27 @@ export class ExecutionError extends RhemifyError {
     this.name = "ExecutionError";
   }
 }
+
+/**
+ * Thrown when the SDK detects a payment protocol it can recognize but does
+ * not yet have an executor for (e.g. L402, AP2, ACP). Callers can switch
+ * on `error.code === "PROTOCOL_NOT_IMPLEMENTED"` (or `instanceof
+ * ProtocolNotImplementedError`) to provide a graceful UX — surface the
+ * detected challenge to the user, fall back to a manual flow, etc. — rather
+ * than treating it as a generic execution failure.
+ */
+export class ProtocolNotImplementedError extends RhemifyError {
+  constructor(
+    public protocol: string,
+    public network: string,
+    message?: string,
+  ) {
+    super(
+      message ??
+        `Payment protocol "${protocol}" was detected on network "${network}" but Rhemify does not yet have an executor for it. ` +
+          `Currently executable protocols: x402 (Solana, EVM), MPP (charge, session, AgentCard).`,
+      "PROTOCOL_NOT_IMPLEMENTED",
+    );
+    this.name = "ProtocolNotImplementedError";
+  }
+}
