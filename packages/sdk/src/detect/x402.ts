@@ -105,7 +105,12 @@ function pickPreferred(reqs: X402Requirement[]): X402Requirement {
   const solana = reqs.find(
     (r) => r.network?.startsWith("solana") || normalizeNetwork(r.network ?? "").startsWith("solana"),
   );
-  return solana ?? reqs[0];
+  if (solana) return solana;
+  const fallback = reqs[0];
+  if (!fallback) {
+    throw new Error("x402.pickPreferred: callers must pass a non-empty array");
+  }
+  return fallback;
 }
 
 /** Map CAIP-2 network identifiers to our short names */
