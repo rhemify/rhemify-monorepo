@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "smoke": "bun run initialize-fleet-vault.ts"
+    "smoke": "bun run initialize-fleet-vault.ts",
+    "squat": "bun run squat-defeated.ts"
   },
   "dependencies": {
     "@solana/web3.js": "^1.98.4"
