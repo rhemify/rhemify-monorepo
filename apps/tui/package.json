@@ -1,0 +1,22 @@
+{
+  "name": "@rhemify-monorepo/tui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.tsx",
+    "start": "bun run src/index.tsx",
+    "seed": "bun run scripts/seed.ts"
+  },
+  "dependencies": {
+    "@opentui/core": "^0.2.6",
+    "@opentui/react": "^0.2.6",
+    "convex": "^1.34.1",
+    "react": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^19.2.10",
+    "typescript": "^5.7.0"
+  }
+}

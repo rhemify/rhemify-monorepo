@@ -2,6 +2,15 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { PaymentStandard, TransactionStatus } from "./schema";
 
+// Read-all helper consumed by the TUI dashboard. Newest first.
+export const listAll = query({
+  args: { limit: v.optional(v.float64()) },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 30;
+    return await ctx.db.query("transactions").order("desc").take(limit);
+  },
+});
+
 export const list = query({
   args: {
     fleet_id: v.id("fleets"),

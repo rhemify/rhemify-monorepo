@@ -39,6 +39,17 @@ export const list = query({
   },
 });
 
+// Read-all helper consumed by the TUI dashboard (apps/tui/). Scoped to
+// observability surfaces — not for app-tier paths that should always
+// be fleet-scoped.
+export const listAll = query({
+  args: { limit: v.optional(v.float64()) },
+  handler: async (ctx, args) => {
+    const all = await ctx.db.query("agents").collect();
+    return args.limit ? all.slice(0, args.limit) : all;
+  },
+});
+
 export const get = query({
   args: { id: v.id("agents") },
   handler: async (ctx, args) => {
