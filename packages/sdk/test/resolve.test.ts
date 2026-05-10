@@ -129,7 +129,11 @@ describe("PathResolver", () => {
   });
 
   describe("cross-chain (CCTP)", () => {
-    it("CCTP is available when Solana wallet + EVM vendor", () => {
+    it("CCTP path is intentionally disabled until executor lands (audit #10)", () => {
+      // Pre-Phase-K: CCTP was available whenever wallet+vendor crossed chains.
+      // Phase K disabled it because there is no cctpExecutor in execute/.
+      // The path still appears in `resolve()` output for cost-panel rendering,
+      // but `available` is false with a documented unavailableReason.
       const resolver = new PathResolver();
       const detection = makeDetection({ protocol: "x402", network: "base" });
       const wallet: WalletConfig = { solanaPrivateKey: "fake-key" };
@@ -137,8 +141,8 @@ describe("PathResolver", () => {
       const paths = resolver.resolve(detection, wallet);
       const cctpPath = paths.find((p) => p.instrument === "cctp");
       expect(cctpPath).toBeDefined();
-      expect(cctpPath!.available).toBe(true);
-      expect(cctpPath!.risk).toBe("medium");
+      expect(cctpPath!.available).toBe(false);
+      expect(cctpPath!.rejectedReason).toContain("CCTP executor not implemented");
     });
 
     it("CCTP is unavailable when wallet matches vendor chain", () => {
@@ -201,17 +205,24 @@ describe("PathResolver", () => {
       expect(jup!.available).toBe(false);
     });
 
-    it("CCTP bridge is more expensive than direct", () => {
+    it("CCTP cost-estimate stays accurate even though path is disabled", () => {
+      // Phase K disabled the cctp evaluator's availability, but its
+      // estimateCost still reflects what a real CCTP bridge would charge,
+      // so cost panels and forward-looking comparisons stay accurate. Once
+      // a CCTP executor lands, flipping isAvailable back on requires no
+      // change to score math.
       const resolver = new PathResolver();
       const detection = makeDetection({ network: "base" });
       const wallet: WalletConfig = { solanaPrivateKey: "fake-key", evmPrivateKey: "0xfake" };
 
       const paths = resolver.resolve(detection, wallet);
       const owsEvm = paths.find((p) => p.instrument === "ows" && p.available);
-      const cctpPath = paths.find((p) => p.instrument === "cctp" && p.available);
+      const cctpPath = paths.find((p) => p.instrument === "cctp");
 
       expect(owsEvm).toBeDefined();
       expect(cctpPath).toBeDefined();
+      expect(cctpPath!.available).toBe(false);
+      // Direct on-chain payment is cheaper than the (hypothetical) bridge.
       expect(owsEvm!.score).toBeLessThan(cctpPath!.score);
     });
 
