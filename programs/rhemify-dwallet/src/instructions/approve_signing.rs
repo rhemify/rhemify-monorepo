@@ -11,6 +11,8 @@ pub enum DWalletError {
     ExceedsPerTxLimit,
     #[msg("Amount exceeds daily limit")]
     ExceedsDailyLimit,
+    #[msg("Amount exceeds fleet daily cap")]
+    ExceedsFleetDailyCap,
     #[msg("Target chain not allowed for this agent")]
     ChainNotAllowed,
     #[msg("Unauthorized co-signer")]
@@ -22,16 +24,17 @@ pub enum DWalletError {
 pub struct ApproveSigningAccounts<'info> {
     #[account(
         mut,
-        seeds = [b"agent-wallet", agent_wallet.fleet_id.as_bytes(), agent_wallet.agent_key.as_bytes()],
-        bump = agent_wallet.bump,
-    )]
-    pub agent_wallet: Account<'info, AgentWallet>,
-
-    #[account(
-        seeds = [b"fleet-vault", agent_wallet.fleet_id.as_bytes()],
+        seeds = [b"fleet-vault", fleet_vault.authority.as_ref(), fleet_vault.fleet_id.as_bytes()],
         bump = fleet_vault.bump,
     )]
     pub fleet_vault: Account<'info, FleetVault>,
+
+    #[account(
+        mut,
+        seeds = [b"agent-wallet", fleet_vault.authority.as_ref(), agent_wallet.fleet_id.as_bytes(), agent_wallet.agent_key.as_bytes()],
+        bump = agent_wallet.bump,
+    )]
+    pub agent_wallet: Account<'info, AgentWallet>,
 
     #[account(
         init,
@@ -59,7 +62,7 @@ pub fn approve_signing(
     nonce: String,
 ) -> Result<()> {
     let wallet = &mut ctx.accounts.agent_wallet;
-    let vault = &ctx.accounts.fleet_vault;
+    let vault = &mut ctx.accounts.fleet_vault;
 
     // Policy checks
     require!(wallet.status == 0, DWalletError::AgentFrozen);
@@ -72,28 +75,40 @@ pub fn approve_signing(
         DWalletError::ChainNotAllowed
     );
 
-    // Reset daily spent if new day
     let now = Clock::get()?.unix_timestamp;
     let current_day = now / 86400;
-    let last_day = wallet.last_reset_day / 86400;
-    if current_day > last_day {
+
+    // Reset agent daily spent if new day
+    if current_day > wallet.last_reset_day / 86400 {
         wallet.daily_spent = 0;
         wallet.last_reset_day = current_day * 86400;
     }
 
-    // Check daily limit
-    let projected_spend = wallet.daily_spent
+    // Check + update agent daily limit
+    let projected_agent = wallet.daily_spent
         .checked_add(amount)
         .ok_or(error!(DWalletError::ExceedsDailyLimit))?;
     require!(
-        projected_spend <= wallet.daily_limit,
+        projected_agent <= wallet.daily_limit,
         DWalletError::ExceedsDailyLimit
     );
+    wallet.daily_spent = projected_agent;
 
-    // Update daily spent
-    wallet.daily_spent = wallet.daily_spent
+    // Reset fleet daily spent if new day
+    if current_day > vault.last_reset_day / 86400 {
+        vault.daily_spent = 0;
+        vault.last_reset_day = current_day * 86400;
+    }
+
+    // Check + update fleet daily cap (the field was previously stored but never read)
+    let projected_fleet = vault.daily_spent
         .checked_add(amount)
-        .ok_or(error!(DWalletError::ExceedsDailyLimit))?;
+        .ok_or(error!(DWalletError::ExceedsFleetDailyCap))?;
+    require!(
+        projected_fleet <= vault.daily_cap,
+        DWalletError::ExceedsFleetDailyCap
+    );
+    vault.daily_spent = projected_fleet;
 
     // Create signing approval
     let approval = &mut ctx.accounts.signing_approval;

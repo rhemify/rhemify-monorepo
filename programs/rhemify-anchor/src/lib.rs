@@ -5,7 +5,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("AnNz2XESvXbyt2uNnFaZD3Wr6qZpmHC4iuHzmcxMoPRg");
+declare_id!("HYWjBbLMEz98KnppVkUnHmkUZ4pyQ8abaDRTtUedUkxV");
 
 #[program]
 pub mod rhemify_anchor {
