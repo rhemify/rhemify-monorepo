@@ -81,10 +81,13 @@ const owsEvm: InstrumentEvaluator = {
 
 const privySolana: InstrumentEvaluator = {
   instrument: "privy",
-  isAvailable(_wallet, detection) {
-    // Privy is cloud-hosted — available if Solana network
-    // In practice, requires privy session key (not yet implemented)
-    return false && isSolanaNetwork(detection.network);
+  isAvailable(_wallet, _detection) {
+    // STUB: Privy TEE wallet integration not implemented. Restore the
+    // legacy availability check by replacing this body with:
+    //   return isSolanaNetwork(_detection.network);
+    // (also requires Privy session key plumbing in WalletConfig — not
+    // present in the current types.)
+    return false;
   },
   estimateCost(detection) {
     return basePrice(detection) + 0.002; // slightly more than OWS (API call overhead)
@@ -125,10 +128,12 @@ const agentcard: InstrumentEvaluator = {
 
 const squads: InstrumentEvaluator = {
   instrument: "squads",
-  isAvailable(_wallet, detection) {
-    // Squads sessions for recurring on-chain Solana vendors
-    // Not yet implemented — requires Squads Smart Account setup
-    return false && isSolanaNetwork(detection.network);
+  isAvailable(_wallet, _detection) {
+    // STUB: Squads Smart Account session integration not implemented.
+    // Restore the legacy availability check by replacing this body with:
+    //   return isSolanaNetwork(_detection.network);
+    // (also requires Squads multisig signer plumbing — not in WalletConfig.)
+    return false;
   },
   estimateCost(detection) {
     return basePrice(detection) + 0.0005; // near-zero per-call (session amortized)
