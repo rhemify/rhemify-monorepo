@@ -1,0 +1,11 @@
+{
+  "name": "devnet-smoke",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke": "bun run initialize-fleet-vault.ts"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4"
+  }
+}
