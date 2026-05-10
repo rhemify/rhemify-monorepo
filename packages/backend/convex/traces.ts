@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Confidence } from "./schema";
 
 // GET /api/traces/:id
 export const get = query({
@@ -28,7 +29,7 @@ export const insert = mutation({
     alternatives_evaluated: v.any(),
     policy_rules_fired: v.any(),
     instrument_selection_log: v.any(),
-    confidence: v.string(),
+    confidence: Confidence,
     replay_snapshot: v.any(),
     trace_hash: v.string(),
   },

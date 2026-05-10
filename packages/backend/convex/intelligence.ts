@@ -1,5 +1,6 @@
 import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { IntelligenceActionType, IntelligenceOutcome } from "./schema";
 
 // ============================================================================
 // FRONTEND QUERIES — @junshen these are ready for the dashboard
@@ -20,8 +21,8 @@ import { v } from "convex/values";
 export const listActions = query({
   args: {
     fleet_id: v.optional(v.string()),
-    action_type: v.optional(v.string()),
-    outcome: v.optional(v.string()),
+    action_type: v.optional(IntelligenceActionType),
+    outcome: v.optional(IntelligenceOutcome),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -143,7 +144,7 @@ export const reverseAction = mutation({
 // Records an intelligence action taken by the rules engine.
 export const insertAction = internalMutation({
   args: {
-    action_type: v.string(),
+    action_type: IntelligenceActionType,
     severity: v.string(),
     trigger_rule: v.string(),
     trigger_event_id: v.optional(v.string()),

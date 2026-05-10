@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { PaymentStandard, TransactionStatus } from "./schema";
 
 export const list = query({
   args: {
@@ -39,8 +40,8 @@ export const add = mutation({
     vendor: v.string(),
     domain: v.string(),
     amount: v.float64(),
-    standard: v.string(),
-    status: v.string(),
+    standard: PaymentStandard,
+    status: TransactionStatus,
     blocked_reason: v.optional(v.string()),
   },
   handler: async (ctx, args) => {

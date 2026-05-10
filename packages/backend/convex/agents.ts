@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { AgentStatus } from "./schema";
 
 const DEFAULT_DOMAINS: Record<string, string[]> = {
   ceo: ["notion.so", "slack.com"],
@@ -10,7 +11,7 @@ const DEFAULT_DOMAINS: Record<string, string[]> = {
   finance: ["stripe.com", "quickbooks.com", "plaid.com"],
 };
 
-const DEFAULT_STANDARDS: Record<string, string> = {
+const DEFAULT_STANDARDS: Record<string, "mpp" | "x402" | "l402" | "ap2"> = {
   ceo: "mpp",
   research: "x402",
   marketing: "mpp",
@@ -107,7 +108,7 @@ export const deploy = mutation({
 export const updateStatus = mutation({
   args: {
     id: v.id("agents"),
-    status: v.string(),
+    status: AgentStatus,
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, { status: args.status });

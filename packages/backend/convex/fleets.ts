@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { FleetRole } from "./schema";
 
 export const get = query({
   args: { id: v.id("fleets") },
@@ -35,7 +36,7 @@ export const create = mutation({
   args: {
     email: v.string(),
     company_name: v.string(),
-    role: v.string(),
+    role: FleetRole,
     active_departments: v.array(v.string()),
     monthly_spend_cap: v.float64(),
   },
@@ -64,7 +65,7 @@ export const update = mutation({
     id: v.id("fleets"),
     email: v.optional(v.string()),
     company_name: v.optional(v.string()),
-    role: v.optional(v.string()),
+    role: v.optional(FleetRole),
     active_departments: v.optional(v.array(v.string())),
     monthly_spend_cap: v.optional(v.float64()),
     is_deployed: v.optional(v.boolean()),
