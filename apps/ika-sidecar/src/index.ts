@@ -33,7 +33,12 @@ app.post("/dkg", async (c) => {
   if (!ikaService) return c.json({ error: "service not initialized" }, 503);
 
   try {
-    const body = await c.req.json<{ curve?: string }>().catch(() => ({}));
+    let body: { curve?: string } = {};
+    try {
+      body = await c.req.json<{ curve?: string }>();
+    } catch {
+      // empty body is OK — falls through to default curve
+    }
     const result = await ikaService.createDWallet(body.curve as any);
     return c.json(result);
   } catch (err: any) {
