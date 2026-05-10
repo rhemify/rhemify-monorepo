@@ -229,16 +229,25 @@ export async function createGovernedSession(
 
 async function openMppSession(
   config: RhemifyConfig,
-  maxDepositUsd: number,
-  ttlSeconds: number,
-  autoTopup?: boolean,
+  _maxDepositUsd: number,
+  _ttlSeconds: number,
+  _autoTopup?: boolean,
 ): Promise<{ fetch: typeof fetch; close?: () => Promise<unknown> }> {
-  // Dynamic import of @solana/mpp
+  // @solana/mpp 0.5.x ships only `solana.charge` (per-request payment).
+  // Session-based pay-as-you-go (deposit + TTL + auto-topup) is Tempo-only
+  // upstream. Rhemify's outer session() wrapper still enforces the deposit
+  // ceiling, TTL, and cumulative-spend governance — those parameters are
+  // not lost, they just no longer flow into the MPP method.
+  //
+  // TODO(tempo): when RhemifyConfig.wallet gains a tempoAccount (viem Account),
+  // register `tempo.session({ signer, autoOpen, autoTopup, sessionDefaults: {
+  // suggestedDeposit, ttlSeconds }})` alongside `solana()` so true MPP session
+  // semantics (single batched settlement) become available for Tempo
+  // endpoints. Tracked in task list as Phase B.5.
   const mppClient = await import("@solana/mpp/client").catch(() => null);
 
   if (!mppClient) {
-    // Fallback: return a basic fetch wrapper that doesn't do MPP
-    // This allows session() to work in test/dev without @solana/mpp installed
+    // Fallback: basic fetch wrapper, lets session() work in test/dev without @solana/mpp installed
     return {
       fetch: globalThis.fetch.bind(globalThis),
       close: async () => ({}),
@@ -251,22 +260,11 @@ async function openMppSession(
     throw new ExecutionError("@solana/kit is required for MPP sessions. Run: bun add @solana/kit");
   }
 
-  // Build signer
   const keyBytes = decodeSolanaKey(config.wallet.solanaPrivateKey!);
   const keypair = await solanaKit.createKeyPairFromBytes(keyBytes);
   const signer = await solanaKit.createSignerFromKeyPair(keypair);
 
-  // Create MPP session method with deposit and TTL
-  const depositBaseUnits = String(Math.floor(maxDepositUsd * 1_000_000));
-  const method = mppClient.solana.session({
-    signer,
-    autoOpen: true,
-    autoTopup: autoTopup ?? false,
-    sessionDefaults: {
-      suggestedDeposit: depositBaseUnits,
-      ttlSeconds,
-    },
-  });
+  const method = mppClient.solana({ signer });
 
   const mppx = mppClient.Mppx.create({
     methods: [method],
@@ -274,7 +272,7 @@ async function openMppSession(
 
   return {
     fetch: mppx.fetch.bind(mppx) as typeof fetch,
-    close: mppx.close?.bind(mppx),
+    // Mppx 0.5.x has no .close() — per-charge model has no session lifecycle to tear down.
   };
 }
 
