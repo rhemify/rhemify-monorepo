@@ -160,7 +160,7 @@ These items would graduate Rhemos from "audit-grade autonomy layer" to "producti
 - **L402, AP2, ACP execution** — Today they detect cleanly and throw a typed error. Adding execution is per-protocol work, not pipeline work.
 - **EVM execution path** — x402EvmExecutor exists but unproven; needs a Base/Sepolia 402 endpoint to integrate-test against, and the path resolver needs an EVM wallet config story.
 - **CCTP cross-chain** — Wiring stub exists; needs real Solana↔Base CCTP integration.
-- **Ika dWallet 2PC-MPC signing** — Sidecar boots cleanly, `/sign` endpoint is a `NotImplementedError`. Decision: ship in v1 or scope out.
+- **Ika dWallet 2PC-MPC signing** — Sidecar boots cleanly. `/sign` returns 501 Not Implemented with an explicit `scope_status: "v1_scoped_out"` payload (see `apps/ika-sidecar/src/index.ts`). The 0.3.1 SDK signing surface needs live Ika test network access to verify — staged for a future "MPC-controlled fleet treasury" feature.
 - **Shared dev Convex deployment** — Current demo uses local anonymous Convex. Migrating to a shared dev deployment requires coordinated schema rollout.
 - **CI/CD on GH Actions** — `tsc + cargo check + go test` on push.
 

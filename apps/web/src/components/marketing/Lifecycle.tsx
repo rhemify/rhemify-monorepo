@@ -8,20 +8,20 @@ type Step = {
 
 const STEPS: readonly Step[] = [
   {
-    title: "Classify intent",
-    body: "User intent is parsed into a structured class — swap, liquidity, send, rebalance — with extracted params, risk tier, and protocol rails.",
+    title: "Detect standard",
+    body: "The SDK parses the resource's HTTP 402 response — x402 (status 402 + accepts[] array) or MPP (WWW-Authenticate: Payment ...). Network, price, recipient, and currency extracted from the challenge.",
   },
   {
-    title: "Scoped execution context",
-    body: "Each agent run gets a passkey-bound, TTL-limited ExecutionContext. Sub-agents can only narrow scope — never expand it.",
+    title: "Evaluate fleet policy",
+    body: "Six named rules — daily_limit, max_per_transaction, domain_allowlist, standard_allowlist, vendor_blocked, approval_threshold — checked client-side against the fleet config. A block here aborts before any tx is signed.",
   },
   {
-    title: "Policy check at the tool layer",
-    body: "Every tool call is evaluated against OPA rules before execution. HIGH and CRITICAL actions require explicit confirmation or passkey sign.",
+    title: "Sign + execute on Solana",
+    body: "A memo transaction is signed by the agent's keypair and submitted to Solana. Memo content carries the trace context (network, amount, recipient, resource path, timestamp). Signature attached to the resource retry as the X-Payment / Authorization header.",
   },
   {
-    title: "Execute and verify",
-    body: "Action routes through the correct protocol template. Every step is signed, logged, and anchored on-chain.",
+    title: "Trace + anchor",
+    body: "The full decision — detection raw body, paths scored, rules fired, agent spend context — is hashed and stored. Optionally anchored to Solana via the Rhemos Anchor program, producing a Merkle root any auditor can cryptographically verify.",
   },
 ] as const;
 
@@ -90,13 +90,13 @@ export function Lifecycle() {
                 id="lifecycle-heading"
                 className="mt-5 text-[clamp(1.85rem,3.4vw,2.85rem)] font-bold leading-[1.12] tracking-tight text-text"
               >
-                From intent to on-chain execution.
+                From 402 response to on-chain trace.
               </h2>
             </ScrollReveal>
 
             <ScrollReveal fadeOnly durationMs={1020} delayMs={200} className="block">
               <p className="mt-5 max-w-md text-[clamp(1rem,1.3vw,1.15rem)] leading-relaxed text-muted">
-                Every agent action flows through intent classification, scoped context, policy enforcement, and verified execution — in that order.
+                Every payment flows through standard detection, fleet policy, memo execution, and trace anchoring — in that order.
               </p>
             </ScrollReveal>
 

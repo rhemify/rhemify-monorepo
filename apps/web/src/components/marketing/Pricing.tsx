@@ -26,15 +26,15 @@ export function Pricing() {
               <PricingCard
                 title="Free"
                 price="$0 /month"
-                description="Kick the tires with a single CEO agent and two departments."
+                description="Run the SDK against the local stack — full pipeline, no rate limits."
                 buttonVariant="outline"
                 ctaLabel="Get Started"
                 ctaHref="/signup"
                 features={[
-                  "CEO agent always included",
-                  "2 department agents",
-                  "Real-time transaction feed",
-                  "Basic spend guardrails",
+                  "rhemify.pay for x402 + MPP on Solana",
+                  "Local Convex deployment",
+                  "All 6 policy rules",
+                  "Decision-trace replay (CLI)",
                   "Community support",
                 ]}
               />
@@ -42,20 +42,20 @@ export function Pricing() {
               <PricingCard
                 title="Pro"
                 price="$9 /agent /month"
-                description="For teams running production agent fleets with full delegation."
+                description="For teams running production agent fleets with audited spend."
                 buttonVariant="default"
                 highlight
                 ctaLabel="Get Started"
                 ctaHref="/signup"
                 features={[
-                  "Unlimited agents & departments",
+                  "Unlimited agents",
                   "Per-agent spend policies",
-                  "Multi-chain payments",
-                  "Approved vendors & daily limits",
-                  "Agent-to-agent delegation",
+                  "Solana payment execution (memo + roadmap: real USDC transfer)",
+                  "Domain + standard allowlists",
+                  "Decision-trace replay UI",
+                  "Anchor-tx verification (Merkle root on Solana)",
                   "SDK access",
-                  "Real-time audit logs",
-                  "Auto-freeze on policy breach",
+                  "Real-time policy decision feed",
                   "Priority support",
                   "Only active agents are billed",
                 ]}
