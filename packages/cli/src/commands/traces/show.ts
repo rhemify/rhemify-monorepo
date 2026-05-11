@@ -202,12 +202,19 @@ function render(t: TraceWithEvent): void {
   section(`POLICY  ${pc.dim(`${rules.length} rules evaluated`)}`);
   const maxRuleLen = Math.max(...rules.map((r) => r.rule.length), 22);
   for (const r of rules) {
-    const result = r.result === "block" ? pc.red(r.result.toUpperCase()) :
-                   r.result === "flag" ? pc.yellow(r.result.toUpperCase()) :
-                   r.result === "skipped" ? pc.dim(r.result) :
-                   pc.green(r.result);
+    // Compute the rendered (colored) string AND the visible-length string
+    // separately. `String.padEnd(n)` counts ANSI escape codes, so padding
+    // the colored string would inflate the column by ~6–10 chars per row.
+    const visible =
+      r.result === "block" || r.result === "flag" ? r.result.toUpperCase() : r.result;
+    const result =
+      r.result === "block" ? pc.red(visible) :
+      r.result === "flag" ? pc.yellow(visible) :
+      r.result === "skipped" ? pc.dim(visible) :
+      pc.green(visible);
+    const pad = " ".repeat(Math.max(0, 10 - visible.length));
     const detail = `${pc.dim("threshold")} ${r.threshold}  ${pc.dim("actual")} ${r.value}`;
-    console.log(`  ${ruleIcon(r.result)} ${r.rule.padEnd(maxRuleLen)}  ${result.padEnd(20)}  ${detail}`);
+    console.log(`  ${ruleIcon(r.result)} ${r.rule.padEnd(maxRuleLen)}  ${result}${pad}  ${detail}`);
   }
 
   // PATH
