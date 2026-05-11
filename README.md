@@ -36,6 +36,7 @@ The scope guardrails are encoded in `packages/sdk/src/execute/index.ts:28` — `
 | Trace ingestion (SDK → Go → Convex) | `rhemify traces list` | Trace shown with non-seeded `trc_<hex>` id |
 | Full decision context | `rhemify traces show <trace_id>` | 7 sections: TRACE / EVENT / POLICY / PATH / SNAPSHOT / VERIFIABILITY / NEXT |
 | Counterfactual replay | `rhemify traces replay <id> --daily-limit 0` | Original ALLOWED → counterfactual BLOCKED, per-rule diff |
+| Merkle anchor + verify | `rhemify traces verify <id>` | Per-trace proof against a shared daily Merkle root on devnet — every trace in the fleet/date VERIFIES against the same on-chain root |
 | CI gates on every push | `gh run list --branch feature/siewwwin --limit 1` | TypeScript + Go + Anchor jobs all green |
 | On-chain trace anchor | `rhemify traces verify <id>` | `write_daily_root` Anchor program submits Merkle root to devnet |
 
