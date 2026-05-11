@@ -1,6 +1,6 @@
 import { createRhemify } from "@rhemify-monorepo/sdk";
 import pc from "picocolors";
-import { loadConfig, loadWallet } from "../config.js";
+import { loadConfig, loadEvmWallet, loadWallet } from "../config.js";
 
 interface PayArgs {
   url?: string;
@@ -44,6 +44,7 @@ export async function pay(...argv: string[]) {
 
   const config = loadConfig();
   const wallet = loadWallet();
+  const evmWallet = loadEvmWallet();
 
   if (!config || !wallet) {
     console.log(pc.red("  Not set up. Run: rhemify onboard"));
@@ -51,13 +52,22 @@ export async function pay(...argv: string[]) {
   }
 
   console.log(pc.dim(`  Paying: ${args.url}${args.dryRun ? pc.yellow(" [DRY RUN]") : ""}`));
+  if (evmWallet) {
+    console.log(pc.dim(`  EVM wallet: ${evmWallet.address} (Base/Sepolia/Ethereum capable)`));
+  }
 
   const rhemify = createRhemify({
     serverUrl: config.serverUrl,
     fleetApiKey: config.fleetApiKey ?? "cli-user",
     agentId: config.agentIds[0]!,
     fleetId: config.fleetId,
-    wallet: { solanaPrivateKey: JSON.stringify(wallet) },
+    wallet: {
+      solanaPrivateKey: JSON.stringify(wallet),
+      // EVM key only included when a wallet-evm.json exists. Without it the
+      // EVM executors decline at canExecute (wallet.evmPrivateKey absent) and
+      // the cascade falls through to the next eligible Solana path.
+      ...(evmWallet ? { evmPrivateKey: evmWallet.privateKey } : {}),
+    },
     solanaRpcUrl: "https://api.devnet.solana.com",
     defaultMaxBudget: "$1.00",
     onError: (err: Error) => {

@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import { loadConfig, loadWallet, resolveConvexUrl } from "../config.js";
+import { loadConfig, loadEvmWallet, loadWallet, resolveConvexUrl } from "../config.js";
 import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 /**
@@ -50,6 +50,21 @@ export async function status() {
       console.log(pc.dim(`    Address: ${keypair.publicKey.toString()}`));
       console.log(pc.dim(`    SOL: ${(balance / LAMPORTS_PER_SOL).toFixed(4)}`));
     }
+  }
+
+  // Optional EVM wallet — only shown if the user has generated one. The
+  // section is a check-in for the EVM e2e path: if the address is funded
+  // with Base Sepolia ETH + USDC, x402EvmTransferExecutor will activate.
+  const evmWallet = loadEvmWallet();
+  if (evmWallet) {
+    console.log();
+    console.log(pc.bold("  EVM Wallet:"));
+    console.log(pc.dim(`    Address: ${evmWallet.address}`));
+    console.log(
+      pc.dim(
+        "    Fund via: faucet.circle.com (Base Sepolia USDC) + Coinbase faucet (Base Sepolia ETH)",
+      ),
+    );
   }
 
   // --- Service reachability checks ---
