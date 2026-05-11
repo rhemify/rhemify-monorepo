@@ -146,6 +146,41 @@ func TestEvaluatePolicy_ApprovalThresholdFlags(t *testing.T) {
 	}
 }
 
+func TestEvaluatePolicy_ApprovalThresholdDisabledWhenZero(t *testing.T) {
+	// SDK convention: approval_threshold == 0 means "no approval required".
+	// Go must match — replay diff should not spuriously flag every real
+	// payment just because the Go-served policy default is 0.
+	event := map[string]interface{}{"amount": 0.50, "domain": "x.com", "standard": "x402"}
+	policy := map[string]interface{}{"approval_threshold": 0.0}
+
+	outcome := EvaluatePolicy(event, policy, map[string]interface{}{}, map[string]interface{}{})
+
+	if !outcome.Allowed {
+		t.Error("threshold=0 must not block the payment")
+	}
+	found := findRule(outcome, "approval_threshold")
+	if found == nil || found.Result != "pass" {
+		t.Errorf("expected approval_threshold pass when threshold=0, got %+v", found)
+	}
+	if found != nil && found.Threshold != "disabled" {
+		t.Errorf("expected threshold field to read 'disabled', got %q", found.Threshold)
+	}
+}
+
+func TestEvaluatePolicy_ApprovalThresholdFlagsAtBoundary(t *testing.T) {
+	// Boundary semantic: amount == threshold flags (matches SDK
+	// `price >= threshold` check, line 161 of rules.ts).
+	event := map[string]interface{}{"amount": 50.0, "domain": "x.com", "standard": "x402"}
+	policy := map[string]interface{}{"approval_threshold": 50.0}
+
+	outcome := EvaluatePolicy(event, policy, map[string]interface{}{}, map[string]interface{}{})
+
+	found := findRule(outcome, "approval_threshold")
+	if found == nil || found.Result != "flag" {
+		t.Errorf("amount == threshold should flag (inclusive boundary), got %+v", found)
+	}
+}
+
 func TestEvaluatePolicy_MissingDataSkips(t *testing.T) {
 	event := map[string]interface{}{"amount": 1.0, "domain": "x.com", "standard": "x402"}
 	// All empty — no policy fields, no vendor, no agent

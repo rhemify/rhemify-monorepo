@@ -138,16 +138,33 @@ func EvaluatePolicy(
 		})
 	}
 
-	// 6. approval_threshold (flag, not block)
+	// 6. approval_threshold (flag, not block).
+	//
+	// SDK convention (packages/sdk/src/policy/rules.ts:approvalThresholdRule):
+	// threshold == 0 means "approval flow disabled" — every payment passes.
+	// Anything > 0 means "spending at or above this amount requires a human
+	// click before settling" → flag.
+	//
+	// Go must match: a fleet with approvalThreshold=0 in its Go-served
+	// policy should not flag every payment when replayed. Prior behavior
+	// (any amount > 0 flags) produced a spurious "approval_threshold flag"
+	// row in every replay diff against real traces.
 	if at, ok := policyState["approval_threshold"]; ok {
 		threshold := toFloat(at)
-		if amount > threshold {
+		switch {
+		case threshold <= 0:
+			results = append(results, RuleResult{
+				Rule: "approval_threshold", Result: "pass",
+				Threshold: "disabled",
+				Actual:    fmt.Sprintf("%.2f", amount),
+			})
+		case amount >= threshold:
 			results = append(results, RuleResult{
 				Rule: "approval_threshold", Result: "flag",
 				Threshold: fmt.Sprintf("%.2f", threshold),
 				Actual:    fmt.Sprintf("%.2f", amount),
 			})
-		} else {
+		default:
 			results = append(results, RuleResult{
 				Rule: "approval_threshold", Result: "pass",
 				Threshold: fmt.Sprintf("%.2f", threshold),
