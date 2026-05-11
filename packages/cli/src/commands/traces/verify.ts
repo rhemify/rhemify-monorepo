@@ -235,8 +235,14 @@ function render(_args: VerifyArgs, r: VerifyResult): void {
     row("anchor tx", pc.green(r.tx_hash ?? "—"));
     row("slot", String(r.slot ?? "—"));
     row("status", pc.green("freshly anchored in this run"));
+  } else if (r.match) {
+    row("status", pc.dim("already anchored — on-chain root matches this trace"));
   } else {
-    row("status", pc.dim("already anchored — verified without writing a new tx"));
+    row("status", pc.yellow(
+      "PDA exists from a previous anchor for this fleet+date, but its root " +
+      "differs from this trace. To anchor this trace's hash, delete or rotate " +
+      "the existing PDA, or wait until the next day's PDA slot.",
+    ));
   }
 
   section("HASH CHAIN");
