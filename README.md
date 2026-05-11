@@ -95,15 +95,18 @@ cat > ~/.rhemify/config.json <<EOF
 EOF
 solana-keygen new -o ~/.rhemify/wallet.json     # Fund on devnet via faucet.solana.com
 
-# 4. Run a real payment
-bun --cwd packages/cli run src/index.ts pay http://localhost:3402/stock-data --max-budget '$1.00'
+# 4. Run the full demo end-to-end (status + pay + show + replay)
+./tools/demo-run.sh
+# or for the MPP path:
+./tools/demo-run.sh http://localhost:3402/analytics
 
-# 5. See the trace
-bun --cwd packages/cli run src/index.ts traces list
-bun --cwd packages/cli run src/index.ts traces show <trace_id>
-
-# 6. Run a counterfactual
-bun --cwd packages/cli run src/index.ts traces replay <trace_id> --daily-limit 0
+# That's it — `demo-run.sh` is a thin wrapper. The individual commands
+# below if you want to invoke them by hand instead:
+bun packages/cli/src/index.ts status
+bun packages/cli/src/index.ts pay http://localhost:3402/stock-data --max-budget '$1.00'
+bun packages/cli/src/index.ts traces list
+bun packages/cli/src/index.ts traces show <trace_id>
+bun packages/cli/src/index.ts traces replay <trace_id> --daily-limit 0
 ```
 
 ## Tech stack (what's actually used)
