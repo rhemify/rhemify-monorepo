@@ -80,16 +80,24 @@ cd packages/backend && bunx convex dev          # Convex local on :3212
 cd apps/server && go run ./cmd/server           # Go server on :8080
 cd tools/test-402 && bun run server.ts          # Test 402 on :3402
 
-# 3. CLI config (one-time)
+# 3. Seed the demo fleet into Convex (one-time)
+#    Creates a fleet at api_key "rhm_demo_local_fleet_key_2026" with 6 agents.
+curl -sS http://127.0.0.1:3212/api/mutation -X POST -H 'Content-Type: application/json' \
+  -d '{"path":"seed:demo","args":{},"format":"json"}'
+
+# 4. CLI config (one-time) — uses the seed's known fleet api_key so you don't
+#    have to query Convex to find it. Fleet/agent ids are looked up by the
+#    api_key on every request, so leaving these placeholder is fine for the
+#    demo (the CLI doesn't validate them locally).
 mkdir -p ~/.rhemify
 cat > ~/.rhemify/config.json <<EOF
 {
-  "fleetId": "<your fleet id>",
+  "fleetId": "<fleet id from seed:demo response>",
   "fleetName": "demo",
-  "agentIds": ["<your agent id>"],
+  "agentIds": ["<one agent id — query agents:listAll if needed>"],
   "serverUrl": "http://localhost:8080",
   "convexUrl": "http://127.0.0.1:3212",
-  "fleetApiKey": "<api key from Convex fleets row>",
+  "fleetApiKey": "rhm_demo_local_fleet_key_2026",
   "createdAt": "2026-05-11T00:00:00Z"
 }
 EOF
