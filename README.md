@@ -165,7 +165,8 @@ These items would graduate Rhemos from "audit-grade autonomy layer" to "producti
 - **CCTP cross-chain** — Wiring stub exists; needs real Solana↔Base CCTP integration.
 - **Ika dWallet 2PC-MPC signing** — Sidecar boots cleanly. `/sign` returns 501 Not Implemented with an explicit `scope_status: "v1_scoped_out"` payload (see `apps/ika-sidecar/src/index.ts`). The 0.3.1 SDK signing surface needs live Ika test network access to verify — staged for a future "MPC-controlled fleet treasury" feature.
 - **Shared dev Convex deployment** — Current demo uses local anonymous Convex. Migrating to a shared dev deployment requires coordinated schema rollout.
-- **CI/CD on GH Actions** — `tsc + cargo check + go test` on push.
+- **CI/CD on GH Actions** — `tsc + cargo check + go test` on push. (shipped — `.github/workflows/ci.yml`)
+- **Per-trace Merkle anchoring** — Today `rhemify traces verify <id>` calls `write_daily_root` with the single trace's content hash. The PDA is per-fleet-per-date, so only the first verify-call's trace each day matches; subsequent calls report MISMATCH (the verify command says so explicitly). The real design is a Merkle root over all traces for the fleet's day, with `traces verify <id>` returning a Merkle proof against that root. The Anchor program already takes `merkle_root + trace_count` — the structure is there, the batching layer isn't.
 
 ## Team (Colosseum Frontier hackathon)
 
