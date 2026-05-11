@@ -119,6 +119,7 @@ bun packages/cli/src/index.ts pay http://localhost:3402/stock-data --max-budget 
 bun packages/cli/src/index.ts traces list
 bun packages/cli/src/index.ts traces show <trace_id>
 bun packages/cli/src/index.ts traces replay <trace_id> --daily-limit 0
+bun packages/cli/src/index.ts traces verify <trace_id>   # cryptographic Merkle anchor on devnet
 ```
 
 ## Tech stack (what's actually used)
