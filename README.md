@@ -18,7 +18,7 @@ The hackathon-judging surface is a CLI + Go intelligence server + Solana Anchor 
 
 What is NOT in v1 (and the code says so):
 
-- **Real USDC SPL-Token transfers.** Each `rhemify pay` submits a signed memo tx (~5000 lamports fee), not a USDC transfer. Memo carries the trace context for audit; recipient receives no tokens. A future `x402SolanaTransferExecutor` will do real transfers.
+- **Real USDC SPL-Token transfers** — code path ships (`x402SolanaTransferExecutor`, registered ahead of the memo executor in the cascade). On a wallet funded with devnet USDC + a real-keypair recipient, `rhemify pay` does a real Token::TransferChecked of the USDC amount from payer's ATA to recipient's ATA (creates recipient ATA if missing). On a wallet without a USDC ATA (the default state — there's no programmatic devnet USDC faucet), the transfer executor declines and the cascade falls through to the memo executor, so the demo always succeeds. Live USDC e2e proof requires funding via faucet.circle.com first.
 - **L402, AP2, ACP.** Detected and routed correctly, then throw a typed `ProtocolNotImplementedError`. Honest stub, not silent failure.
 - **EVM execution.** `x402EvmExecutor` exists but was not proven end-to-end against any real endpoint. Solana is the supported execution surface.
 - **CCTP / Jupiter / AgentCard / Squads / Privy** path resolvers all currently return `available: false`. Wiring is in place; execution is not.
@@ -171,7 +171,7 @@ rhemify-monorepo/
 
 These items would graduate Rhemos from "audit-grade autonomy layer" to "production payment rail":
 
-- **Real USDC SPL-Token transfers** — `x402SolanaTransferExecutor`, `mppChargeTransferExecutor`. Replace memo-as-intent with actual token transfer; receipt parsing from facilitator response.
+- **Real USDC SPL-Token transfers** — x402SolanaTransferExecutor (shipped, see "What is NOT in v1" for the caveats). mppChargeTransferExecutor (not started — same pattern as the x402 transfer executor, would slot in ahead of mppChargeExecutor in the cascade).
 - **Mainnet anchoring** — write_daily_root parameterized for mainnet, multisig upgrade authority via Squads.
 - **L402, AP2, ACP execution** — Today they detect cleanly and throw a typed error. Adding execution is per-protocol work, not pipeline work.
 - **EVM execution path** — x402EvmExecutor exists but unproven; needs a Base/Sepolia 402 endpoint to integrate-test against, and the path resolver needs an EVM wallet config story.

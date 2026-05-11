@@ -3,6 +3,7 @@ import { creditPayExecutor, setCreditConfig } from "../src/execute/credit-pay.js
 import { jupiterSwapExecutor, setJupiterApiKey } from "../src/execute/jupiter-swap.js";
 import { agentcardMppExecutor, setAgentCardApiKey } from "../src/execute/agentcard-mpp.js";
 import { x402SolanaExecutor } from "../src/execute/x402-solana.js";
+import { x402SolanaTransferExecutor } from "../src/execute/x402-solana-transfer.js";
 import { mppChargeExecutor } from "../src/execute/mpp-charge.js";
 import { ExecutionError } from "../src/errors.js";
 import type { DetectionResult, PayOptions, WalletConfig } from "../src/types.js";
@@ -256,5 +257,97 @@ describe("mppChargeExecutor", () => {
   it("canExecute returns false for non-Solana networks", () => {
     const detection = makeDetection({ protocol: "mpp", network: "base" });
     expect(mppChargeExecutor.canExecute(detection, wallet)).toBe(false);
+  });
+});
+
+// ─── x402-solana-transfer (real USDC SPL settlement, phase R) ────────────────
+//
+// Live USDC transfer requires a funded ATA on the payer's wallet (no
+// programmatic devnet USDC faucet exists), so the execute() path is
+// exercised only in real e2e. The cascade-routing logic IS testable
+// cheaply: this executor MUST decline the System-Program placeholder
+// recipient the test 402 server uses by default — otherwise it would
+// burn fees attempting a transfer to an account that can't hold tokens
+// while preventing the memo executor from picking up downstream.
+
+describe("x402SolanaTransferExecutor", () => {
+  const SYSTEM_PROGRAM = "11111111111111111111111111111111";
+  // Any valid-looking pubkey works for canExecute — the test doesn't
+  // touch chain. Picked a known devnet keypair pubkey.
+  const REAL_RECIPIENT = "8usJ1ShvoR3e74E6WMaNk2owwGUf87MuCuBJHdPgdEnQ";
+
+  it("canExecute returns true with a real recipient pubkey on devnet", () => {
+    const detection = makeDetection({
+      protocol: "x402",
+      network: "solana-devnet",
+      payTo: REAL_RECIPIENT,
+    });
+    expect(x402SolanaTransferExecutor.canExecute(detection, wallet)).toBe(true);
+  });
+
+  it("canExecute returns true on mainnet too", () => {
+    const detection = makeDetection({
+      protocol: "x402",
+      network: "solana-mainnet",
+      payTo: REAL_RECIPIENT,
+    });
+    expect(x402SolanaTransferExecutor.canExecute(detection, wallet)).toBe(true);
+  });
+
+  it("canExecute returns false when recipient is the System Program placeholder", () => {
+    // The test 402 server defaults RECIPIENT_ADDRESS to "1111...1" when no
+    // override is set. System Program can't hold SPL tokens, so the
+    // executor must decline so the cascade picks up the memo executor.
+    const detection = makeDetection({
+      protocol: "x402",
+      network: "solana-devnet",
+      payTo: SYSTEM_PROGRAM,
+    });
+    expect(x402SolanaTransferExecutor.canExecute(detection, wallet)).toBe(false);
+  });
+
+  it("canExecute returns false for an empty / malformed payTo", () => {
+    expect(
+      x402SolanaTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "solana-devnet", payTo: "" }),
+        wallet,
+      ),
+    ).toBe(false);
+    expect(
+      x402SolanaTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "solana-devnet", payTo: "short" }),
+        wallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false without a Solana wallet", () => {
+    const detection = makeDetection({
+      protocol: "x402",
+      network: "solana-devnet",
+      payTo: REAL_RECIPIENT,
+    });
+    expect(x402SolanaTransferExecutor.canExecute(detection, {})).toBe(false);
+    expect(
+      x402SolanaTransferExecutor.canExecute(detection, { evmPrivateKey: "0x1" }),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false for non-x402 protocols", () => {
+    expect(
+      x402SolanaTransferExecutor.canExecute(
+        makeDetection({ protocol: "mpp", network: "solana-devnet", payTo: REAL_RECIPIENT }),
+        wallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false for EVM networks", () => {
+    expect(
+      x402SolanaTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "base", payTo: REAL_RECIPIENT }),
+        wallet,
+      ),
+    ).toBe(false);
   });
 });

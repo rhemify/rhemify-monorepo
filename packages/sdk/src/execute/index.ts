@@ -1,6 +1,7 @@
 import type { DetectionResult, ExecutionResult, PayOptions, WalletConfig } from "../types.js";
 import { ExecutionError, ProtocolNotImplementedError } from "../errors.js";
 import type { PaymentExecutor } from "./types.js";
+import { x402SolanaTransferExecutor } from "./x402-solana-transfer.js";
 import { x402SolanaExecutor } from "./x402-solana.js";
 import { x402EvmExecutor } from "./x402-evm.js";
 import { mppChargeExecutor } from "./mpp-charge.js";
@@ -38,6 +39,12 @@ export type SupportedProtocol = (typeof SUPPORTED_PROTOCOLS)[number];
  */
 const defaultExecutors: PaymentExecutor[] = [
   creditPayExecutor,
+  // Real USDC settlement first (phase R). Falls through to the memo executor
+  // below if canExecute returns false (no Solana wallet, System-Program
+  // recipient, etc.) or if execute() throws (no USDC ATA, insufficient
+  // balance, etc.). Both x402-Solana executors stay registered; the cascade
+  // picks whichever can actually deliver.
+  x402SolanaTransferExecutor,
   x402SolanaExecutor,
   x402EvmExecutor,
   agentcardMppExecutor,
