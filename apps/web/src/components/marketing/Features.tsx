@@ -34,7 +34,7 @@ function SectionHeader() {
       </ScrollReveal>
       <ScrollReveal fadeOnly durationMs={1020} delayMs={200} className="flex justify-center">
         <p className="mt-3 w-full max-w-full text-[17px] leading-relaxed text-muted">
-          Structured intent routing, policy enforcement at the call layer, and unified payment rails — so agents can act safely and verifiably on Ethereum.
+          Standard detection, policy enforcement at the call layer, and verifiable trace anchoring — so agents can pay safely and verifiably on Solana.
         </p>
       </ScrollReveal>
     </div>
@@ -99,8 +99,8 @@ export function Features() {
         <FeatureRow
           staggerBase={0}
           overline="// Payment Rails"
-          headline="Unified x402 + MPP payment abstraction"
-          body="One SDK primitive abstracts x402 crypto micropayments, MPP web2 rails, and onchain gas. The runtime selects the right rail per action transparently — no manual wiring."
+          headline="One call. x402 or MPP detected. Memo-anchored on Solana."
+          body="rhemify.pay(url) detects the standard from the HTTP 402 response, runs the fleet policy, signs a memo transaction on Solana, and replays the resource with the proof. The runtime picks the rail per call — you don't wire it."
           visual={
             <FeatureVisualImage
               src="/payments.png"
@@ -112,8 +112,8 @@ export function Features() {
         <FeatureRow
           staggerBase={65}
           overline="// Policy Engine"
-          headline="Enforcement at the tool layer, not spawn time"
-          body="OPA-style rules evaluated at every tool call. Actions are risk-tiered — LOW auto-executes, CRITICAL requires passkey sign. Prompt injection can't bypass it because the constraint lives in the execution layer."
+          headline="Six named rules. Enforced before any tx is signed."
+          body="daily_limit, max_per_transaction, domain_allowlist, standard_allowlist, vendor_blocked, approval_threshold — evaluated client-side against the policy your fleet sets. Prompt injection can't bypass it because the constraint lives in the execution layer, not the prompt."
           reversed
           visual={
             <FeatureVisualImage
@@ -125,9 +125,9 @@ export function Features() {
 
         <FeatureRow
           staggerBase={130}
-          overline="// Intent Taxonomy"
-          headline="Deterministic routing across 20+ intent classes"
-          body="A structured schema of Ethereum retail intents — from simple swaps to multi-agent LP rebalancing — each mapped to params, protocol templates, risk tier, and payment rails. No hallucinated tool calls."
+          overline="// Decision Replay"
+          headline="What if our daily limit had been $1? Re-run the trace and see."
+          body="Every payment captures the full decision context — detection raw body, alternative paths scored, rules fired, agent spend. Override any policy variable and the Go replay engine re-evaluates against the snapshot. The audit-grade primitive: not just what your agent did, but why — and what it would have done under different policy."
           visual={
             <FeatureVisualImage
               src="/delegation.png"

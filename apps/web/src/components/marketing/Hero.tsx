@@ -105,8 +105,8 @@ export function Hero() {
             >
               <h1 className="w-full max-w-full text-3xl font-bold leading-[1.02] tracking-tight text-white md:text-5xl lg:text-6xl text-center md:text-left">
                 Scoped permissions,{" "}
-                <span className="text-[#52c390]">enforced policies, and unified payment rails</span>{" "}
-                for Ethereum agents.
+                <span className="text-[#52c390]">enforced policies, and verifiable payment rails</span>{" "}
+                for Solana agents.
               </h1>
             </ScrollReveal>
             <ScrollReveal y={14} durationMs={1420} delayMs={420} revealOnMount className="block">
