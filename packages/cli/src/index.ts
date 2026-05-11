@@ -3,6 +3,7 @@ import { pay } from "./commands/pay.js";
 import { status } from "./commands/status.js";
 import { tracesList } from "./commands/traces/list.js";
 import { tracesShow } from "./commands/traces/show.js";
+import { tracesReplay } from "./commands/traces/replay.js";
 import pc from "picocolors";
 
 const args = process.argv.slice(2);
@@ -50,8 +51,10 @@ async function tracesDispatch(traceArgs: string[]) {
       await tracesShow(traceArgs.slice(1));
       break;
     case "replay":
+      await tracesReplay(traceArgs.slice(1));
+      break;
     case "verify":
-      console.log(pc.yellow(`  '${sub}' coming in a later chunk (Phase N.${sub === "replay" ? "3" : "4"}).`));
+      console.log(pc.yellow(`  'verify' coming in Phase N.4 — Merkle proof + Solana PDA verification.`));
       console.log(pc.dim(`  See docs/superpowers/specs/2026-04-15-replay-engine-design.md for the spec.`));
       process.exit(0);
       break;
@@ -74,9 +77,9 @@ ${pc.bold("rhemify traces")} — browse, inspect, replay, and verify decision tr
 
 ${pc.bold("Subcommands:")}
   ${pc.cyan("list")}    Browse recent decision traces (entry point)
-  ${pc.cyan("show <id>")}    Full decision context — agent, vendor, 6 rules fired, snapshot
-  ${pc.dim("replay")}  Coming in Phase N.3 — counterfactual policy override
-  ${pc.dim("verify")}  Coming in Phase N.4 — Merkle proof against Solana anchor
+  ${pc.cyan("show <id>")}      Full decision context — agent, vendor, 6 rules fired, snapshot
+  ${pc.cyan("replay <id>")}    Counterfactual policy override — "what if daily_limit was 10?"
+  ${pc.dim("verify")}         Coming in Phase N.4 — Merkle proof against Solana anchor
 `);
 }
 

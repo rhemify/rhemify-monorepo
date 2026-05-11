@@ -92,7 +92,16 @@ export const demo = mutation({
         active_departments: ["ceo", "research", "marketing", "sales", "engineering", "finance"],
         monthly_spend_cap: 1000,
         is_deployed: true,
+        // Stable known key so the CLI / TUI / Go server can authenticate
+        // against the local anonymous Convex without an onboard flow.
+        // The Go server's middleware.FleetAPIKeyAuth resolves this to
+        // fleet_id via fleets:getByApiKey. NOT a production secret —
+        // local-deployment only.
+        api_key: "rhm_demo_local_fleet_key_2026",
       });
+    } else if (!existing?.api_key && args.reseed) {
+      // Backfill api_key onto a pre-existing demo fleet seeded before Phase N.3.
+      await ctx.db.patch(fleet_id, { api_key: "rhm_demo_local_fleet_key_2026" });
     }
 
     // Insert agents (skip if same agent_key already exists)
