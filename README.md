@@ -29,11 +29,14 @@ The scope guardrails are encoded in `packages/sdk/src/execute/index.ts:28` — `
 
 | Capability | How to verify | Where the proof is |
 |---|---|---|
+| Full demo, one shot | `./tools/demo-run.sh` | status → pay → show → replay in one invocation |
+| Dependency health diagnostic | `rhemify status` | per-service reachability table (Go server / Convex / test-402) |
 | x402 detection + Solana memo execution | `rhemify pay http://localhost:3402/stock-data --max-budget '$1.00'` | Solana devnet signature returned, memo log readable on explorer |
 | MPP detection + Solana memo execution | `rhemify pay http://localhost:3402/analytics --max-budget '$1.00'` | Solana devnet signature returned |
 | Trace ingestion (SDK → Go → Convex) | `rhemify traces list` | Trace shown with non-seeded `trc_<hex>` id |
 | Full decision context | `rhemify traces show <trace_id>` | 7 sections: TRACE / EVENT / POLICY / PATH / SNAPSHOT / VERIFIABILITY / NEXT |
 | Counterfactual replay | `rhemify traces replay <id> --daily-limit 0` | Original ALLOWED → counterfactual BLOCKED, per-rule diff |
+| CI gates on every push | `gh run list --branch feature/siewwwin --limit 1` | TypeScript + Go + Anchor jobs all green |
 | On-chain trace anchor | `rhemify traces verify <id>` | `write_daily_root` Anchor program submits Merkle root to devnet |
 
 The CLI is `packages/cli/`. The Go intelligence server (`apps/server/`) runs the rules engine, replay engine, and Convex ingestion shaping. The Anchor program (`programs/rhemify-anchor/`) is deployed to devnet at `HYWjBbLMEz98KnppVkUnHmkUZ4pyQ8abaDRTtUedUkxV`.
