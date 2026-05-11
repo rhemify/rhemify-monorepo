@@ -16,11 +16,7 @@ async function main() {
       await onboard();
       break;
     case "pay":
-      if (!args[1]) {
-        console.log(pc.red("Usage: rhemify pay <url>"));
-        process.exit(1);
-      }
-      await pay(args[1]);
+      await pay(...args.slice(1));
       break;
     case "status":
       await status();

@@ -18,6 +18,14 @@ export interface RhemifyConfig {
    * back to env var CONVEX_URL or DEFAULT_CONVEX_URL.
    */
   convexUrl?: string;
+  /**
+   * Fleet API key — Bearer token the SDK transport sends to the Go server's
+   * FleetAPIKeyAuth middleware. The middleware resolves it to fleet_id via
+   * fleets:getByApiKey. Optional in config so legacy onboards still load;
+   * commands that hit the Go server should default to "cli-user" only as a
+   * last resort, since auth will fail without a real key.
+   */
+  fleetApiKey?: string;
   createdAt: string;
 }
 

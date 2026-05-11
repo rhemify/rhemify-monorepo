@@ -177,134 +177,17 @@ export const demo = mutation({
       actionCount++;
     }
 
-    // Insert sample payment_events + matched payment_traces.
+    // NOTE: payment_events / payment_traces / policy_decisions are NOT seeded.
+    // Those tables are populated by REAL SDK pipeline runs (rhemify pay <url>),
+    // which exercises detect → policy → resolve → execute → trace → emit and
+    // writes through the Go server's /api/ingest/payment handler. Seeding them
+    // hid SDK↔Convex contract drift (e.g. PaymentEvent missing `chain` field)
+    // and let auto-checks pass while the real pipeline silently failed —
+    // exactly the audit hole this monorepo is being judged on.
     //
-    // Each trace carries a full replay_snapshot shaped exactly the way the
-    // Go server's replay.Replay() expects (see apps/server/internal/replay/
-    // replay.go:64-75 — required keys: policy_state, vendor_registry_snapshot,
-    // agent_context). Without this seed, `rhemify traces list` returns an
-    // empty table and `rhemify traces replay` has nothing to replay against.
-    //
-    // Three scenario types interleaved (forced by `i % 3` so deterministic):
-    //   - allowed-all-pass  (60% feel — i % 3 in {0,1}): demo "what if tighter?"
-    //   - blocked-by-domain (33% feel — i % 3 === 2): demo "what if allowed?"
-    //   - flagged-threshold (when amount > approval): allowed but surfaced
-    const outcomes: ("success" | "rejected" | "failed")[] = ["success", "success", "success", "rejected", "failed"];
-
-    // The "snapshot" of the policy at decision time. Shared across the seeded
-    // traces — in production each fleet has its own; for the demo we want
-    // every replay to use the same baseline so override math is predictable.
-    const allowlistDomains = ["supabase.com", "stripe.com", "openai.com", "anthropic.com", "github.com"];
-    const seedPolicyState = {
-      daily_limit: 50,
-      max_per_transaction: 5,
-      domain_allowlist: allowlistDomains,
-      allowed_standards: ["x402", "mpp"],
-      approval_threshold: 10,
-    };
-    const seedVendorSnapshot = VENDORS.reduce<Record<string, { is_blocked: boolean }>>(
-      (acc, v) => {
-        acc[v] = { is_blocked: false };
-        return acc;
-      },
-      {},
-    );
-
-    let traceCount = 0;
-    const baseStamp = Date.now();
-    for (let i = 0; i < 12; i++) {
-      const a = agentIds[Math.floor(r() * agentIds.length)]!;
-      const vendor = VENDORS[Math.floor(r() * VENDORS.length)]!;
-      const amount = Math.round(r() * 50) / 100;
-      const spendToday = Math.round(r() * 30 * 100) / 100;
-      const scenario = i % 3; // 0,1 = allowed, 2 = domain block
-
-      const wasBlocked = scenario === 2 && !allowlistDomains.includes(vendor);
-      const wasFlagged = !wasBlocked && amount > seedPolicyState.approval_threshold;
-
-      const outcome: "success" | "rejected" | "failed" = wasBlocked
-        ? "rejected"
-        : outcomes[Math.floor(r() * outcomes.length)]!;
-
-      const traceId = `trc_seed_${baseStamp}_${i}`;
-
-      const eventId = await ctx.db.insert("payment_events", {
-        agent_id: a.id,
-        fleet_id,
-        standard: a.primary,
-        amount,
-        token: "USDC",
-        chain: "solana-devnet",
-        domain: vendor,
-        outcome,
-        instrument_type: "ows",
-        trace_id: traceId,
-      });
-
-      const policyRulesFired = [
-        {
-          rule: "daily_limit",
-          result: spendToday + amount > seedPolicyState.daily_limit ? "block" : "pass",
-          threshold: seedPolicyState.daily_limit.toFixed(2),
-          value: (spendToday + amount).toFixed(2),
-        },
-        {
-          rule: "max_per_transaction",
-          result: amount > seedPolicyState.max_per_transaction ? "block" : "pass",
-          threshold: seedPolicyState.max_per_transaction.toFixed(2),
-          value: amount.toFixed(2),
-        },
-        {
-          rule: "domain_allowlist",
-          result: wasBlocked ? "block" : "pass",
-          threshold: "allowlist",
-          value: vendor,
-        },
-        {
-          rule: "standard_allowlist",
-          result: "pass",
-          threshold: "allowlist",
-          value: a.primary,
-        },
-        {
-          rule: "vendor_blocked",
-          result: "pass",
-          threshold: "not_blocked",
-          value: vendor,
-        },
-        {
-          rule: "approval_threshold",
-          result: wasFlagged ? "flag" : "pass",
-          threshold: seedPolicyState.approval_threshold.toFixed(2),
-          value: amount.toFixed(2),
-        },
-      ];
-
-      await ctx.db.insert("payment_traces", {
-        payment_event_id: eventId,
-        trace_id: traceId,
-        agent_task_context: `${a.name} called ${vendor} ($${amount.toFixed(2)} ${a.primary})`,
-        trigger_402_raw: `HTTP 402 from ${vendor}: payment required (${a.primary} challenge)`,
-        alternatives_evaluated: [
-          { instrument: "credit", available: false, reason: "no credit service configured" },
-          { instrument: "ows", available: true, score: 0.95, estimated_cost: amount + 0.001 },
-          { instrument: "jupiter", available: false, reason: "USDC matches vendor" },
-        ],
-        policy_rules_fired: policyRulesFired,
-        instrument_selection_log: {
-          selected: wasBlocked ? "none" : "ows",
-          reason: wasBlocked ? "domain blocked by policy" : "lowest cost path",
-        },
-        confidence: wasBlocked ? "high" : amount > 5 ? "medium" : "high",
-        replay_snapshot: {
-          policy_state: seedPolicyState,
-          vendor_registry_snapshot: seedVendorSnapshot,
-          agent_context: { spend_today: spendToday },
-        },
-        trace_hash: `sha256_seed_${i}_${baseStamp.toString(16)}`,
-      });
-      traceCount++;
-    }
+    // To populate traces for a demo, run:
+    //   bun run tools/test-402/server.ts &
+    //   rhemify pay http://localhost:3402/stock-data --dry-run --max-budget '$1.00'
 
     return {
       status: "seeded",
@@ -312,7 +195,58 @@ export const demo = mutation({
       agents: agentIds.length,
       transactions: txCount,
       intelligence_actions: actionCount,
-      payment_traces: traceCount,
+      payment_traces: 0,
+    };
+  },
+});
+
+/**
+ * Wipe payment_events / payment_traces / policy_decisions for the demo fleet.
+ * Used to clear out pre-Phase-O.1 seeded traces before re-running with real
+ * pipeline output. Safe to call repeatedly — only touches the demo fleet
+ * (matched by email "demo@rhemify.local").
+ */
+export const wipeDemoTraces = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const fleet = await ctx.db
+      .query("fleets")
+      .withIndex("by_email", (q) => q.eq("email", "demo@rhemify.local"))
+      .unique();
+    if (!fleet) return { status: "no_demo_fleet" };
+
+    const events = await ctx.db
+      .query("payment_events")
+      .withIndex("by_fleet", (q) => q.eq("fleet_id", fleet._id))
+      .collect();
+
+    let tracesDeleted = 0;
+    let decisionsDeleted = 0;
+    for (const event of events) {
+      const traces = await ctx.db
+        .query("payment_traces")
+        .withIndex("by_payment_event", (q) => q.eq("payment_event_id", event._id))
+        .collect();
+      for (const t of traces) {
+        await ctx.db.delete(t._id);
+        tracesDeleted++;
+      }
+      const decisions = await ctx.db
+        .query("policy_decisions")
+        .withIndex("by_payment_event", (q) => q.eq("payment_event_id", event._id))
+        .collect();
+      for (const d of decisions) {
+        await ctx.db.delete(d._id);
+        decisionsDeleted++;
+      }
+      await ctx.db.delete(event._id);
+    }
+
+    return {
+      status: "wiped",
+      events_deleted: events.length,
+      traces_deleted: tracesDeleted,
+      decisions_deleted: decisionsDeleted,
     };
   },
 });

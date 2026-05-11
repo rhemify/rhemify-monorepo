@@ -2,7 +2,46 @@ import { createRhemify } from "@rhemify-monorepo/sdk";
 import pc from "picocolors";
 import { loadConfig, loadWallet } from "../config.js";
 
-export async function pay(url: string) {
+interface PayArgs {
+  url?: string;
+  dryRun: boolean;
+  maxBudget: string;
+  taskContext: string;
+}
+
+function parseArgs(argv: string[]): PayArgs {
+  const out: PayArgs = { dryRun: false, maxBudget: "$0.10", taskContext: "CLI payment" };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === "--dry-run") {
+      out.dryRun = true;
+    } else if (arg === "--max-budget") {
+      const v = argv[++i];
+      if (!v) throw new Error("--max-budget requires a value (e.g. '$0.50')");
+      out.maxBudget = v;
+    } else if (arg === "--task-context") {
+      const v = argv[++i];
+      if (!v) throw new Error("--task-context requires a string");
+      out.taskContext = v;
+    } else if (arg && !arg.startsWith("--") && !out.url) {
+      out.url = arg;
+    } else if (arg !== undefined) {
+      throw new Error(`Unknown argument: ${arg}`);
+    }
+  }
+  if (!out.url) throw new Error("Usage: rhemify pay <url> [--dry-run] [--max-budget <amount>]");
+  return out;
+}
+
+export async function pay(...argv: string[]) {
+  let args: PayArgs;
+  try {
+    args = parseArgs(argv);
+  } catch (err) {
+    console.log(pc.red(`  ${(err as Error).message}`));
+    process.exit(2);
+  }
+
   const config = loadConfig();
   const wallet = loadWallet();
 
@@ -11,22 +50,26 @@ export async function pay(url: string) {
     return;
   }
 
-  console.log(pc.dim(`  Paying: ${url}`));
+  console.log(pc.dim(`  Paying: ${args.url}${args.dryRun ? pc.yellow(" [DRY RUN]") : ""}`));
 
   const rhemify = createRhemify({
     serverUrl: config.serverUrl,
-    fleetApiKey: "cli-user",
-    agentId: config.agentIds[0],
+    fleetApiKey: config.fleetApiKey ?? "cli-user",
+    agentId: config.agentIds[0]!,
     fleetId: config.fleetId,
     wallet: { solanaPrivateKey: JSON.stringify(wallet) },
     solanaRpcUrl: "https://api.devnet.solana.com",
     defaultMaxBudget: "$1.00",
+    onError: (err: Error) => {
+      console.error(pc.yellow(`  [ingest] ${err.message}`));
+    },
   });
 
   try {
-    const result = await rhemify.pay(url, {
-      taskContext: "CLI payment",
-      maxBudget: "$0.10",
+    const result = await rhemify.pay(args.url!, {
+      taskContext: args.taskContext,
+      maxBudget: args.maxBudget,
+      dryRun: args.dryRun,
     });
 
     console.log(pc.green(`  Payment ${result.success ? "succeeded" : "failed"}`));
@@ -37,7 +80,12 @@ export async function pay(url: string) {
     if (result.receipt.txHash) {
       console.log(pc.dim(`  TxHash: ${result.receipt.txHash}`));
     }
+    if (args.dryRun) {
+      console.log(pc.yellow(`  Dry run — no chain submit. Inspect trace:`));
+      console.log(`    ${pc.cyan(`rhemify traces show ${result.trace.id}`)}`);
+    }
   } catch (err) {
     console.log(pc.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+    process.exit(1);
   }
 }
