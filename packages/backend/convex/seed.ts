@@ -12,14 +12,6 @@
 
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
-import {
-  PaymentStandard,
-  AgentStatus,
-  TransactionStatus,
-  PaymentOutcome,
-  IntelligenceActionType,
-  IntelligenceOutcome,
-} from "./schema";
 
 const VENDORS = [
   "perplexity.ai",
