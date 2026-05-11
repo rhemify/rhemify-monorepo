@@ -266,6 +266,18 @@ function colorResult(result: string): string {
   return pc.dim(result);
 }
 
+/**
+ * Pad a colorized string to a visible width. `String.padEnd` counts
+ * ANSI escape codes as visible chars, so colorized cells end up
+ * over-padded by ~5–10 chars depending on the color. We compute the
+ * uncolored visible length here, then add the padding outside the
+ * color codes.
+ */
+function colorPadEnd(colored: string, visible: string, width: number): string {
+  const pad = Math.max(0, width - visible.length);
+  return colored + " ".repeat(pad);
+}
+
 function render(args: ReplayArgs, r: ReplayResult): void {
   const orig = r.original.allowed ? pc.green(pc.bold(" ALLOWED ")) : pc.red(pc.bold(" BLOCKED "));
   const counter = r.counterfactual_blocked
@@ -315,12 +327,14 @@ function render(args: ReplayArgs, r: ReplayResult): void {
   for (const ruleName of allRules) {
     const o = origMap.get(ruleName);
     const re = repMap.get(ruleName);
+    const oVisible = o ? o.result.toUpperCase().match(/^(BLOCK)$/) ? "BLOCK" : o.result : "skipped";
+    const rVisible = re ? re.result.toUpperCase().match(/^(BLOCK)$/) ? "BLOCK" : re.result : "skipped";
     const oResult = o ? colorResult(o.result) : pc.dim("skipped");
     const rResult = re ? colorResult(re.result) : pc.dim("skipped");
     const changed = diffRules.has(ruleName) ? pc.yellow("CHANGED") : pc.dim("—");
     const icon = re ? ruleIcon(re.result) : ruleIcon("skipped");
     console.log(
-      `  ${icon} ${ruleName.padEnd(20)} ${oResult.padEnd(20)} → ${rResult.padEnd(20)} ${changed}`,
+      `  ${icon} ${ruleName.padEnd(20)} ${colorPadEnd(oResult, oVisible, 10)} → ${colorPadEnd(rResult, rVisible, 10)} ${changed}`,
     );
   }
 
