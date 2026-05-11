@@ -102,14 +102,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-anchor-
 
-      # cargo check on the host target only — does not require Solana's
-      # cargo-build-sbf toolchain. Catches syntax + type errors in the
-      # programs without paying for a full SBF compile in CI. The SBF
-      # build is exercised on the developer machine before devnet deploy.
-      - name: cargo check — rhemify-anchor
+      # cargo test runs check + builds tests + executes them on the host
+      # target. SBF compile (cargo-build-sbf) is still a developer-machine
+      # step before devnet deploy; that path stays out of CI to keep job
+      # runtime under a minute on cache hit.
+      #
+      # Test surface today: PDA seed derivation invariants, squat defense
+      # for the user-scoped seeds, program-ID pinning. See
+      # programs/*/tests/pda_seeds.rs for what's covered. Full integration
+      # tests against an SVM (Mollusk / litesvm) are a future chunk.
+      - name: cargo test — rhemify-anchor
         working-directory: programs/rhemify-anchor
-        run: cargo check --all-targets
+        run: cargo test --all-targets
 
-      - name: cargo check — rhemify-dwallet
+      - name: cargo test — rhemify-dwallet
         working-directory: programs/rhemify-dwallet
-        run: cargo check --all-targets
+        run: cargo test --all-targets
