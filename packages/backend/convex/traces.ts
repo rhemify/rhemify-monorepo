@@ -18,6 +18,71 @@ export const get = query({
   },
 });
 
+// listAll — browse-first surface for the CLI / TUI / dashboard.
+//
+// Server-side joins each trace to its payment_event to fold the most
+// "decision-summary-relevant" fields (agent, vendor, amount, outcome) into
+// a flat row shape consumers can render directly. Also computes a
+// `decision` field ("allowed" | "blocked") by inspecting policy_rules_fired
+// so consumers don't have to walk the rules array themselves just to filter.
+//
+// Optional filters are post-applied (after over-fetch) because the indexes
+// we have don't cover (blocked_only, agent_id). Cap at 100 to keep the
+// over-fetch bounded.
+export const listAll = query({
+  args: {
+    limit: v.optional(v.float64()),
+    agent_id: v.optional(v.string()),
+    blocked_only: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.min(args.limit ?? 20, 100);
+
+    // Over-fetch when filtering so the cap still yields `limit` matches.
+    const overscan = args.agent_id || args.blocked_only ? limit * 3 : limit;
+    const traces = await ctx.db.query("payment_traces").order("desc").take(overscan);
+
+    const enriched = await Promise.all(
+      traces.map(async (t) => {
+        const event = await ctx.db.get(t.payment_event_id);
+        const rulesFired = Array.isArray(t.policy_rules_fired)
+          ? (t.policy_rules_fired as Array<{ rule: string; result: string }>)
+          : [];
+        const decision: "allowed" | "blocked" = rulesFired.some(
+          (r) => r.result === "block",
+        )
+          ? "blocked"
+          : "allowed";
+
+        return {
+          _id: t._id,
+          trace_id: t.trace_id,
+          _creationTime: t._creationTime,
+          confidence: t.confidence,
+          decision,
+          payment_event_id: t.payment_event_id,
+          agent_id: event?.agent_id ?? null,
+          domain: event?.domain ?? null,
+          amount: event?.amount ?? null,
+          standard: event?.standard ?? null,
+          outcome: event?.outcome ?? null,
+          anchor_tx_hash: t.anchor_tx_hash ?? null,
+        };
+      }),
+    );
+
+    let filtered = enriched;
+    if (args.agent_id) {
+      filtered = filtered.filter((e) => e.agent_id === args.agent_id);
+    }
+    if (args.blocked_only) {
+      filtered = filtered.filter((e) => e.decision === "blocked");
+    }
+
+    return filtered.slice(0, limit);
+  },
+});
+
 // Insert a payment trace (called by Go server after ingest)
 export const insert = mutation({
   args: {

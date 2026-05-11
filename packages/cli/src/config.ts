@@ -11,7 +11,30 @@ export interface RhemifyConfig {
   fleetName: string;
   agentIds: string[];
   serverUrl: string;
+  /**
+   * Convex deployment URL — used by read-mostly commands that talk to
+   * Convex directly (`traces list`, future `agents list`, etc.).
+   * Optional in config because pre-Phase-N onboards didn't set it; falls
+   * back to env var CONVEX_URL or DEFAULT_CONVEX_URL.
+   */
+  convexUrl?: string;
   createdAt: string;
+}
+
+/** Default local anonymous Convex deployment (`bunx convex dev` in packages/backend). */
+export const DEFAULT_CONVEX_URL = "http://127.0.0.1:3210";
+
+/**
+ * Resolves the Convex URL using the priority: explicit override > config > env > default.
+ * Used by every command that talks to Convex directly. Single source of truth.
+ */
+export function resolveConvexUrl(override?: string): string {
+  if (override) return override;
+  const cfg = loadConfig();
+  if (cfg?.convexUrl) return cfg.convexUrl;
+  const env = process.env.CONVEX_URL;
+  if (env) return env;
+  return DEFAULT_CONVEX_URL;
 }
 
 function ensureDir() {
