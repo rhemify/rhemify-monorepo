@@ -27,12 +27,18 @@ export class PolicyEngine {
   /**
    * Evaluate all policy rules against a detection result.
    * Fetches current policy from Go server (cached for cacheTtl ms).
-   * Returns the aggregate decision: block if any rule blocks,
-   * flag if any rule flags, allow otherwise.
+   * Returns the aggregate decision AND the context the decision was made
+   * against. The caller is expected to snapshot the context into the trace's
+   * replay_snapshot.policy_state so the Go replay engine has real values to
+   * work with — without that, every counterfactual replay runs against an
+   * empty policy and produces meaningless output.
    */
-  async evaluate(detection: DetectionResult, domain: string): Promise<PolicyDecision> {
+  async evaluate(
+    detection: DetectionResult,
+    domain: string,
+  ): Promise<{ decision: PolicyDecision; context: PolicyContext }> {
     const context = await this.getContext();
-    return this.evaluateWithContext(detection, domain, context);
+    return { decision: this.evaluateWithContext(detection, domain, context), context };
   }
 
   /**

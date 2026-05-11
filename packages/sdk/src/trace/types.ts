@@ -1,4 +1,4 @@
-import type { DetectionResult, PolicyDecision, ScoredPath } from "../types.js";
+import type { DetectionResult, PolicyContext, PolicyDecision, ScoredPath } from "../types.js";
 
 export interface TraceSnapshot {
   url: string;
@@ -9,6 +9,13 @@ export interface TraceSnapshot {
   taskStep?: number;
   detection: DetectionResult;
   policyDecision: PolicyDecision;
+  /**
+   * The full policy + agent context evaluated against. Optional because
+   * a trace can be finalized in an error path before context is captured
+   * (e.g. detection failed). When present, drives replay_snapshot.policy_state
+   * in the emitted trace — without it the counterfactual replay is empty.
+   */
+  policyContext?: PolicyContext;
   allPaths: ScoredPath[];
   chosenPath: ScoredPath | null;
   executionSuccess: boolean;

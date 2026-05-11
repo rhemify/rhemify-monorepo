@@ -112,19 +112,39 @@ export interface EconomicRationalityCheck {
 
 export interface ReplaySnapshot {
   policy_state: PolicyState;
-  vendor_registry_snapshot?: Record<string, unknown>;
-  agent_context?: string;
+  /**
+   * Per-domain vendor health at decision time. Go replay engine reads
+   * snapshot[domain].is_blocked to evaluate vendor_blocked rule.
+   * Shape must match apps/server/internal/replay/policy.go expectations.
+   */
+  vendor_registry_snapshot: Record<string, { is_blocked: boolean }>;
+  /**
+   * Agent runtime state at decision time. Go replay engine reads
+   * agent_context.spend_today to evaluate daily_limit rule.
+   */
+  agent_context: { spend_today: number };
   detection: DetectionSummary;
   all_paths: ScoredPathSummary[];
   policy_decision: PolicyDecisionSummary;
 }
 
+/**
+ * Policy snapshot for replay. Keys are snake_case to match the Go replay
+ * engine contract (apps/server/internal/replay/policy.go reads
+ * policy_state["daily_limit"], etc.). This is the on-wire shape for the
+ * replay flow — distinct from the SDK's runtime PolicyConfig (camelCase,
+ * defined in @rhemify-monorepo/sdk types) which is what the agent's
+ * policy rules engine evaluates against. The SDK translates camelCase
+ * runtime config → snake_case snapshot fields when emitting the trace.
+ */
 export interface PolicyState {
-  dailyLimit: number;
-  maxPerTransaction: number;
-  approvalThreshold: number;
-  allowedStandards: PaymentProtocol[];
-  domainAllowlist: string[];
+  daily_limit: number;
+  max_per_transaction: number;
+  approval_threshold: number;
+  // Loose string[] so over-the-wire serialization (where the literal union
+  // is lost) still type-checks. Real values are PaymentProtocol literals.
+  allowed_standards: string[];
+  domain_allowlist: string[];
 }
 
 export interface DetectionSummary {

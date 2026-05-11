@@ -39,7 +39,9 @@ export async function createGovernedSession(
   const taskContext = options?.taskContext;
 
   // --- Policy gate: can this agent open a session for this deposit? ---
-  const policyContext = await policyEngine.evaluate(
+  // (Variable previously named `policyContext` but held a PolicyDecision.
+  // Renamed to match the new evaluate() return shape: { decision, context }.)
+  const { decision: depositDecision } = await policyEngine.evaluate(
     {
       protocol: "mpp",
       confidence: "high",
@@ -53,10 +55,10 @@ export async function createGovernedSession(
     "session-deposit",
   );
 
-  if (policyContext.action === "block") {
+  if (depositDecision.action === "block") {
     throw new PolicyBlockedError(
-      policyContext.reason ?? "Session deposit blocked by policy",
-      policyContext,
+      depositDecision.reason ?? "Session deposit blocked by policy",
+      depositDecision,
     );
   }
 
@@ -330,12 +332,14 @@ function emitSessionTrace(
     task_outcome_linked_at: null,
     replay_snapshot: {
       policy_state: {
-        dailyLimit: 0,
-        maxPerTransaction: 0,
-        approvalThreshold: 0,
-        allowedStandards: [],
-        domainAllowlist: [],
+        daily_limit: 0,
+        max_per_transaction: 0,
+        approval_threshold: 0,
+        allowed_standards: [],
+        domain_allowlist: [],
       },
+      vendor_registry_snapshot: {},
+      agent_context: { spend_today: 0 },
       detection: snapshot.detection,
       all_paths: [],
       policy_decision: snapshot.policyDecision,

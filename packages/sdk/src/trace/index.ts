@@ -1,5 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { DetectionResult, PolicyDecision, ScoredPath, TraceRecord } from "../types.js";
+import type {
+  DetectionResult,
+  PolicyContext,
+  PolicyDecision,
+  ScoredPath,
+  TraceRecord,
+} from "../types.js";
 import type { TraceSnapshot } from "./types.js";
 
 export type { TraceSnapshot } from "./types.js";
@@ -21,6 +27,7 @@ export class Trace {
 
   private detection: DetectionResult | null = null;
   private policyDecision: PolicyDecision | null = null;
+  private policyContext: PolicyContext | null = null;
   private allPaths: ScoredPath[] = [];
   private chosenPath: ScoredPath | null = null;
   private executionSuccess = false;
@@ -52,6 +59,15 @@ export class Trace {
 
   recordPolicyDecision(decision: PolicyDecision): void {
     this.policyDecision = decision;
+  }
+
+  /**
+   * Capture the policy + agent context the decision was made against. Drives
+   * replay_snapshot.policy_state / vendor_registry_snapshot / agent_context
+   * in the emitted trace — without it the counterfactual replay is empty.
+   */
+  recordPolicyContext(context: PolicyContext): void {
+    this.policyContext = context;
   }
 
   recordPathSelection(allPaths: ScoredPath[], chosen: ScoredPath | null): void {
@@ -126,6 +142,7 @@ export class Trace {
       taskStep: this.taskStep,
       detection: this.detection!,
       policyDecision: this.policyDecision!,
+      policyContext: this.policyContext ?? undefined,
       allPaths: this.allPaths,
       chosenPath: this.chosenPath,
       executionSuccess: this.executionSuccess,

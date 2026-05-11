@@ -99,23 +99,39 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       economic_rationality_check: null,
       task_outcome: null,
       task_outcome_linked_at: null,
+      // Replay snapshot — captured policy + agent + vendor state at decision
+      // time. Keys are snake_case to match Go replay engine expectations
+      // (apps/server/internal/replay/policy.go reads policy_state["daily_limit"]
+      // etc.). Without real values here, every counterfactual replay runs
+      // against an empty policy and the diff is meaningless.
       replay_snapshot: {
-        policy_state:
-          snapshot.policyDecision.rulesFired.length > 0
-            ? {
-                dailyLimit: 0,
-                maxPerTransaction: 0,
-                approvalThreshold: 0,
-                allowedStandards: [],
-                domainAllowlist: [],
-              }
-            : {
-                dailyLimit: 0,
-                maxPerTransaction: 0,
-                approvalThreshold: 0,
-                allowedStandards: [],
-                domainAllowlist: [],
+        policy_state: snapshot.policyContext
+          ? {
+              daily_limit: snapshot.policyContext.policy.dailyLimit,
+              max_per_transaction: snapshot.policyContext.policy.maxPerTransaction,
+              approval_threshold: snapshot.policyContext.policy.approvalThreshold,
+              allowed_standards: snapshot.policyContext.policy.allowedStandards,
+              domain_allowlist: snapshot.policyContext.policy.domainAllowlist,
+            }
+          : {
+              daily_limit: 0,
+              max_per_transaction: 0,
+              approval_threshold: 0,
+              allowed_standards: [] as string[],
+              domain_allowlist: [] as string[],
+            },
+        vendor_registry_snapshot: snapshot.policyContext
+          ? snapshot.policyContext.blockedDomains.reduce<Record<string, { is_blocked: boolean }>>(
+              (acc, d) => {
+                acc[d] = { is_blocked: true };
+                return acc;
               },
+              {},
+            )
+          : {},
+        agent_context: {
+          spend_today: snapshot.policyContext?.spentToday ?? 0,
+        },
         detection: snapshot.detection,
         all_paths: snapshot.allPaths,
         policy_decision: snapshot.policyDecision,
@@ -209,8 +225,12 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
 
     // --- Stage 2: POLICY ---
     const domain = extractDomain(url);
-    const policyDecision = await policyEngine.evaluate(detection, domain);
+    const { decision: policyDecision, context: policyContext } = await policyEngine.evaluate(
+      detection,
+      domain,
+    );
     trace.recordPolicyDecision(policyDecision);
+    trace.recordPolicyContext(policyContext);
     emitStage("policy", {
       action: policyDecision.action,
       reason: policyDecision.reason ?? null,
@@ -305,7 +325,7 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     });
 
     const domain = extractDomain(url);
-    const policyDecision = await policyEngine.evaluate(detection, domain);
+    const { decision: policyDecision } = await policyEngine.evaluate(detection, domain);
     const allPaths = pathResolver.resolve(detection, config.wallet);
     const best = allPaths.find((p) => p.available) ?? null;
 
