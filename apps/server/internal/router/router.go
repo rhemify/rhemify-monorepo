@@ -88,6 +88,7 @@ func Setup(convex *cx.Client, cfg *config.Config, deps ...*Deps) *gin.Engine {
 			sdk.POST("/traces/:id/replay", replayHandler.HandleReplay)
 			sdk.PATCH("/traces/:id/anchor", anchorHandler.UpdateTraceAnchor)
 			sdk.GET("/anchor/verify/:traceId", anchorHandler.VerifyTrace)
+			sdk.GET("/anchor/:fleetId/:date/merkle-proof", anchorHandler.GetMerkleProof)
 			sdk.GET("/anchor/:fleetId/:date", anchorHandler.GetDailyRoot)
 
 			// dWallet + Signing (requires cosigner and pipeline)

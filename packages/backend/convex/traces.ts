@@ -171,6 +171,73 @@ export const getForReplay = query({
   },
 });
 
+// GET (via Go merkle-proof handler) — list a fleet's traces for a UTC date,
+// ordered by _creationTime ascending. The leaf index of each trace in the
+// Merkle tree is its position in this list, so the ordering must be stable
+// (always insertion order). Date is "YYYY-MM-DD" UTC, the same format
+// `rhemify traces verify` uses as the daily anchor PDA seed.
+//
+// Walks every payment_event for the fleet via by_fleet index, filters to
+// the date window in-memory, then joins each event to its trace. Filter
+// in-memory because Convex indexes can't compose (fleet_id, time_range)
+// without a stale prefix-index that doubles index storage. Fleet sizes in
+// v1 (hundreds of payments/day) keep this cheap; if a fleet ever scales
+// to 10k+/day, add a dedicated by_fleet_date materialized index.
+export const listByFleetDate = query({
+  args: {
+    fleet_id: v.string(),
+    date: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // [startMs, endMs) for the UTC day.
+    const day = Date.parse(`${args.date}T00:00:00Z`);
+    if (Number.isNaN(day)) {
+      throw new Error(`listByFleetDate: invalid date '${args.date}', expected YYYY-MM-DD`);
+    }
+    const endMs = day + 24 * 60 * 60 * 1000;
+
+    const events = await ctx.db
+      .query("payment_events")
+      .withIndex("by_fleet", (q) => q.eq("fleet_id", args.fleet_id))
+      .collect();
+
+    const dayEvents = events.filter(
+      (e) => e._creationTime >= day && e._creationTime < endMs,
+    );
+    // Stable order = insertion order = leaf index.
+    dayEvents.sort((a, b) => a._creationTime - b._creationTime);
+
+    // Only include traces whose trace_hash is a real 64-char hex SHA-256.
+    // Pre-O.1 seed.ts generated synthetic trace_hashes like
+    // "sha256_seed_0_<...>" which aren't valid leaf bytes; including them
+    // breaks tree construction in the Go handler. Real SDK output always
+    // produces 64-hex.
+    const HEX64 = /^[0-9a-f]{64}$/;
+
+    const out: Array<{
+      trace_id: string;
+      trace_hash: string;
+      created_at_ms: number;
+      leaf_index: number;
+    }> = [];
+    for (const ev of dayEvents) {
+      const trace = await ctx.db
+        .query("payment_traces")
+        .withIndex("by_payment_event", (q) => q.eq("payment_event_id", ev._id))
+        .unique();
+      if (!trace) continue;
+      if (!HEX64.test(trace.trace_hash)) continue;
+      out.push({
+        trace_id: trace.trace_id,
+        trace_hash: trace.trace_hash,
+        created_at_ms: ev._creationTime,
+        leaf_index: out.length,
+      });
+    }
+    return out;
+  },
+});
+
 // PATCH /api/traces/:id/anchor — update trace with Memo tx signature
 export const updateAnchor = mutation({
   args: {

@@ -1,27 +1,28 @@
 /**
  * `rhemify traces verify <trace_id> [--json]`
  *
- * THE moat command. Anchors a trace's hash on Solana devnet via the
- * rhemify-anchor program's write_daily_root instruction, then reads the
- * PDA back to prove the trace is cryptographically committed on-chain.
+ * THE moat command. Cryptographically proves a trace exists in the day's
+ * batch on Solana devnet.
  *
- * Flow:
- *   1. Load trace from Convex
- *   2. Compute leaf bytes = sha256(trace.trace_hash) — deterministic 32 bytes
- *   3. For single-trace verify, merkle_root = leaf (single-leaf tree).
- *      Production batches multiple traces; this CLI demonstrates the
- *      anchor primitive for one trace at a time. See Phase N.4 design
- *      note in docs/superpowers/specs/2026-04-15-replay-engine-design.md.
- *   4. Derive PDA: [b"rhemify-daily", authority, fleet_id, date]
- *      (user-scoped seeds per Phase C — same as tools/devnet-smoke/
- *      squat-defeated.ts proved structurally squat-resistant).
- *   5. Check if PDA already exists on devnet. If yes, READ the on-chain
- *      root and compare to our computed root → VERIFIED if match.
- *      If no, build write_daily_root tx, submit, then re-query.
- *   6. Print VERIFIED with pda + tx_hash + slot + explorer link.
+ * Flow (post-M.1–M.4 Merkle batching):
+ *   1. Fetch Merkle proof from the Go server's
+ *      /api/anchor/<fleet>/<date>/merkle-proof endpoint. Server builds the
+ *      tree from every trace for the fleet+date, returns:
+ *        root, leaf_hash, leaf_index, trace_count, path[]
+ *   2. Verify the proof locally — recompute the root from leaf + path,
+ *      confirm it matches what the server returned. This catches a
+ *      server-side bug or tampered response without trusting the server's
+ *      math.
+ *   3. Read the on-chain DailyRoot PDA for fleet+date. If the on-chain
+ *      root matches the (now-trusted) Merkle root, the trace is
+ *      VERIFIED — any auditor can re-derive the leaf, re-fetch the
+ *      proof, and re-check independently.
+ *   4. If on-chain root is stale (different from current Merkle root —
+ *      e.g. more traces have been added since last anchor), submit a
+ *      write_daily_root tx to refresh the on-chain root.
  *
- * Auth: uses ~/.config/solana/id.json (the user's local devnet keypair).
- * No Go server needed — this command talks directly to Solana devnet.
+ * Auth: uses ~/.config/solana/id.json for the on-chain submission.
+ * Requires: Go server (for the Merkle proof endpoint) + Solana devnet.
  */
 
 import {
@@ -33,13 +34,12 @@ import {
   TransactionInstruction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { ConvexHttpClient } from "convex/browser";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import pc from "picocolors";
-import { resolveConvexUrl } from "../../config.js";
+import { loadConfig } from "../../config.js";
 
 const RHEMIFY_ANCHOR_PROGRAM_ID = new PublicKey(
   "HYWjBbLMEz98KnppVkUnHmkUZ4pyQ8abaDRTtUedUkxV",
@@ -48,41 +48,43 @@ const DEVNET_RPC = "https://api.devnet.solana.com";
 
 interface VerifyArgs {
   traceId?: string;
-  convexUrl?: string;
-  json?: boolean;
+  fleetId?: string;
+  date?: string;
+  serverUrl?: string;
   rpcUrl?: string;
+  json?: boolean;
 }
 
-interface TraceRow {
+interface MerkleProofResponse {
+  fleet_id: string;
+  date: string;
   trace_id: string;
   trace_hash: string;
-  _creationTime: number;
-  payment_event_id: string;
-}
-
-interface PaymentEventRow {
-  fleet_id: string;
-  agent_id: string;
-  domain: string;
-  amount: number;
+  leaf_index: number;
+  leaf_hash: string;
+  root: string;
+  trace_count: number;
+  path: { hash: string; side: "left" | "right" }[];
 }
 
 interface VerifyResult {
   trace_id: string;
-  computed_root: string;
-  pda: string;
-  pda_bump: number;
-  on_chain_root: string;
-  match: boolean;
   fleet_id: string;
   date: string;
+  leaf_index: number;
+  trace_count: number;
+  leaf_hash: string;
+  computed_root: string;
+  server_root: string;
+  on_chain_root: string;
+  pda: string;
+  pda_bump: number;
+  proof_match: boolean;
+  on_chain_match: boolean;
   tx_hash: string | null;
   slot: number | null;
   newly_anchored: boolean;
-  explorer: {
-    tx: string | null;
-    pda: string;
-  };
+  explorer: { tx: string | null; pda: string };
 }
 
 function parseArgs(argv: string[]): VerifyArgs {
@@ -91,10 +93,18 @@ function parseArgs(argv: string[]): VerifyArgs {
     const arg = argv[i];
     if (arg === "--json") {
       out.json = true;
-    } else if (arg === "--convex") {
+    } else if (arg === "--server") {
       const v = argv[++i];
-      if (!v) throw new Error("--convex requires a URL");
-      out.convexUrl = v;
+      if (!v) throw new Error("--server requires a URL");
+      out.serverUrl = v;
+    } else if (arg === "--fleet") {
+      const v = argv[++i];
+      if (!v) throw new Error("--fleet requires a fleet_id");
+      out.fleetId = v;
+    } else if (arg === "--date") {
+      const v = argv[++i];
+      if (!v) throw new Error("--date requires YYYY-MM-DD");
+      out.date = v;
     } else if (arg === "--rpc") {
       const v = argv[++i];
       if (!v) throw new Error("--rpc requires a URL");
@@ -114,31 +124,31 @@ function parseArgs(argv: string[]): VerifyArgs {
 
 function printHelp(): void {
   console.log(`
-${pc.bold("rhemify traces verify")} — cryptographically prove a trace exists on Solana
+${pc.bold("rhemify traces verify")} — cryptographically prove a trace is in the day's batch on Solana
 
 ${pc.bold("Usage:")}
   rhemify traces verify <trace_id> [options]
 
 ${pc.bold("Options:")}
   --json            raw JSON output for scripting
-  --convex <url>    override Convex deployment URL
+  --server <url>    override Go server URL (default from config)
+  --fleet <id>      override fleet_id (defaults to config.fleetId)
+  --date <YYYY-MM-DD>  override anchor date (defaults to UTC today)
   --rpc <url>       override Solana RPC URL (default ${DEVNET_RPC})
   -h, --help        show this message
 
 ${pc.bold("What this does:")}
-  1. Loads the trace from Convex
-  2. Computes leaf = sha256(trace_hash) — deterministic 32 bytes
-  3. Derives the daily-root PDA from the deployed rhemify-anchor program
-  4. If PDA exists: reads on-chain root, verifies match (no tx submitted)
-     If not:       submits write_daily_root, waits, re-queries PDA
-  5. Prints VERIFIED with on-chain receipt — explorer link, slot, tx hash
+  1. Fetches the Merkle proof from the Go server (builds tree from every
+     trace for fleet+date, returns root + path + leaf)
+  2. Verifies the proof locally — recomputes the root from leaf + path
+  3. Reads the on-chain DailyRoot PDA. If it matches → VERIFIED
+  4. If on-chain root is stale (older batch), submits write_daily_root
+     to anchor the current root
 
 ${pc.bold("Requires:")}
-  - ~/.config/solana/id.json (your devnet keypair, ~0.001 SOL per new anchor)
-  - bunx convex dev running in packages/backend/ (for Convex query)
-
-${pc.bold("Example:")}
-  rhemify traces verify trc_seed_1778482712054_0
+  - rhemify CLI configured (~/.rhemify/config.json)
+  - Go intelligence server running
+  - ~/.config/solana/id.json funded with ~0.001 SOL devnet for re-anchor
 `);
 }
 
@@ -146,11 +156,6 @@ function loadKeypair(): Keypair {
   const path = join(homedir(), ".config", "solana", "id.json");
   const secret = new Uint8Array(JSON.parse(readFileSync(path, "utf-8")));
   return Keypair.fromSecretKey(secret);
-}
-
-function dateForTrace(creationTimeMs: number): string {
-  // YYYY-MM-DD UTC — matches the Anchor program's expected seed format
-  return new Date(creationTimeMs).toISOString().slice(0, 10);
 }
 
 function anchorDiscriminator(name: string): Buffer {
@@ -170,21 +175,41 @@ function encodeU32LE(n: number): Buffer {
   return b;
 }
 
+/**
+ * Verify a Merkle proof in-process. Mirrors apps/server/internal/merkle:
+ * leaf prefix 0x00, node prefix 0x01. Returns the recomputed root so the
+ * caller can compare against both the server-asserted root AND the
+ * on-chain root.
+ */
+function verifyProof(
+  leafHex: string,
+  path: { hash: string; side: "left" | "right" }[],
+): Buffer {
+  // Buffer type widening between Buffer.from() and createHash().digest() in
+  // strict node @types — use Uint8Array as the running container and convert
+  // back at the end. Same bytes, calmer compiler.
+  let running: Uint8Array = Buffer.from(leafHex, "hex");
+  for (const step of path) {
+    const sibling = Buffer.from(step.hash, "hex");
+    if (step.side === "right") {
+      // sibling on right → running is left operand
+      running = sha256Node(running, sibling);
+    } else {
+      running = sha256Node(sibling, running);
+    }
+  }
+  return Buffer.from(running);
+}
+
+function sha256Node(left: Uint8Array, right: Uint8Array): Uint8Array {
+  return createHash("sha256")
+    .update(Buffer.concat([Buffer.from([0x01]), left, right]))
+    .digest();
+}
+
 /** Read on-chain DailyRoot.merkle_root from a fetched account's raw data. */
 function parseOnChainRoot(data: Buffer, fleetId: string, date: string): Buffer | null {
-  // DailyRoot layout (Anchor): 8-byte discriminator, then InitSpace ordering:
-  //   fleet_id: String         (4 bytes len + max 32 bytes utf8)
-  //   date: String             (4 bytes len + max 10 bytes utf8)
-  //   merkle_root: [u8; 32]    (32 bytes, no length prefix — fixed)
-  //   trace_count: u32         (4 bytes)
-  //   authority: Pubkey        (32 bytes)
-  //   timestamp: i64           (8 bytes)
-  //   bump: u8                 (1 byte)
-  //
-  // Strings are stored variable-length (4-byte LE length, then utf8) — NOT
-  // padded to max_len in serialized form. So we walk the buffer.
-  let offset = 8; // discriminator
-
+  let offset = 8; // anchor discriminator
   const fleetIdLen = data.readUInt32LE(offset);
   offset += 4;
   const fleetIdStr = data.subarray(offset, offset + fleetIdLen).toString("utf-8");
@@ -197,18 +222,25 @@ function parseOnChainRoot(data: Buffer, fleetId: string, date: string): Buffer |
   offset += dateLen;
   if (dateStr !== date) return null;
 
-  const merkleRoot = data.subarray(offset, offset + 32);
-  return Buffer.from(merkleRoot);
+  return Buffer.from(data.subarray(offset, offset + 32));
 }
 
-async function loadTrace(convexUrl: string, traceId: string): Promise<{ trace: TraceRow; event: PaymentEventRow }> {
-  const client = new ConvexHttpClient(convexUrl);
-  const result = (await client.query("traces:getByTraceId" as never, {
-    trace_id: traceId,
-  } as never)) as (TraceRow & { payment_event: PaymentEventRow | null }) | null;
-  if (!result) throw new Error(`Trace not found: ${traceId}`);
-  if (!result.payment_event) throw new Error(`Trace ${traceId} has no linked payment_event`);
-  return { trace: result, event: result.payment_event };
+async function fetchProof(
+  serverUrl: string,
+  apiKey: string,
+  fleetId: string,
+  date: string,
+  traceId: string,
+): Promise<MerkleProofResponse> {
+  const url = `${serverUrl}/api/anchor/${encodeURIComponent(fleetId)}/${encodeURIComponent(
+    date,
+  )}/merkle-proof?trace_id=${encodeURIComponent(traceId)}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`merkle-proof ${res.status}: ${text || res.statusText}`);
+  }
+  return (await res.json()) as MerkleProofResponse;
 }
 
 function row(label: string, value: string): void {
@@ -219,11 +251,27 @@ function section(title: string): void {
   console.log(pc.bold(pc.cyan(`\n${title}`)));
 }
 
-function render(_args: VerifyArgs, r: VerifyResult): void {
-  const badge = r.match ? pc.green(pc.bold(" VERIFIED ")) : pc.red(pc.bold(" MISMATCH "));
+function render(r: VerifyResult): void {
+  const verified = r.proof_match && r.on_chain_match;
+  const badge = verified ? pc.green(pc.bold(" VERIFIED ")) : pc.red(pc.bold(" MISMATCH "));
 
   console.log(`\n${pc.bold(pc.cyan("VERIFY"))} ${pc.dim(r.trace_id)}`);
-  console.log(`  ${badge}  ${r.match ? pc.green("trace hash matches on-chain Merkle root") : pc.red("on-chain root does not match computed root")}`);
+  if (verified) {
+    console.log(
+      `  ${badge}  ${pc.green(`trace is leaf #${r.leaf_index} of a ${r.trace_count}-leaf Merkle tree, root anchored on devnet`)}`,
+    );
+  } else if (!r.proof_match) {
+    console.log(`  ${badge}  ${pc.red("server's Merkle proof does not reconstruct to the server's root — trust failure")}`);
+  } else {
+    console.log(`  ${badge}  ${pc.red("on-chain root differs from current Merkle root — anchor is stale")}`);
+  }
+
+  section("MERKLE PROOF");
+  row("leaf index", `${r.leaf_index} of ${r.trace_count}`);
+  row("leaf hash", pc.dim(r.leaf_hash));
+  row("computed root", pc.dim(r.computed_root));
+  row("server root", pc.dim(r.server_root));
+  row("proof valid", r.proof_match ? pc.green("✓ recomputed root matches server") : pc.red("✗ mismatch"));
 
   section("ON-CHAIN");
   row("program", RHEMIFY_ANCHOR_PROGRAM_ID.toBase58());
@@ -231,35 +279,25 @@ function render(_args: VerifyArgs, r: VerifyResult): void {
   row("bump", String(r.pda_bump));
   row("fleet_id", pc.dim(r.fleet_id));
   row("date", r.date);
+  row("on-chain root", pc.dim(r.on_chain_root));
+  row("root match", r.on_chain_match ? pc.green("✓ identical") : pc.red("✗ different"));
   if (r.newly_anchored) {
     row("anchor tx", pc.green(r.tx_hash ?? "—"));
-    row("slot", String(r.slot ?? "—"));
+    if (r.slot !== null) row("slot", String(r.slot));
     row("status", pc.green("freshly anchored in this run"));
-  } else if (r.match) {
-    row("status", pc.dim("already anchored — on-chain root matches this trace"));
-  } else {
-    row("status", pc.yellow(
-      "PDA exists from a previous anchor for this fleet+date, but its root " +
-      "differs from this trace. To anchor this trace's hash, delete or rotate " +
-      "the existing PDA, or wait until the next day's PDA slot.",
-    ));
   }
-
-  section("HASH CHAIN");
-  row("computed root", pc.dim(r.computed_root));
-  row("on-chain root", pc.dim(r.on_chain_root));
-  row("match", r.match ? pc.green("✓ identical") : pc.red("✗ different"));
 
   section("EXPLORER");
   row("PDA", pc.cyan(r.explorer.pda));
   if (r.explorer.tx) row("anchor tx", pc.cyan(r.explorer.tx));
 
   console.log();
-  if (r.match) {
-    console.log(pc.green(`  ${pc.bold("Audit-grade proof:")} an auditor can independently re-derive the leaf,`));
-    console.log(pc.green(`  query the PDA at ${r.pda},`));
-    console.log(pc.green(`  and confirm the root committed at slot ${r.slot ?? "(existing)"}.`));
-    console.log(pc.green(`  No competitor (Tenderly, Stripe, Foundry) ships this.`));
+  if (verified) {
+    console.log(pc.green(`  ${pc.bold("Audit-grade proof:")} a third-party auditor can independently`));
+    console.log(pc.green(`    1. recompute the leaf hash from this trace's trace_hash,`));
+    console.log(pc.green(`    2. re-fetch the proof via /api/anchor/.../merkle-proof,`));
+    console.log(pc.green(`    3. recompute the root via the published merkle.Verify helper,`));
+    console.log(pc.green(`    4. read the PDA on devnet — match means tamper-evident.`));
   }
   console.log();
 }
@@ -274,23 +312,30 @@ export async function tracesVerify(argv: string[] = []): Promise<void> {
     process.exit(2);
   }
 
-  const convexUrl = resolveConvexUrl(args.convexUrl);
+  const config = loadConfig();
+  if (!config) {
+    console.error(pc.red("  Not set up. Run: rhemify onboard\n"));
+    process.exit(1);
+  }
+  const serverUrl = args.serverUrl ?? config.serverUrl;
   const rpcUrl = args.rpcUrl ?? DEVNET_RPC;
+  const fleetId = args.fleetId ?? config.fleetId;
+  const apiKey = config.fleetApiKey ?? "cli-user";
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
 
-  // 1. Load trace
-  const { trace, event } = await loadTrace(convexUrl, args.traceId!);
+  // 1. Fetch the Merkle proof from the Go server.
+  const proof = await fetchProof(serverUrl, apiKey, fleetId, date, args.traceId!);
 
-  // 2. Compute deterministic leaf bytes from trace_hash
-  const leaf = createHash("sha256").update(trace.trace_hash).digest();
-  // Single-leaf tree: root = leaf
-  const computedRoot = leaf;
+  // 2. Recompute the root from the leaf + path locally. Must match what
+  //    the server returned, otherwise the server lied / a bug shipped.
+  const computedRoot = verifyProof(proof.leaf_hash, proof.path);
+  const serverRootBytes = Buffer.from(proof.root, "hex");
+  const proofMatch = computedRoot.equals(serverRootBytes);
 
-  // 3. Derive PDA — user-scoped per Phase C
+  // 3. Look up the on-chain PDA. Derive the same way write_daily_root does:
+  //    [b"rhemify-daily", authority, fleet_id, date]
   const conn = new Connection(rpcUrl, "confirmed");
   const authority = loadKeypair();
-  const fleetId = event.fleet_id;
-  const date = dateForTrace(trace._creationTime);
-
   const [pda, bump] = PublicKey.findProgramAddressSync(
     [
       Buffer.from("rhemify-daily"),
@@ -301,20 +346,29 @@ export async function tracesVerify(argv: string[] = []): Promise<void> {
     RHEMIFY_ANCHOR_PROGRAM_ID,
   );
 
-  // 4. Check if PDA exists
   let acct = await conn.getAccountInfo(pda);
   let txHash: string | null = null;
   let slot: number | null = null;
   let newlyAnchored = false;
 
-  if (!acct) {
-    // 5. Anchor it — build write_daily_root instruction
+  // 4. If PDA doesn't exist OR holds a stale root (e.g. anchored when the
+  //    batch had fewer leaves), submit a fresh write_daily_root with the
+  //    current Merkle root + trace_count.
+  let needAnchor = !acct;
+  if (acct) {
+    const existing = parseOnChainRoot(acct.data, fleetId, date);
+    if (!existing || !existing.equals(serverRootBytes)) {
+      needAnchor = true;
+    }
+  }
+
+  if (needAnchor && proofMatch) {
     const ixData = Buffer.concat([
       anchorDiscriminator("write_daily_root"),
       encodeBorshString(fleetId),
       encodeBorshString(date),
-      Buffer.from(computedRoot), // merkle_root: [u8; 32]
-      encodeU32LE(1), // trace_count: u32 (single-leaf "batch")
+      serverRootBytes,
+      encodeU32LE(proof.trace_count),
     ]);
     const ix = new TransactionInstruction({
       programId: RHEMIFY_ANCHOR_PROGRAM_ID,
@@ -325,36 +379,36 @@ export async function tracesVerify(argv: string[] = []): Promise<void> {
       ],
       data: ixData,
     });
-    console.log(pc.dim(`\n  anchoring trace ${trace.trace_id} to devnet (~0.001 SOL fee)...`));
+    console.log(pc.dim(`\n  anchoring root for ${proof.trace_count}-leaf batch (~0.000005 SOL fee)...`));
     txHash = await sendAndConfirmTransaction(conn, new Transaction().add(ix), [authority]);
     newlyAnchored = true;
-
-    // Re-fetch the PDA to get the slot + on-chain data
     const confirmed = await conn.getTransaction(txHash, { maxSupportedTransactionVersion: 0 });
     slot = confirmed?.slot ?? null;
     acct = await conn.getAccountInfo(pda);
-    if (!acct) throw new Error(`Anchor tx ${txHash} confirmed but PDA still not found`);
   }
 
-  // 6. Read on-chain root from PDA account data
-  const onChainRoot = parseOnChainRoot(acct.data, fleetId, date);
+  const onChainRoot = acct ? parseOnChainRoot(acct.data, fleetId, date) : null;
   if (!onChainRoot) {
     throw new Error(
-      "Could not parse on-chain DailyRoot. The PDA exists but layout doesn't match — possibly stale schema or a different program version.",
+      `Could not read on-chain root for ${pda.toBase58()}. PDA may be uninitialized or layout mismatched.`,
     );
   }
-
-  const match = onChainRoot.equals(computedRoot);
+  const onChainMatch = onChainRoot.equals(serverRootBytes);
 
   const result: VerifyResult = {
-    trace_id: trace.trace_id,
+    trace_id: proof.trace_id,
+    fleet_id: proof.fleet_id,
+    date: proof.date,
+    leaf_index: proof.leaf_index,
+    trace_count: proof.trace_count,
+    leaf_hash: proof.leaf_hash,
     computed_root: computedRoot.toString("hex"),
+    server_root: proof.root,
+    on_chain_root: onChainRoot.toString("hex"),
     pda: pda.toBase58(),
     pda_bump: bump,
-    on_chain_root: onChainRoot.toString("hex"),
-    match,
-    fleet_id: fleetId,
-    date,
+    proof_match: proofMatch,
+    on_chain_match: onChainMatch,
     tx_hash: txHash,
     slot,
     newly_anchored: newlyAnchored,
@@ -369,7 +423,7 @@ export async function tracesVerify(argv: string[] = []): Promise<void> {
     return;
   }
 
-  render(args, result);
+  render(result);
 
-  if (!match) process.exit(1);
+  if (!proofMatch || !onChainMatch) process.exit(1);
 }
