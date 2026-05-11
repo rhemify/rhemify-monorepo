@@ -18,6 +18,27 @@ export const get = query({
   },
 });
 
+// Look up a trace by its human-readable `trace_id` field (e.g.
+// "trc_seed_1778482712054_8"). CLI consumers copy this string out of the
+// `traces list` output — they don't have the Convex internal _id.
+// Uses the existing `by_trace_id` index.
+export const getByTraceId = query({
+  args: { trace_id: v.string() },
+  handler: async (ctx, args) => {
+    const trace = await ctx.db
+      .query("payment_traces")
+      .withIndex("by_trace_id", (q) => q.eq("trace_id", args.trace_id))
+      .unique();
+    if (!trace) return null;
+
+    const event = await ctx.db.get(trace.payment_event_id);
+    return {
+      ...trace,
+      payment_event: event,
+    };
+  },
+});
+
 // listAll — browse-first surface for the CLI / TUI / dashboard.
 //
 // Server-side joins each trace to its payment_event to fold the most
