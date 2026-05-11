@@ -4,6 +4,7 @@ import type { PaymentExecutor } from "./types.js";
 import { x402SolanaTransferExecutor } from "./x402-solana-transfer.js";
 import { x402SolanaExecutor } from "./x402-solana.js";
 import { x402EvmExecutor } from "./x402-evm.js";
+import { mppChargeTransferExecutor } from "./mpp-charge-transfer.js";
 import { mppChargeExecutor } from "./mpp-charge.js";
 import { mppSessionExecutor } from "./mpp-session.js";
 import { agentcardMppExecutor } from "./agentcard-mpp.js";
@@ -48,6 +49,11 @@ const defaultExecutors: PaymentExecutor[] = [
   x402SolanaExecutor,
   x402EvmExecutor,
   agentcardMppExecutor,
+  // Same pattern as the x402 pair above: real USDC settlement first,
+  // memo intent fallback second. mppChargeTransferExecutor.canExecute
+  // declines the System-Program placeholder recipient so the demo
+  // gracefully falls through to mppChargeExecutor.
+  mppChargeTransferExecutor,
   mppChargeExecutor,
   jupiterSwapExecutor,
   mppSessionExecutor,

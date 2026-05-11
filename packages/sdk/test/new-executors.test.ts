@@ -5,6 +5,7 @@ import { agentcardMppExecutor, setAgentCardApiKey } from "../src/execute/agentca
 import { x402SolanaExecutor } from "../src/execute/x402-solana.js";
 import { x402SolanaTransferExecutor } from "../src/execute/x402-solana-transfer.js";
 import { mppChargeExecutor } from "../src/execute/mpp-charge.js";
+import { mppChargeTransferExecutor } from "../src/execute/mpp-charge-transfer.js";
 import { ExecutionError } from "../src/errors.js";
 import type { DetectionResult, PayOptions, WalletConfig } from "../src/types.js";
 
@@ -346,6 +347,77 @@ describe("x402SolanaTransferExecutor", () => {
     expect(
       x402SolanaTransferExecutor.canExecute(
         makeDetection({ protocol: "x402", network: "base", payTo: REAL_RECIPIENT }),
+        wallet,
+      ),
+    ).toBe(false);
+  });
+});
+
+// ─── mpp-charge-transfer (real USDC SPL settlement for MPP, phase R.MPP) ─────
+//
+// Mirror of x402SolanaTransferExecutor for the MPP standard. Same
+// cascade-with-graceful-fallback design: declines System-Program
+// placeholder recipient so mppChargeExecutor (memo) picks up downstream.
+
+describe("mppChargeTransferExecutor", () => {
+  const SYSTEM_PROGRAM = "11111111111111111111111111111111";
+  const REAL_RECIPIENT = "8usJ1ShvoR3e74E6WMaNk2owwGUf87MuCuBJHdPgdEnQ";
+
+  it("canExecute returns true with a real recipient pubkey on devnet", () => {
+    const detection = makeDetection({
+      protocol: "mpp",
+      network: "solana-devnet",
+      payTo: REAL_RECIPIENT,
+    });
+    expect(mppChargeTransferExecutor.canExecute(detection, wallet)).toBe(true);
+  });
+
+  it("canExecute returns true on the legacy 'devnet' / 'mainnet-beta' aliases too", () => {
+    expect(
+      mppChargeTransferExecutor.canExecute(
+        makeDetection({ protocol: "mpp", network: "devnet", payTo: REAL_RECIPIENT }),
+        wallet,
+      ),
+    ).toBe(true);
+    expect(
+      mppChargeTransferExecutor.canExecute(
+        makeDetection({ protocol: "mpp", network: "mainnet-beta", payTo: REAL_RECIPIENT }),
+        wallet,
+      ),
+    ).toBe(true);
+  });
+
+  it("canExecute returns false for the System-Program placeholder recipient", () => {
+    expect(
+      mppChargeTransferExecutor.canExecute(
+        makeDetection({ protocol: "mpp", network: "solana-devnet", payTo: SYSTEM_PROGRAM }),
+        wallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false without a Solana wallet", () => {
+    const detection = makeDetection({
+      protocol: "mpp",
+      network: "solana-devnet",
+      payTo: REAL_RECIPIENT,
+    });
+    expect(mppChargeTransferExecutor.canExecute(detection, {})).toBe(false);
+  });
+
+  it("canExecute returns false for non-mpp protocols", () => {
+    expect(
+      mppChargeTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "solana-devnet", payTo: REAL_RECIPIENT }),
+        wallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false for non-Solana networks", () => {
+    expect(
+      mppChargeTransferExecutor.canExecute(
+        makeDetection({ protocol: "mpp", network: "base", payTo: REAL_RECIPIENT }),
         wallet,
       ),
     ).toBe(false);
