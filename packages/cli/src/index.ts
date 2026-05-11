@@ -4,6 +4,7 @@ import { status } from "./commands/status.js";
 import { tracesList } from "./commands/traces/list.js";
 import { tracesShow } from "./commands/traces/show.js";
 import { tracesReplay } from "./commands/traces/replay.js";
+import { tracesVerify } from "./commands/traces/verify.js";
 import pc from "picocolors";
 
 const args = process.argv.slice(2);
@@ -54,9 +55,7 @@ async function tracesDispatch(traceArgs: string[]) {
       await tracesReplay(traceArgs.slice(1));
       break;
     case "verify":
-      console.log(pc.yellow(`  'verify' coming in Phase N.4 — Merkle proof + Solana PDA verification.`));
-      console.log(pc.dim(`  See docs/superpowers/specs/2026-04-15-replay-engine-design.md for the spec.`));
-      process.exit(0);
+      await tracesVerify(traceArgs.slice(1));
       break;
     case undefined:
     case "help":
@@ -79,7 +78,7 @@ ${pc.bold("Subcommands:")}
   ${pc.cyan("list")}    Browse recent decision traces (entry point)
   ${pc.cyan("show <id>")}      Full decision context — agent, vendor, 6 rules fired, snapshot
   ${pc.cyan("replay <id>")}    Counterfactual policy override — "what if daily_limit was 10?"
-  ${pc.dim("verify")}         Coming in Phase N.4 — Merkle proof against Solana anchor
+  ${pc.cyan("verify <id>")}    Cryptographic anchor proof on Solana devnet — the moat
 `);
 }
 
