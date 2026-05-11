@@ -7,6 +7,14 @@ info:
 
     **Auth:** SDK endpoints require `Authorization: Bearer <fleet-api-key>`.
     Dashboard endpoints are currently unauthenticated.
+
+    **Coverage:** This spec documents the routes the SDK depends on
+    end-to-end (health, fleet, events, traces, ingest, policy, vendor,
+    replay). The router also exposes routes for identity SNS resolution,
+    on-chain anchor verification, dWallet wallet/signing flows, and trace
+    anchor patching. Those are reachable in code (see
+    `apps/server/internal/router/router.go`) but are not yet schema'd
+    here. Treat router.go as the canonical route inventory until they are.
   version: 1.0.0
   contact:
     name: Rhemify Team
@@ -82,13 +90,19 @@ components:
         _creationTime:
           type: number
 
+    # NOTE: This is the SDK-side shape sent over the wire. The Go server
+    # reshapes it to the Convex mutation validators internally (see
+    # apps/server/internal/handler/ingest.go:reshape*ForConvex). Clients
+    # should send the canonical SDK shape from @rhemify-monorepo/types
+    # (PaymentEvent, PaymentTrace, PolicyDecisionEvent) — not whatever the
+    # downstream Convex schema looks like.
     IngestRequest:
       type: object
       required: [event, trace, policyDecisions]
       properties:
         event:
           type: object
-          required: [agent_id, fleet_id, standard, amount, token, chain, domain, outcome, instrument_type, trace_id]
+          required: [agent_id, fleet_id, standard, amount, token, domain, outcome, instrument_type, trace_id]
           properties:
             agent_id:
               type: string
@@ -96,12 +110,28 @@ components:
               type: string
             standard:
               type: string
+              description: |
+                Detected payment standard. v1 SDK only emits x402 or mpp at
+                execute time; l402 / ap2 / acp are detected but raise
+                ProtocolNotImplementedError before this endpoint is called.
+              enum: [x402, mpp, l402, ap2, acp]
             amount:
               type: number
             token:
               type: string
+            chain_from:
+              type: string
+              description: |
+                Source chain (e.g. "solana-devnet"). Required in practice;
+                Go derives the canonical `chain` field from this. Spec marks
+                optional because legacy clients sometimes send `chain` directly.
+            chain_to:
+              type: string
+              description: Destination chain, equal to chain_from for non-bridged payments.
             chain:
               type: string
+              description: |
+                Optional legacy field. If absent, Go derives chain ← chain_from || chain_to.
             domain:
               type: string
             outcome:
@@ -111,18 +141,20 @@ components:
               type: string
             trace_id:
               type: string
-            chain_from:
-              type: string
-            chain_to:
-              type: string
         trace:
           type: object
-          required: [id, agent_task_context, trigger_402_raw, alternatives_evaluated, policy_rules_fired, instrument_selection_log, confidence, replay_snapshot, trace_hash]
+          required: [id, trigger_402_raw, alternatives_evaluated, policy_rules_fired, replay_snapshot, trace_hash]
           properties:
             id:
               type: string
+            agent_task_description:
+              type: string
+              description: |
+                Canonical field name in SDK PaymentTrace (packages/types).
+                Go reshape maps this to Convex's agent_task_context.
             agent_task_context:
               type: string
+              description: Accepted as a legacy alias for agent_task_description.
             trigger_402_raw:
               type: string
             alternatives_evaluated:
@@ -130,26 +162,55 @@ components:
               items: {}
             policy_rules_fired:
               type: array
+              description: |
+                Each entry: { rule, decision (allow|block|flag), threshold,
+                actual }. The trace shape that ships in v1 — Go reshape also
+                accepts the legacy { result, value } shape for back-compat.
               items: {}
             instrument_selection_log:
-              type: array
-              items: {}
+              description: |
+                Either a string (SDK shape, e.g. "ows selected: score 0.701")
+                or an object { selected, reason } (legacy seed shape).
+                oneOf at the OpenAPI 3.0 level rather than typed as array.
+              oneOf:
+                - type: string
+                - type: object
             confidence:
               type: string
+              description: |
+                SDK doesn't currently emit this — Go reshape defaults to "high"
+                if absent so the Convex Confidence validator accepts the doc.
               enum: [high, medium, low]
             replay_snapshot:
               type: object
+              description: |
+                Snake_case keys for Go replay engine compatibility. See
+                packages/types/src/intelligence.ts:ReplaySnapshot.
               properties:
                 policy_state:
                   type: object
+                  description: |
+                    daily_limit, max_per_transaction, approval_threshold,
+                    allowed_standards, domain_allowlist (snake_case).
                 vendor_registry_snapshot:
                   type: object
+                  description: Map of domain → { is_blocked: boolean }
                 agent_context:
                   type: object
-                wallet_manifest:
-                  type: object
+                  description: |
+                    Includes spend_today (number); read by Go replay's
+                    daily_limit rule.
             trace_hash:
               type: string
+            payment_tx_hash:
+              type: string
+              description: |
+                Optional. On-chain signature of the payment transaction
+                itself (e.g. the Solana memo tx the x402SolanaExecutor
+                submitted). Distinct from anchor_tx_hash. See O.2.
+            anchor_tx_hash:
+              type: string
+              description: Optional. Merkle root anchor tx — set by rhemify traces verify.
         policyDecisions:
           type: array
           items:
