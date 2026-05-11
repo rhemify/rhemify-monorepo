@@ -341,6 +341,7 @@ function emitSessionTrace(
       policy_decision: snapshot.policyDecision,
     },
     trace_hash: traceRecord.traceHash,
+    payment_tx_hash: snapshot.executionTxHash ?? null,
     anchor_tx_hash: null,
     merkle_proof: null,
   };

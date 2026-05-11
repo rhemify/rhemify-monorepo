@@ -53,6 +53,14 @@ export interface PaymentTrace {
   task_outcome_linked_at: string | null;
   replay_snapshot: ReplaySnapshot;
   trace_hash: string;
+  /**
+   * On-chain signature of the payment transaction itself (e.g. the Solana
+   * memo tx the x402 executor submitted, or the EVM tx hash from x402-fetch).
+   * Distinct from anchor_tx_hash, which is the Merkle root anchor for the
+   * trace's content hash. payment_tx_hash proves "the payment happened";
+   * anchor_tx_hash proves "this trace document hasn't been tampered with."
+   */
+  payment_tx_hash: string | null;
   anchor_tx_hash: string | null;
   merkle_proof: string[] | null;
 }

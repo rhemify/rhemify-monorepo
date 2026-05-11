@@ -118,6 +118,7 @@ export const insert = mutation({
     confidence: Confidence,
     replay_snapshot: v.any(),
     trace_hash: v.string(),
+    payment_tx_hash: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Find the payment event by trace_id to link them
@@ -147,6 +148,7 @@ export const insert = mutation({
       confidence: args.confidence,
       replay_snapshot: args.replay_snapshot,
       trace_hash: args.trace_hash,
+      payment_tx_hash: args.payment_tx_hash,
     });
 
     return traceDoc;

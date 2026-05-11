@@ -193,6 +193,7 @@ export default defineSchema({
     confidence: Confidence,
     replay_snapshot: v.any(),
     trace_hash: v.string(),
+    payment_tx_hash: v.optional(v.string()),
     anchor_tx_hash: v.optional(v.string()),
     merkle_proof: v.optional(v.any()),
   })

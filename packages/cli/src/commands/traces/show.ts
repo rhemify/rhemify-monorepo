@@ -20,11 +20,42 @@ import { ConvexHttpClient } from "convex/browser";
 import pc from "picocolors";
 import { resolveConvexUrl } from "../../config.js";
 
+/**
+ * Policy rule shape — accepts either the seeded shape (`result`/`value`) or
+ * the SDK-emitted shape (`decision`/`actual`). The Go server's reshape doesn't
+ * normalize this so we have to absorb the drift at render time. Convert via
+ * normalizeRule() before rendering.
+ */
 interface PolicyRule {
+  rule: string;
+  result?: "pass" | "block" | "flag" | "skipped";
+  decision?: "allow" | "block" | "flag" | "pass" | "skipped";
+  threshold: string;
+  value?: string;
+  actual?: string;
+}
+
+interface NormalizedRule {
   rule: string;
   result: "pass" | "block" | "flag" | "skipped";
   threshold: string;
   value: string;
+}
+
+function normalizeRule(r: PolicyRule): NormalizedRule {
+  // SDK emits `decision: "allow"` for pass; seed used `result: "pass"`.
+  let result: NormalizedRule["result"] = "pass";
+  const raw = r.result ?? r.decision ?? "pass";
+  if (raw === "block") result = "block";
+  else if (raw === "flag") result = "flag";
+  else if (raw === "skipped") result = "skipped";
+  // "allow" / "pass" / anything else → "pass"
+  return {
+    rule: r.rule,
+    result,
+    threshold: r.threshold ?? "",
+    value: r.value ?? r.actual ?? "",
+  };
 }
 
 interface Alternative {
@@ -54,7 +85,8 @@ interface TraceWithEvent {
   trigger_402_raw: string;
   alternatives_evaluated: Alternative[];
   policy_rules_fired: PolicyRule[];
-  instrument_selection_log: { selected: string; reason: string };
+  // Seeded as { selected, reason }; SDK emits a plain string. Render both.
+  instrument_selection_log: { selected: string; reason: string } | string;
   confidence: "high" | "medium" | "low";
   replay_snapshot: {
     policy_state: {
@@ -68,6 +100,7 @@ interface TraceWithEvent {
     agent_context: { spend_today?: number };
   };
   trace_hash: string;
+  payment_tx_hash?: string | null;
   anchor_tx_hash?: string | null;
   payment_event: PaymentEvent | null;
 }
@@ -165,9 +198,10 @@ function render(t: TraceWithEvent): void {
   }
 
   // POLICY
-  section(`POLICY  ${pc.dim(`${t.policy_rules_fired.length} rules evaluated`)}`);
-  const maxRuleLen = Math.max(...t.policy_rules_fired.map((r) => r.rule.length), 22);
-  for (const r of t.policy_rules_fired) {
+  const rules = (t.policy_rules_fired ?? []).map(normalizeRule);
+  section(`POLICY  ${pc.dim(`${rules.length} rules evaluated`)}`);
+  const maxRuleLen = Math.max(...rules.map((r) => r.rule.length), 22);
+  for (const r of rules) {
     const result = r.result === "block" ? pc.red(r.result.toUpperCase()) :
                    r.result === "flag" ? pc.yellow(r.result.toUpperCase()) :
                    r.result === "skipped" ? pc.dim(r.result) :
@@ -178,9 +212,12 @@ function render(t: TraceWithEvent): void {
 
   // PATH
   section("PATH SELECTION");
-  if (t.instrument_selection_log) {
-    row("selected", t.instrument_selection_log.selected === "none" ? pc.red("none") : pc.green(t.instrument_selection_log.selected));
-    row("reason", t.instrument_selection_log.reason);
+  const isl = t.instrument_selection_log;
+  if (typeof isl === "string" && isl) {
+    row("log", isl);
+  } else if (isl && typeof isl === "object") {
+    row("selected", isl.selected === "none" ? pc.red("none") : pc.green(isl.selected));
+    row("reason", isl.reason);
   }
   if (Array.isArray(t.alternatives_evaluated) && t.alternatives_evaluated.length > 0) {
     console.log(`  ${pc.dim("alternatives".padEnd(20))}`);
@@ -195,26 +232,57 @@ function render(t: TraceWithEvent): void {
 
   // SNAPSHOT
   section(`SNAPSHOT  ${pc.dim("captured state at decision time")}`);
-  const ps = t.replay_snapshot.policy_state;
+  const snap = t.replay_snapshot ?? {};
+  // SDK emits camelCase keys (dailyLimit, maxPerTransaction, ...) and zero
+  // values when policy isn't fully wired; seed.ts used snake_case with real
+  // values. Read both — prefer real (non-zero) value if available.
+  const psRaw = (snap.policy_state ?? {}) as Record<string, unknown>;
+  const num = (a: unknown, b: unknown): number | undefined => {
+    const v = (typeof a === "number" && a > 0 ? a : undefined) ??
+              (typeof b === "number" && b > 0 ? b : undefined) ??
+              (typeof a === "number" ? a : undefined) ??
+              (typeof b === "number" ? b : undefined);
+    return v;
+  };
+  const arr = (a: unknown, b: unknown): string[] | undefined => {
+    if (Array.isArray(a) && a.length > 0) return a as string[];
+    if (Array.isArray(b) && b.length > 0) return b as string[];
+    if (Array.isArray(a)) return a as string[];
+    if (Array.isArray(b)) return b as string[];
+    return undefined;
+  };
+  const dailyLimit = num(psRaw.daily_limit, psRaw.dailyLimit);
+  const maxPerTx = num(psRaw.max_per_transaction, psRaw.maxPerTransaction);
+  const approval = num(psRaw.approval_threshold, psRaw.approvalThreshold);
+  const allowlist = arr(psRaw.domain_allowlist, psRaw.domainAllowlist);
+  const standards = arr(psRaw.allowed_standards, psRaw.allowedStandards);
   const psParts: string[] = [];
-  if (ps.daily_limit != null) psParts.push(`daily_limit=${ps.daily_limit}`);
-  if (ps.max_per_transaction != null) psParts.push(`max_per_tx=${ps.max_per_transaction}`);
-  if (ps.approval_threshold != null) psParts.push(`approval=${ps.approval_threshold}`);
-  if (ps.domain_allowlist) psParts.push(`allowlist=${ps.domain_allowlist.length} domain${ps.domain_allowlist.length === 1 ? "" : "s"}`);
-  if (ps.allowed_standards) psParts.push(`standards=[${ps.allowed_standards.join(",")}]`);
-  row("policy", psParts.join("  "));
-  const vendorCount = Object.keys(t.replay_snapshot.vendor_registry_snapshot ?? {}).length;
+  if (dailyLimit !== undefined) psParts.push(`daily_limit=${dailyLimit}`);
+  if (maxPerTx !== undefined) psParts.push(`max_per_tx=${maxPerTx}`);
+  if (approval !== undefined) psParts.push(`approval=${approval}`);
+  if (allowlist) psParts.push(`allowlist=${allowlist.length} domain${allowlist.length === 1 ? "" : "s"}`);
+  if (standards) psParts.push(`standards=[${standards.join(",")}]`);
+  row("policy", psParts.length > 0 ? psParts.join("  ") : pc.dim("(empty — SDK policy state not yet populated)"));
+  const vendorCount = Object.keys(snap.vendor_registry_snapshot ?? {}).length;
   row("vendors", `${vendorCount} in registry`);
-  row("agent ctx", `spend_today=$${(t.replay_snapshot.agent_context.spend_today ?? 0).toFixed(2)}`);
+  const agentCtx = snap.agent_context ?? {};
+  const spendToday = (agentCtx as { spend_today?: number }).spend_today ?? 0;
+  row("agent ctx", `spend_today=$${spendToday.toFixed(2)}`);
 
   // VERIFIABILITY
   section("VERIFIABILITY");
   row("trace hash", pc.dim(t.trace_hash));
+  if (t.payment_tx_hash) {
+    row("payment tx", pc.green(t.payment_tx_hash));
+    row("payment explorer", pc.dim(`https://explorer.solana.com/tx/${t.payment_tx_hash}?cluster=devnet`));
+  } else {
+    row("payment tx", pc.dim("none (dry-run or executor produced no signature)"));
+  }
   if (t.anchor_tx_hash) {
     row("anchor tx", pc.green(t.anchor_tx_hash));
-    row("explorer", pc.dim(`https://explorer.solana.com/tx/${t.anchor_tx_hash}?cluster=devnet`));
+    row("anchor explorer", pc.dim(`https://explorer.solana.com/tx/${t.anchor_tx_hash}?cluster=devnet`));
   } else {
-    row("anchor status", pc.dim("not anchored yet (Phase N.4 verify cmd will anchor + verify)"));
+    row("anchor status", pc.dim("not anchored yet (rhemify traces verify <id> anchors it)"));
   }
 
   // NEXT

@@ -145,7 +145,7 @@ func reshapeTraceForConvex(t map[string]interface{}) map[string]interface{} {
 	if isl == nil {
 		isl = ""
 	}
-	return map[string]interface{}{
+	out := map[string]interface{}{
 		"id":                       t["id"],
 		"trace_id":                 t["id"],
 		"agent_task_context":       taskCtx,
@@ -157,6 +157,14 @@ func reshapeTraceForConvex(t map[string]interface{}) map[string]interface{} {
 		"replay_snapshot":          t["replay_snapshot"],
 		"trace_hash":               stringOr(t["trace_hash"], ""),
 	}
+	// payment_tx_hash is optional in the Convex validator — only include when the
+	// SDK set a real signature (i.e. the executor actually submitted on-chain).
+	// Sending an empty string would fail strict optional-string validation in
+	// some Convex versions.
+	if s, ok := t["payment_tx_hash"].(string); ok && s != "" {
+		out["payment_tx_hash"] = s
+	}
+	return out
 }
 
 // reshapePolicyDecisionForConvex projects the SDK PolicyDecisionEvent map onto
