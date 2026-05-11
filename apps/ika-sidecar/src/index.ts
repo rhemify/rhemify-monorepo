@@ -1,3 +1,21 @@
+/**
+ * Ika dWallet 2PC-MPC sidecar.
+ *
+ * v1 scope (Colosseum hackathon submission):
+ *   - /health, /dkg, /presign, /dwallet/:id, /signature/:id  — work against
+ *     an Ika test network when SUI_SECRET_KEY + network access are wired up.
+ *   - /identity/{resolve,subdomains,register}  — SNS lookups via Bonfida.
+ *     /identity/register returns instructions_ready; does NOT broadcast.
+ *   - /sign  — intentionally returns 501 Not Implemented. The 0.3.1 Ika SDK
+ *     surface has structural changes (ZeroTrust dWallet narrowing, encrypted-
+ *     share id lookup, requestSign signature shape) that need live Ika
+ *     network access to verify. See TODO(ika-sign) in ika-service.ts.
+ *
+ * The Rhemos demo flow does NOT depend on Ika /sign. Payment signing uses
+ * the SDK's @solana/web3.js memo path (packages/sdk/src/execute/*-solana.ts).
+ * Ika is staged for a future "MPC-controlled fleet treasury" feature; until
+ * then this sidecar runs as a scoped-out service, not a silent failure.
+ */
 import { Hono } from "hono";
 import { IkaService } from "./ika-service";
 
@@ -63,7 +81,14 @@ app.post("/presign", async (c) => {
   }
 });
 
-// Sign a message using 2PC-MPC
+// Sign a message using 2PC-MPC.
+//
+// Intentionally returns 501 in v1 — see top-of-file comment + the TODO in
+// ika-service.ts. The /sign request body is still validated (so callers
+// catching shape errors don't silently mis-construct payloads while the
+// endpoint matures), but the actual signing call surfaces a clear
+// not-implemented signal rather than a generic 500. Once Ika test network
+// access lands, flip the early-return to call ikaService.sign() as before.
 app.post("/sign", async (c) => {
   if (!ikaService) return c.json({ error: "service not initialized" }, 503);
 
@@ -78,9 +103,19 @@ app.post("/sign", async (c) => {
       return c.json({ error: "dwallet_id, message_hex, and presign_id required" }, 400);
     }
 
-    const message = Uint8Array.from(Buffer.from(message_hex, "hex"));
-    const result = await ikaService.sign({ dwalletId: dwallet_id, message, presignId: presign_id });
-    return c.json(result);
+    return c.json(
+      {
+        error: "not_implemented",
+        message:
+          "Ika /sign is intentionally scoped out of v1. The @ika.xyz/sdk 0.3.1 " +
+          "signing surface (ZeroTrustDWallet narrowing, encrypted-share id lookup, " +
+          "requestSign signature shape) requires live Ika network access to " +
+          "verify. Payment signing in v1 uses the SDK's @solana/web3.js memo " +
+          "path, not Ika.",
+        scope_status: "v1_scoped_out",
+      },
+      501,
+    );
   } catch (err: any) {
     console.error("[/sign] error:", err);
     return c.json({ error: "signing failed" }, 500);
