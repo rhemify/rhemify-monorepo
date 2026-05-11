@@ -114,13 +114,13 @@ function getSuggestion(rule: string): string | undefined {
   switch (rule) {
     case "daily_limit":
       return "Wait until tomorrow or request a limit increase.";
-    case "max_per_tx":
+    case "max_per_transaction":
       return "This payment exceeds the per-transaction limit.";
     case "domain_allowlist":
       return "This domain is not in the allowed list. Contact your fleet operator.";
-    case "allowed_standards":
+    case "standard_allowlist":
       return "This payment standard is not allowed by policy.";
-    case "domain_blocked":
+    case "vendor_blocked":
       return "This vendor was auto-blocked by intelligence due to poor reliability. Contact your fleet operator to unblock.";
     default:
       return undefined;
