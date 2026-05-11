@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { creditPayExecutor, setCreditConfig } from "../src/execute/credit-pay.js";
 import { jupiterSwapExecutor, setJupiterApiKey } from "../src/execute/jupiter-swap.js";
 import { agentcardMppExecutor, setAgentCardApiKey } from "../src/execute/agentcard-mpp.js";
+import { x402SolanaExecutor } from "../src/execute/x402-solana.js";
+import { mppChargeExecutor } from "../src/execute/mpp-charge.js";
 import { ExecutionError } from "../src/errors.js";
 import type { DetectionResult, PayOptions, WalletConfig } from "../src/types.js";
 
@@ -156,5 +158,103 @@ describe("agentcardMppExecutor", () => {
     await expect(
       agentcardMppExecutor.execute("https://merchant.com/pay", detection, wallet, payOptions),
     ).rejects.toThrow(/AgentCard API key not configured/);
+  });
+});
+
+// ─── x402-solana (real on-chain memo executor, phase O.2) ────────────────────
+//
+// Execute path requires Solana RPC + funded keypair, so it's exercised by
+// the live e2e flow (rhemify pay against tools/test-402/server.ts) rather
+// than these unit tests. What we CAN test cheaply: the canExecute predicate
+// that gates which executor the cascade picks. Bugs there silently re-route
+// payments to the wrong executor (or skip everything and fall to the
+// unsupported-protocol stubs).
+
+describe("x402SolanaExecutor", () => {
+  it("canExecute returns true for x402 on solana-devnet with a Solana wallet", () => {
+    const detection = makeDetection({ protocol: "x402", network: "solana-devnet" });
+    expect(x402SolanaExecutor.canExecute(detection, wallet)).toBe(true);
+  });
+
+  it("canExecute returns true for x402 on solana-mainnet", () => {
+    const detection = makeDetection({ protocol: "x402", network: "solana-mainnet" });
+    expect(x402SolanaExecutor.canExecute(detection, wallet)).toBe(true);
+  });
+
+  it("canExecute returns false for EVM networks (executor cascade should fall through to x402-evm)", () => {
+    expect(
+      x402SolanaExecutor.canExecute(makeDetection({ protocol: "x402", network: "base" }), wallet),
+    ).toBe(false);
+    expect(
+      x402SolanaExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "base-sepolia" }),
+        wallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false without a Solana wallet", () => {
+    const detection = makeDetection({ protocol: "x402", network: "solana-devnet" });
+    expect(x402SolanaExecutor.canExecute(detection, {})).toBe(false);
+    expect(x402SolanaExecutor.canExecute(detection, { evmPrivateKey: "0x1" })).toBe(false);
+  });
+
+  it("canExecute returns false for non-x402 protocols", () => {
+    expect(
+      x402SolanaExecutor.canExecute(
+        makeDetection({ protocol: "mpp", network: "solana-devnet" }),
+        wallet,
+      ),
+    ).toBe(false);
+    expect(
+      x402SolanaExecutor.canExecute(
+        makeDetection({ protocol: "l402", network: "solana-devnet" }),
+        wallet,
+      ),
+    ).toBe(false);
+  });
+});
+
+// ─── mpp-charge (real on-chain memo executor, phase O.3) ─────────────────────
+
+describe("mppChargeExecutor", () => {
+  it("canExecute returns true for mpp on solana-devnet with a Solana wallet", () => {
+    const detection = makeDetection({ protocol: "mpp", network: "solana-devnet" });
+    expect(mppChargeExecutor.canExecute(detection, wallet)).toBe(true);
+  });
+
+  it("canExecute returns true for mpp on solana-mainnet", () => {
+    const detection = makeDetection({ protocol: "mpp", network: "solana-mainnet" });
+    expect(mppChargeExecutor.canExecute(detection, wallet)).toBe(true);
+  });
+
+  it("canExecute returns true on the legacy 'devnet' / 'mainnet-beta' network aliases", () => {
+    // Detector for MPP via WWW-Authenticate header sometimes yields these
+    // shorter strings. The executor's isSolanaNetwork accepts them so the
+    // cascade can still pick MPP up.
+    expect(
+      mppChargeExecutor.canExecute(makeDetection({ protocol: "mpp", network: "devnet" }), wallet),
+    ).toBe(true);
+    expect(
+      mppChargeExecutor.canExecute(
+        makeDetection({ protocol: "mpp", network: "mainnet-beta" }),
+        wallet,
+      ),
+    ).toBe(true);
+  });
+
+  it("canExecute returns false without a Solana wallet", () => {
+    const detection = makeDetection({ protocol: "mpp", network: "solana-devnet" });
+    expect(mppChargeExecutor.canExecute(detection, {})).toBe(false);
+  });
+
+  it("canExecute returns false for non-mpp protocols (x402 must go through its own executor)", () => {
+    const detection = makeDetection({ protocol: "x402", network: "solana-devnet" });
+    expect(mppChargeExecutor.canExecute(detection, wallet)).toBe(false);
+  });
+
+  it("canExecute returns false for non-Solana networks", () => {
+    const detection = makeDetection({ protocol: "mpp", network: "base" });
+    expect(mppChargeExecutor.canExecute(detection, wallet)).toBe(false);
   });
 });
