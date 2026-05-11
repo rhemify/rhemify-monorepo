@@ -13,8 +13,18 @@
 
 const PORT = Number(process.env.PORT ?? 3402);
 
-// Replace with your own devnet recipient address
+// Replace with your own devnet recipient address (Solana base58 for
+// the Solana endpoints).
 const SOLANA_RECIPIENT = process.env.RECIPIENT_ADDRESS ?? "11111111111111111111111111111111";
+
+// EVM side: configurable network + recipient for /weather. Defaults match
+// the original demo (Base Sepolia + 0x...0001 placeholder). When the
+// payer wants to use Ethereum Sepolia instead (because they have Sepolia
+// ETH but not Base Sepolia ETH — separate chains), set
+// EVM_NETWORK=ethereum-sepolia and EVM_RECIPIENT=<their 0x address>.
+const EVM_NETWORK = process.env.EVM_NETWORK ?? "base-sepolia";
+const EVM_RECIPIENT =
+  process.env.EVM_RECIPIENT ?? "0x0000000000000000000000000000000000000001";
 
 const server = Bun.serve({
   port: PORT,
@@ -73,10 +83,10 @@ const server = Bun.serve({
             paymentRequirements: [
               {
                 scheme: "exact",
-                network: "base-sepolia",
+                network: EVM_NETWORK,
                 maxAmountRequired: "250000",
                 resource: `http://localhost:${PORT}/weather`,
-                payTo: "0x0000000000000000000000000000000000000001",
+                payTo: EVM_RECIPIENT,
                 extra: { name: "USDC" },
               },
             ],
