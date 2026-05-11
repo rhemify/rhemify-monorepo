@@ -1,6 +1,6 @@
 import pc from "picocolors";
 import { loadConfig, loadWallet } from "../config.js";
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 export async function status() {
   const config = loadConfig();
