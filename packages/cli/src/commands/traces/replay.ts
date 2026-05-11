@@ -58,7 +58,9 @@ interface ReplayResult {
   snapshot_complete: boolean;
   original: PolicyOutcome;
   replayed: PolicyOutcome;
-  diff: PolicyDiff[];
+  // Go serializes an empty []PolicyDiff slice as JSON null (not []), so
+  // every consumer must defensively treat null as the no-changes case.
+  diff: PolicyDiff[] | null;
   counterfactual_blocked: boolean;
 }
 
@@ -318,11 +320,13 @@ function render(args: ReplayArgs, r: ReplayResult): void {
     "  " + pc.dim("─".repeat(21)) + " " + pc.dim("─".repeat(9)) + " " + pc.dim("─".repeat(13)) + " " + pc.dim("─".repeat(7)),
   );
 
-  // Combine original+replayed rule lists by rule name
+  // Combine original+replayed rule lists by rule name. Go marshals an
+  // empty diff slice as null — coalesce so .map doesn't throw.
+  const diff = r.diff ?? [];
   const origMap = new Map(r.original.rule_results.map((x) => [x.rule, x]));
   const repMap = new Map(r.replayed.rule_results.map((x) => [x.rule, x]));
   const allRules = Array.from(new Set([...origMap.keys(), ...repMap.keys()]));
-  const diffRules = new Set(r.diff.map((d) => d.rule));
+  const diffRules = new Set(diff.map((d) => d.rule));
 
   for (const ruleName of allRules) {
     const o = origMap.get(ruleName);
@@ -340,10 +344,10 @@ function render(args: ReplayArgs, r: ReplayResult): void {
 
   // What's actually different
   console.log(pc.bold(pc.cyan("\nDIFF SUMMARY")));
-  if (r.diff.length === 0) {
+  if (diff.length === 0) {
     console.log(pc.dim("  No rules changed outcome — your override didn't affect the decision."));
   } else {
-    for (const d of r.diff) {
+    for (const d of diff) {
       console.log(
         `  ${pc.yellow(d.rule.padEnd(22))} ${colorResult(d.original_result)} → ${colorResult(d.replayed_result)}`,
       );
