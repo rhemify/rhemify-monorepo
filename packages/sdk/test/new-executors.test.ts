@@ -4,6 +4,7 @@ import { jupiterSwapExecutor, setJupiterApiKey } from "../src/execute/jupiter-sw
 import { agentcardMppExecutor, setAgentCardApiKey } from "../src/execute/agentcard-mpp.js";
 import { x402SolanaExecutor } from "../src/execute/x402-solana.js";
 import { x402SolanaTransferExecutor } from "../src/execute/x402-solana-transfer.js";
+import { x402EvmTransferExecutor } from "../src/execute/x402-evm-transfer.js";
 import { mppChargeExecutor } from "../src/execute/mpp-charge.js";
 import { mppChargeTransferExecutor } from "../src/execute/mpp-charge-transfer.js";
 import { ExecutionError } from "../src/errors.js";
@@ -419,6 +420,124 @@ describe("mppChargeTransferExecutor", () => {
       mppChargeTransferExecutor.canExecute(
         makeDetection({ protocol: "mpp", network: "base", payTo: REAL_RECIPIENT }),
         wallet,
+      ),
+    ).toBe(false);
+  });
+});
+
+// ─── x402-evm-transfer (real ERC-20 USDC settlement on EVM, phase E) ─────────
+//
+// Same rationale as the Solana transfer executors: real settlement via
+// `transfer(to, amount)` on the chain's USDC contract, replacing the
+// unproven peer-dep-driven x402EvmExecutor. canExecute filters keep the
+// cascade clean — the System-Address-equivalent placeholder for EVM is
+// "0x0000…0001" which the test server uses by default.
+
+describe("x402EvmTransferExecutor", () => {
+  const EVM_PLACEHOLDER = "0x0000000000000000000000000000000000000001";
+  const EVM_ZERO = "0x0000000000000000000000000000000000000000";
+  const EVM_REAL_RECIPIENT = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik.eth — any valid 0x-address
+  const evmWallet: WalletConfig = {
+    evmPrivateKey: "0x" + "11".repeat(32),
+  };
+
+  it("canExecute returns true on base-sepolia + valid recipient + EVM key", () => {
+    const detection = makeDetection({
+      protocol: "x402",
+      network: "base-sepolia",
+      payTo: EVM_REAL_RECIPIENT,
+    });
+    expect(x402EvmTransferExecutor.canExecute(detection, evmWallet)).toBe(true);
+  });
+
+  it("canExecute returns true on base mainnet too", () => {
+    const detection = makeDetection({
+      protocol: "x402",
+      network: "base",
+      payTo: EVM_REAL_RECIPIENT,
+    });
+    expect(x402EvmTransferExecutor.canExecute(detection, evmWallet)).toBe(true);
+  });
+
+  it("canExecute returns true on ethereum / ethereum-sepolia", () => {
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "ethereum", payTo: EVM_REAL_RECIPIENT }),
+        evmWallet,
+      ),
+    ).toBe(true);
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "ethereum-sepolia", payTo: EVM_REAL_RECIPIENT }),
+        evmWallet,
+      ),
+    ).toBe(true);
+  });
+
+  it("canExecute returns false for the test server's 0x...0001 placeholder", () => {
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "base-sepolia", payTo: EVM_PLACEHOLDER }),
+        evmWallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false for the zero address", () => {
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "base-sepolia", payTo: EVM_ZERO }),
+        evmWallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false for malformed addresses", () => {
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "base-sepolia", payTo: "0xnothex" }),
+        evmWallet,
+      ),
+    ).toBe(false);
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "base-sepolia", payTo: "vitalik.eth" }),
+        evmWallet,
+      ),
+    ).toBe(false);
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "base-sepolia", payTo: "" }),
+        evmWallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false without an EVM wallet key", () => {
+    const detection = makeDetection({
+      protocol: "x402",
+      network: "base-sepolia",
+      payTo: EVM_REAL_RECIPIENT,
+    });
+    // wallet has only solanaPrivateKey
+    expect(x402EvmTransferExecutor.canExecute(detection, wallet)).toBe(false);
+    expect(x402EvmTransferExecutor.canExecute(detection, {})).toBe(false);
+  });
+
+  it("canExecute returns false for non-x402 protocols", () => {
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "mpp", network: "base-sepolia", payTo: EVM_REAL_RECIPIENT }),
+        evmWallet,
+      ),
+    ).toBe(false);
+  });
+
+  it("canExecute returns false for Solana networks", () => {
+    expect(
+      x402EvmTransferExecutor.canExecute(
+        makeDetection({ protocol: "x402", network: "solana-devnet", payTo: EVM_REAL_RECIPIENT }),
+        evmWallet,
       ),
     ).toBe(false);
   });

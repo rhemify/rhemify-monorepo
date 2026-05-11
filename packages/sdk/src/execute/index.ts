@@ -3,6 +3,7 @@ import { ExecutionError, ProtocolNotImplementedError } from "../errors.js";
 import type { PaymentExecutor } from "./types.js";
 import { x402SolanaTransferExecutor } from "./x402-solana-transfer.js";
 import { x402SolanaExecutor } from "./x402-solana.js";
+import { x402EvmTransferExecutor } from "./x402-evm-transfer.js";
 import { x402EvmExecutor } from "./x402-evm.js";
 import { mppChargeTransferExecutor } from "./mpp-charge-transfer.js";
 import { mppChargeExecutor } from "./mpp-charge.js";
@@ -47,6 +48,11 @@ const defaultExecutors: PaymentExecutor[] = [
   // picks whichever can actually deliver.
   x402SolanaTransferExecutor,
   x402SolanaExecutor,
+  // Real EVM ERC-20 USDC transfer first (phase E), legacy peer-dep
+  // executor second. Same canExecute fall-through pattern as the
+  // Solana pair: declines the test server's 0x0000...0001 placeholder
+  // so the cascade can route past it.
+  x402EvmTransferExecutor,
   x402EvmExecutor,
   agentcardMppExecutor,
   // Same pattern as the x402 pair above: real USDC settlement first,
