@@ -1,6 +1,7 @@
 import type { DetectionResult, ExecutionResult, PayOptions, WalletConfig } from "../types.js";
 import { ExecutionError } from "../errors.js";
 import type { PaymentExecutor } from "./types.js";
+import { x402SolanaTransferExecutor } from "./x402-solana-transfer.js";
 import { x402SolanaExecutor } from "./x402-solana.js";
 import { x402EvmExecutor } from "./x402-evm.js";
 import { mppChargeExecutor } from "./mpp-charge.js";
@@ -22,6 +23,11 @@ export { setCreditConfig } from "./credit-pay.js";
  */
 const defaultExecutors: PaymentExecutor[] = [
   creditPayExecutor,
+  // Real USDC settlement first (x402 v2 facilitator-broadcast or self-broadcast).
+  // Falls through to x402SolanaExecutor (memo fallback) if canExecute returns
+  // false (no Solana wallet, System-Program placeholder recipient, etc.) or
+  // execute() throws (no USDC ATA, insufficient balance, etc.).
+  x402SolanaTransferExecutor,
   x402SolanaExecutor,
   x402EvmExecutor,
   agentcardMppExecutor,
