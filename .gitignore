@@ -102,4 +102,9 @@ skills/
 .test-wallet.json
 .env.test
 local.db
+apps/web/local.db
+
+# Compiled Go binaries (apps/server) — these belong in CI artifacts, never in tree
+apps/server/bin/
+apps/server/seed
 .vercel

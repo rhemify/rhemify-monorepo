@@ -138,4 +138,70 @@ describe("AnchorQueue", () => {
     await queue.flush(); // should not throw
     expect(queue.pending()).toBe(0);
   });
+
+  // Regression test for commit 9b04d89 — the drain race fix.
+  //
+  // Failure mode (pre-fix): the 2s background timer fires while drain() is
+  // also running; drain's flush() sees `processing=true` (or queue.length=0
+  // because the timer already spliced the items out) and returns immediately.
+  // The in-flight processBatch keeps running off-thread, but the CLI exits
+  // before it completes — the Memo tx + updateTraceAnchor PATCH get torn
+  // down mid-await. Convex's payment_traces.anchor_tx_hash stays null.
+  //
+  // The fix (queue.ts:54, 110-128) tracks the in-flight flush() in an
+  // `inflight: Promise<void>` so re-entrant callers (drain, concurrent
+  // timer tick) join the existing work instead of racing it.
+  //
+  // This test makes the race deterministic by holding updateTraceAnchor open
+  // — drain() must not resolve until the PATCH lands.
+  it("drain() waits for in-flight processBatch instead of returning prematurely", async () => {
+    const transport = mockTransport();
+    let releaseAnchor: () => void = () => {};
+    const anchorBarrier = new Promise<void>((resolve) => {
+      releaseAnchor = resolve;
+    });
+    // updateTraceAnchor stays pending until releaseAnchor() is called —
+    // simulates a slow Convex region or a heavily-loaded ingest goroutine.
+    transport.updateTraceAnchor = vi.fn(async () => {
+      await anchorBarrier;
+    });
+
+    const queue = new AnchorQueue({
+      solanaPrivateKey: "fake-key",
+      rpcUrl: "https://api.devnet.solana.com",
+      transport: transport as never,
+      flushIntervalMs: 999999,
+    });
+    queue.enqueue("trc_race", "hash_race", "fleet-1", "agent-1");
+
+    // Kick off a flush in the background — it will splice the item, send
+    // the (mocked) Memo tx, then block awaiting updateTraceAnchor.
+    const backgroundFlush = queue.flush();
+
+    // Yield to the microtask queue so flush enters processSingle and
+    // calls transport.updateTraceAnchor before drain() starts.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(transport.updateTraceAnchor).toHaveBeenCalledTimes(1);
+    expect(queue.pending()).toBe(0); // item already spliced; would fool a naive drain
+
+    // Drain should join the existing work, not bail.
+    let drainResolved = false;
+    const drainPromise = queue.drain().then(() => {
+      drainResolved = true;
+    });
+
+    // After another tick, drain() must still be pending — the PATCH hasn't
+    // resolved yet. If drain() resolved here, the race-fix regressed.
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(drainResolved).toBe(false);
+
+    // Release the PATCH; drain() must complete now.
+    releaseAnchor();
+    await Promise.all([backgroundFlush, drainPromise]);
+    expect(drainResolved).toBe(true);
+    expect(transport.updateTraceAnchor).toHaveBeenCalledWith(
+      "trc_race",
+      "mock_tx_signature_base58",
+    );
+  });
 });
