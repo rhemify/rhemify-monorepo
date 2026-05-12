@@ -270,4 +270,16 @@ export interface Rhemify {
   discover: (intent: string, options?: DiscoverOptions) => Promise<import("./discovery/index.js").ServiceCandidate[]>;
   setPolicy: (policy: Partial<PolicyConfig>) => Promise<void>;
   status: () => Promise<FleetStatus>;
+  /**
+   * Drain pending Layer-1 Memo anchors and release internal timers.
+   *
+   * Per `docs/stack/02-convex.md`, each trace hash is anchored as a Solana
+   * Memo tx and the resulting signature is patched into
+   * `payment_traces.anchor_tx_hash`. The `AnchorQueue` does this on a 2s
+   * background tick — which never fires in short-lived processes (CLIs,
+   * one-shot scripts) because they exit before the next interval. Callers
+   * that need Layer-1 anchoring to land in Convex MUST await this before
+   * `process.exit`. Long-running services (servers, daemons) can ignore it.
+   */
+  close: () => Promise<void>;
 }

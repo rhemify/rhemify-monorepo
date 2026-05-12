@@ -122,9 +122,14 @@ export async function sendBatchMemoTransaction(
 
   const { value: latestBlockhash } = await (rpc as { getLatestBlockhash: () => { send: () => Promise<{ value: unknown }> } }).getLatestBlockhash().send();
 
+  // Use setTransactionMessageFeePayerSigner — registers the signer so
+  // signTransactionMessageWithSigners can sign the fee-payer slot below.
+  // setTransactionMessageFeePayer only records the address, not the signer,
+  // so the tx ends up "missing signatures for addresses: <fee-payer>"
+  // when sent.
   let txMessage = solanaKit.pipe(
     solanaKit.createTransactionMessage({ version: 0 }),
-    (msg: unknown) => solanaKit.setTransactionMessageFeePayer((signer as { address: unknown }).address, msg),
+    (msg: unknown) => solanaKit.setTransactionMessageFeePayerSigner(signer, msg),
     (msg: unknown) => solanaKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, msg),
   );
   for (const ix of memoInstructions) {

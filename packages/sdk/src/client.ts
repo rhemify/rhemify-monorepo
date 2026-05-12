@@ -355,7 +355,16 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     return discoverServices(intent, options);
   }
 
-  return { pay, probe, session, discover, setPolicy, status };
+  async function close(): Promise<void> {
+    // Drain pending Layer-1 Memo anchors so payment_traces.anchor_tx_hash
+    // lands in Convex before the process exits. No-op if anchorQueue wasn't
+    // initialised (anchorEnabled=false: no Solana wallet or no RPC).
+    if (anchorQueue) {
+      await anchorQueue.drain();
+    }
+  }
+
+  return { pay, probe, session, discover, setPolicy, status, close };
 }
 
 // --- Helpers ---

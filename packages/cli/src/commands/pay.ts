@@ -93,8 +93,19 @@ export async function pay(...argv: string[]) {
     if (args.dryRun) {
       console.log(pc.yellow(`  Dry run — no chain submit. Inspect trace:`));
       console.log(`    ${pc.cyan(`rhemify traces show ${result.trace.id}`)}`);
+    } else {
+      // Layer-1 Memo anchor is queued by pay() but processed by a 2s
+      // background tick. Without awaiting close() the CLI exits before the
+      // tick fires and `payment_traces.anchor_tx_hash` stays null in Convex.
+      // See packages/sdk/src/anchor/queue.ts.
+      console.log(pc.dim(`  Anchoring trace hash (Layer 1)...`));
+      await rhemify.close();
+      console.log(pc.dim(`  Done. Inspect: ${pc.cyan(`rhemify traces show ${result.trace.id}`)}`));
     }
   } catch (err) {
+    // Best-effort drain on error too — a partially-succeeded pay() may
+    // already have enqueued a Memo anchor for a different trace_id.
+    await rhemify.close().catch(() => {});
     console.log(pc.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
     process.exit(1);
   }
