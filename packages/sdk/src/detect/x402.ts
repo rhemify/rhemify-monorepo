@@ -16,7 +16,7 @@ interface X402Requirement {
    * tell the client which pubkey must be the tx feePayer (facilitator broadcasts).
    * EVM responses use `extra.name` / `extra.version` for EIP-712 domain.
    */
-  extra?: { name?: string; currency?: string; version?: string; feePayer?: string };
+  extra?: { name?: string; currency?: string; version?: string; feePayer?: string; memo?: string };
 }
 
 /**
@@ -77,6 +77,7 @@ export const x402Detector: ProtocolDetector = {
       // facilitator-broadcast flow when the resource demands one.
       feePayer: req.extra?.feePayer,
       asset: req.asset,
+      memo: req.extra?.memo,
       raw: { headers: _headers, body },
     };
   },

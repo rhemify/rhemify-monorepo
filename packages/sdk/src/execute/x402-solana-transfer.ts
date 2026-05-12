@@ -48,7 +48,6 @@ const ATA_IX_CREATE_IDEMPOTENT = 1;
 
 const DEVNET_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 const MAINNET_USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-const USDC_DECIMALS = 6;
 
 interface Web3Connection {
   getLatestBlockhash(): Promise<{ blockhash: string; lastValidBlockHeight: number }>;
@@ -57,7 +56,7 @@ interface Web3Connection {
     strategy: { signature: string; blockhash: string; lastValidBlockHeight: number },
     commitment?: string,
   ): Promise<{ value: { err: unknown } }>;
-  getAccountInfo(pubkey: unknown): Promise<{ owner: unknown } | null>;
+  getAccountInfo(pubkey: unknown): Promise<{ owner: unknown; data: Buffer } | null>;
 }
 
 interface SolanaPublicKey {
@@ -87,7 +86,28 @@ interface SolanaWeb3 {
     programId: SolanaPublicKey;
     data: Buffer;
   }) => unknown;
+  TransactionMessage: new (opts: {
+    payerKey: SolanaPublicKey;
+    recentBlockhash: string;
+    instructions: unknown[];
+  }) => { compileToV0Message(): unknown };
+  VersionedTransaction: new (message: unknown) => {
+    sign(signers: { secretKey: Uint8Array }[]): void;
+    serialize(): Uint8Array;
+  };
+  ComputeBudgetProgram: {
+    setComputeUnitLimit(opts: { units: number }): unknown;
+    setComputeUnitPrice(opts: { microLamports: number | bigint }): unknown;
+  };
 }
+
+// @x402/svm canonical defaults — facilitator's verify rejects txs whose
+// position-0 = ComputeUnitLimit and position-1 = ComputeUnitPrice ixs don't
+// parse cleanly. Match values used by the reference client (1 µL/CU, 20k CU).
+const DEFAULT_COMPUTE_UNIT_LIMIT = 20000;
+const DEFAULT_COMPUTE_UNIT_PRICE_MICROLAMPORTS = 1;
+const MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
+const MAX_MEMO_BYTES = 256;
 
 export const x402SolanaTransferExecutor: PaymentExecutor = {
   protocol: "x402",
@@ -119,20 +139,11 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
     }
 
     const rpcUrl = resolveRpcUrl(detection.network);
-    // Prefer detection.asset (canonical mint from the 402 response) over our
-    // hardcoded fallback so a facilitator that wants a different SPL mint
-    // doesn't get hit with USDC by mistake.
-    const mintAddress = detection.asset ?? resolveUsdcMint(detection.network);
     const connection = new web3.Connection(rpcUrl, "confirmed");
     const keyBytes = decodeSolanaKey(wallet.solanaPrivateKey);
     const payer = web3.Keypair.fromSecretKey(keyBytes);
     const payerPubkey = payer.publicKey;
     const recipientPubkey = new web3.PublicKey(detection.payTo);
-    const mint = new web3.PublicKey(mintAddress);
-
-    const tokenProgram = new web3.PublicKey(TOKEN_PROGRAM_ID);
-    const ataProgram = new web3.PublicKey(ASSOCIATED_TOKEN_PROGRAM_ID);
-    const systemProgram = new web3.PublicKey(SYSTEM_PROGRAM_ID);
 
     // Facilitator mode: when the 402 specifies extra.feePayer, the resource
     // wants its facilitator to broadcast on its own gas after verifying our
@@ -142,6 +153,48 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
     const feePayerKey = facilitatorMode
       ? new web3.PublicKey(detection.feePayer!)
       : payerPubkey;
+
+    // Mint selection: canonical x402 SVM clients require `paymentRequirements.asset`
+    // and throw if absent. In facilitator mode we mirror that strictness — the
+    // facilitator's verify compares the on-chain mint against requirements.asset
+    // byte-for-byte (invalid_exact_svm_payload_mint_mismatch). Falling back to a
+    // hardcoded USDC mint in facilitator mode would just guarantee mismatch on
+    // any non-USDC seller. In self mode we keep the USDC fallback because the
+    // self-broadcast path is only used by our own test-402 server which omits
+    // `asset` for ergonomics.
+    const mintAddress = detection.asset ?? (facilitatorMode ? null : resolveUsdcMint(detection.network));
+    if (!mintAddress) {
+      throw new ExecutionError(
+        `x402 facilitator mode requires \`asset\` (SPL mint pubkey) in the 402 response; ` +
+          `the resource at ${url} omitted it.`,
+      );
+    }
+    const mint = new web3.PublicKey(mintAddress);
+
+    const tokenProgram = new web3.PublicKey(TOKEN_PROGRAM_ID);
+    const ataProgram = new web3.PublicKey(ASSOCIATED_TOKEN_PROGRAM_ID);
+    const systemProgram = new web3.PublicKey(SYSTEM_PROGRAM_ID);
+
+    // Read decimals from the mint account instead of hardcoding USDC's 6.
+    // Canonical @x402/svm fetches the mint via fetchMint(rpc, asset) and uses
+    // tokenMint.data.decimals; we read the raw account bytes (decimals is at
+    // offset 44 in the SPL Token mint layout). Hardcoding 6 would either get
+    // rejected at facilitator verify (decimals byte in TransferChecked must
+    // match the mint's actual decimals) or silently transfer a wrong-by-10^N
+    // amount on non-USDC mints.
+    const mintInfo = await connection.getAccountInfo(mint);
+    if (!mintInfo) {
+      throw new ExecutionError(
+        `Mint ${mintAddress} not found on ${detection.network}. ` +
+          `Check that the 402 response's \`asset\` field references a mint on the right cluster.`,
+      );
+    }
+    const mintDecimals = mintInfo.data[44];
+    if (typeof mintDecimals !== "number") {
+      throw new ExecutionError(
+        `Could not read decimals byte from mint ${mintAddress} account data`,
+      );
+    }
 
     // Derive source + destination ATAs. ATA seeds = [owner, TokenProgram, mint].
     const [sourceAta] = web3.PublicKey.findProgramAddressSync(
@@ -167,26 +220,44 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
 
     const ixs: unknown[] = [];
 
-    // If recipient ATA doesn't exist, prepend a CreateIdempotent ix.
-    // Funder is the feePayer — the facilitator pays the rent in
-    // facilitator mode, the payer pays it in self mode.
-    const destInfo = await connection.getAccountInfo(destAta);
-    if (!destInfo) {
-      const createIxData = Buffer.from([ATA_IX_CREATE_IDEMPOTENT]);
+    if (facilitatorMode) {
+      // Facilitator's verify (@x402/svm exact/facilitator) requires positions
+      // 0 = ComputeUnitLimit, 1 = ComputeUnitPrice, 2 = TransferChecked, and
+      // rejects any prepended ix that isn't ComputeBudget — so we MUST NOT
+      // prepend ATA-create here. If the recipient ATA is missing, the
+      // facilitator either creates it or returns recipient_mismatch; either
+      // way the cascade falls through to the memo executor. Don't break the
+      // strict ordering by trying to be helpful.
       ixs.push(
-        new web3.TransactionInstruction({
-          keys: [
-            { pubkey: feePayerKey, isSigner: true, isWritable: true },     // funder = feePayer
-            { pubkey: destAta, isSigner: false, isWritable: true },        // ATA being created
-            { pubkey: recipientPubkey, isSigner: false, isWritable: false }, // owner of ATA
-            { pubkey: mint, isSigner: false, isWritable: false },
-            { pubkey: systemProgram, isSigner: false, isWritable: false },
-            { pubkey: tokenProgram, isSigner: false, isWritable: false },
-          ],
-          programId: ataProgram,
-          data: createIxData,
+        web3.ComputeBudgetProgram.setComputeUnitLimit({
+          units: DEFAULT_COMPUTE_UNIT_LIMIT,
+        }),
+        web3.ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: DEFAULT_COMPUTE_UNIT_PRICE_MICROLAMPORTS,
         }),
       );
+    } else {
+      // Self-broadcast: if recipient ATA doesn't exist, prepend CreateIdempotent
+      // so the transfer doesn't fail at runtime. Funder is the payer (who is
+      // also tx.feePayer in self mode).
+      const destInfo = await connection.getAccountInfo(destAta);
+      if (!destInfo) {
+        const createIxData = Buffer.from([ATA_IX_CREATE_IDEMPOTENT]);
+        ixs.push(
+          new web3.TransactionInstruction({
+            keys: [
+              { pubkey: feePayerKey, isSigner: true, isWritable: true },       // funder = feePayer
+              { pubkey: destAta, isSigner: false, isWritable: true },          // ATA being created
+              { pubkey: recipientPubkey, isSigner: false, isWritable: false }, // owner of ATA
+              { pubkey: mint, isSigner: false, isWritable: false },
+              { pubkey: systemProgram, isSigner: false, isWritable: false },
+              { pubkey: tokenProgram, isSigner: false, isWritable: false },
+            ],
+            programId: ataProgram,
+            data: createIxData,
+          }),
+        );
+      }
     }
 
     // Token::TransferChecked — discriminator 12, takes amount (u64 LE) +
@@ -197,7 +268,7 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
     const transferData = Buffer.alloc(1 + 8 + 1);
     transferData.writeUInt8(TOKEN_IX_TRANSFER_CHECKED, 0);
     transferData.writeBigUInt64LE(amountRaw, 1);
-    transferData.writeUInt8(USDC_DECIMALS, 9);
+    transferData.writeUInt8(mintDecimals, 9);
 
     ixs.push(
       new web3.TransactionInstruction({
@@ -212,41 +283,89 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
       }),
     );
 
-    // Build the tx and split paths: partial-sign-and-handoff for facilitator
-    // mode, full-sign-and-broadcast for self mode.
-    const tx = new web3.Transaction();
-    for (const ix of ixs) tx.add(ix);
+    if (facilitatorMode) {
+      // Append a Memo ix per @x402/svm exact/client/scheme.ts. If the seller
+      // pre-declared a memo string in 402.extra.memo, use those bytes verbatim
+      // — facilitator's verify will compare byte-for-byte and reject on
+      // mismatch (invalid_exact_svm_payload_memo_mismatch). Otherwise use a
+      // 16-byte random nonce as hex, matching the canonical client's default
+      // nonce shape for tx-uniqueness / replay safety.
+      const memoBytes = (() => {
+        if (detection.memo) {
+          const provided = Buffer.from(detection.memo, "utf-8");
+          if (provided.byteLength > MAX_MEMO_BYTES) {
+            throw new ExecutionError(
+              `extra.memo from 402 response exceeds ${MAX_MEMO_BYTES} bytes (${provided.byteLength}); refusing to truncate`,
+            );
+          }
+          return provided;
+        }
+        const nonce = new Uint8Array(16);
+        globalThis.crypto.getRandomValues(nonce);
+        const hex = Array.from(nonce, (b) => b.toString(16).padStart(2, "0")).join("");
+        return Buffer.from(hex, "utf-8");
+      })();
+      ixs.push(
+        new web3.TransactionInstruction({
+          keys: [],
+          programId: new web3.PublicKey(MEMO_PROGRAM_ID),
+          data: memoBytes,
+        }),
+      );
+    }
+
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-    tx.recentBlockhash = blockhash;
-    tx.feePayer = feePayerKey;
 
     let signature: string;
 
     if (facilitatorMode) {
-      // Partial-sign as the source ATA owner only. Facilitator finishes
-      // the signature as feePayer + broadcasts on its own gas.
+      // v2 facilitator-broadcast flow. Empirically verified against x402.org
+      // (HTTP 200, payment-response header carrying the facilitator's settle
+      // tx sig, 0.01 USDC moved by the facilitator on its own gas):
+      //
+      //   1. v0 VersionedTransaction with feePayer = facilitator pubkey
+      //   2. Sign with payer only (the TransferChecked.authority); feePayer
+      //      slot stays empty for the facilitator to fill in
+      //   3. PaymentPayload shape `{ x402Version: 2, accepted: <full
+      //      PaymentRequirements>, payload: { transaction: base64WireBytes } }`
+      //      — `accepted` carries the requirement strings the server matches
+      //      against in findMatchingRequirements; `scheme`/`network` at top
+      //      level (legacy v1 shape) gets rejected as "no matching requirements"
+      //   4. Wire header is `PAYMENT-SIGNATURE` for v2 (NOT `X-Payment` —
+      //      that's the v1 header name; v2 servers ignore it). See
+      //      @x402/core http/x402HTTPClient.ts:encodePaymentSignatureHeader.
+      const message = new web3.TransactionMessage({
+        payerKey: feePayerKey,
+        recentBlockhash: blockhash,
+        instructions: ixs,
+      }).compileToV0Message();
+      const vtx = new web3.VersionedTransaction(message);
       try {
-        tx.partialSign(payer);
+        vtx.sign([payer]);
       } catch (err) {
         throw new ExecutionError(
           `partial sign failed: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
-      const signedBytes = tx.serialize({
-        requireAllSignatures: false,
-        verifySignatures: false,
-      } as never);
-      const txBase64 = Buffer.from(signedBytes).toString("base64");
+      const txBase64 = Buffer.from(vtx.serialize()).toString("base64");
 
+      const acceptedRequirement = {
+        scheme: "exact",
+        network: toCaipNetwork(detection.network),
+        amount: String(detection.priceRaw),
+        asset: mintAddress,
+        payTo: detection.payTo,
+        // Server-advertised default in `accepts[]`; canonical clients
+        // echo this from the matched accept entry.
+        maxTimeoutSeconds: 300,
+        extra: { feePayer: detection.feePayer },
+      };
       const paymentPayload = {
         x402Version: 2,
-        scheme: "exact",
-        // Echo CAIP form back — facilitator's validator matches the original
-        // network string from the 402 response, not our normalized name.
-        network: toCaipNetwork(detection.network),
+        accepted: acceptedRequirement,
         payload: { transaction: txBase64 },
       };
-      const xPaymentHeader = Buffer.from(JSON.stringify(paymentPayload), "utf-8").toString(
+      const signatureHeader = Buffer.from(JSON.stringify(paymentPayload), "utf-8").toString(
         "base64",
       );
 
@@ -256,7 +375,7 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
           method: options.method ?? "GET",
           headers: {
             ...(options.headers ?? {}),
-            "X-Payment": xPaymentHeader,
+            "PAYMENT-SIGNATURE": signatureHeader,
           },
           body: options.body ? JSON.stringify(options.body) : undefined,
         });
@@ -276,7 +395,7 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
 
       signature =
         extractSettlementSignature(response) ??
-        "(facilitator broadcast; no signature surfaced in x-payment-response header)";
+        "(facilitator broadcast; no signature surfaced in payment-response header)";
 
       const contentType = response.headers.get("content-type") ?? "";
       const data = contentType.includes("json") ? await response.json() : await response.text();
@@ -291,6 +410,12 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
 
     // Self-broadcast mode — original code path for resources that don't run
     // a facilitator (our local test-402 server, simple direct-pay endpoints).
+    // Uses legacy Transaction for backwards compat with the existing
+    // test-402 server, which accepts both wire formats.
+    const tx = new web3.Transaction();
+    for (const ix of ixs) tx.add(ix);
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = feePayerKey;
     try {
       tx.sign(payer);
       const rawTx = tx.serialize();

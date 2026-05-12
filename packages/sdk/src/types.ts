@@ -33,6 +33,13 @@ export interface DetectionResult {
    * deriving from network defaults.
    */
   asset?: string;
+  /**
+   * Seller-supplied memo from `extra.memo`. When present on x402 Solana, the
+   * canonical SVM scheme uses these bytes (≤256) verbatim as the Memo-program
+   * ix payload instead of a random nonce — gives the seller a stable handle to
+   * correlate the on-chain tx with the off-chain order.
+   */
+  memo?: string;
   raw: {
     headers: Record<string, string>;
     body?: unknown;
