@@ -9,7 +9,14 @@ interface X402Requirement {
   price?: string | number;
   resource?: string;
   payTo?: string;
-  extra?: { name?: string; currency?: string };
+  /** Asset contract — SPL mint pubkey (Solana) or ERC-20 contract (EVM) */
+  asset?: string;
+  /**
+   * Per-network extras. x402.org's Solana responses use `extra.feePayer` to
+   * tell the client which pubkey must be the tx feePayer (facilitator broadcasts).
+   * EVM responses use `extra.name` / `extra.version` for EIP-712 domain.
+   */
+  extra?: { name?: string; currency?: string; version?: string; feePayer?: string };
 }
 
 /**
@@ -66,6 +73,10 @@ export const x402Detector: ProtocolDetector = {
       priceRaw: parsePriceRaw(amount),
       currency,
       payTo: req.payTo ?? "",
+      // Surface the spec-canonical extras so executors can route through a
+      // facilitator-broadcast flow when the resource demands one.
+      feePayer: req.extra?.feePayer,
+      asset: req.asset,
       raw: { headers: _headers, body },
     };
   },

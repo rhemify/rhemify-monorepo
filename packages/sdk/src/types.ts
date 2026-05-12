@@ -16,6 +16,23 @@ export interface DetectionResult {
   priceRaw: bigint | number;
   currency: string;
   payTo: string;
+  /**
+   * Facilitator's pubkey, when the resource's 402 response specifies a third
+   * party that must broadcast the payment tx and verify it on-chain. For x402
+   * Solana, x402.org-style responses include extra.feePayer — the canonical
+   * client flow is sign-but-don't-broadcast with feePayer = this address, then
+   * the facilitator picks up the signed bytes from the X-Payment header and
+   * settles. Absent when the resource doesn't use a facilitator (clients
+   * broadcast their own tx — e.g. our local test-402 server).
+   */
+  feePayer?: string;
+  /**
+   * Asset contract address from the 402 response's `asset` field (x402
+   * canonical) — the SPL mint pubkey on Solana, the ERC-20 contract on EVM.
+   * Lets executors target the exact asset the facilitator wants rather than
+   * deriving from network defaults.
+   */
+  asset?: string;
   raw: {
     headers: Record<string, string>;
     body?: unknown;

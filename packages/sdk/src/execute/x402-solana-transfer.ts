@@ -79,7 +79,8 @@ interface SolanaWeb3 {
     recentBlockhash: string;
     feePayer: SolanaPublicKey;
     sign(...signers: unknown[]): void;
-    serialize(): Buffer;
+    partialSign(...signers: unknown[]): void;
+    serialize(options?: { requireAllSignatures?: boolean; verifySignatures?: boolean }): Buffer;
   };
   TransactionInstruction: new (opts: {
     keys: { pubkey: SolanaPublicKey; isSigner: boolean; isWritable: boolean }[];
@@ -118,7 +119,10 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
     }
 
     const rpcUrl = resolveRpcUrl(detection.network);
-    const mintAddress = resolveUsdcMint(detection.network);
+    // Prefer detection.asset (canonical mint from the 402 response) over our
+    // hardcoded fallback so a facilitator that wants a different SPL mint
+    // doesn't get hit with USDC by mistake.
+    const mintAddress = detection.asset ?? resolveUsdcMint(detection.network);
     const connection = new web3.Connection(rpcUrl, "confirmed");
     const keyBytes = decodeSolanaKey(wallet.solanaPrivateKey);
     const payer = web3.Keypair.fromSecretKey(keyBytes);
@@ -129,6 +133,15 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
     const tokenProgram = new web3.PublicKey(TOKEN_PROGRAM_ID);
     const ataProgram = new web3.PublicKey(ASSOCIATED_TOKEN_PROGRAM_ID);
     const systemProgram = new web3.PublicKey(SYSTEM_PROGRAM_ID);
+
+    // Facilitator mode: when the 402 specifies extra.feePayer, the resource
+    // wants its facilitator to broadcast on its own gas after verifying our
+    // partially-signed tx. Self mode: no facilitator → we broadcast.
+    const facilitatorMode =
+      !!detection.feePayer && detection.feePayer !== payerPubkey.toBase58();
+    const feePayerKey = facilitatorMode
+      ? new web3.PublicKey(detection.feePayer!)
+      : payerPubkey;
 
     // Derive source + destination ATAs. ATA seeds = [owner, TokenProgram, mint].
     const [sourceAta] = web3.PublicKey.findProgramAddressSync(
@@ -154,17 +167,17 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
 
     const ixs: unknown[] = [];
 
-    // If recipient ATA doesn't exist, prepend a CreateIdempotent ix —
-    // pays its own rent, no-op if already exists. Idempotent variant
-    // avoids "account exists" errors in concurrent scenarios.
+    // If recipient ATA doesn't exist, prepend a CreateIdempotent ix.
+    // Funder is the feePayer — the facilitator pays the rent in
+    // facilitator mode, the payer pays it in self mode.
     const destInfo = await connection.getAccountInfo(destAta);
     if (!destInfo) {
       const createIxData = Buffer.from([ATA_IX_CREATE_IDEMPOTENT]);
       ixs.push(
         new web3.TransactionInstruction({
           keys: [
-            { pubkey: payerPubkey, isSigner: true, isWritable: true },   // funder
-            { pubkey: destAta, isSigner: false, isWritable: true },       // ATA being created
+            { pubkey: feePayerKey, isSigner: true, isWritable: true },     // funder = feePayer
+            { pubkey: destAta, isSigner: false, isWritable: true },        // ATA being created
             { pubkey: recipientPubkey, isSigner: false, isWritable: false }, // owner of ATA
             { pubkey: mint, isSigner: false, isWritable: false },
             { pubkey: systemProgram, isSigner: false, isWritable: false },
@@ -199,15 +212,87 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
       }),
     );
 
-    let signature: string;
-    try {
-      const tx = new web3.Transaction();
-      for (const ix of ixs) tx.add(ix);
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = payerPubkey;
-      tx.sign(payer);
+    // Build the tx and split paths: partial-sign-and-handoff for facilitator
+    // mode, full-sign-and-broadcast for self mode.
+    const tx = new web3.Transaction();
+    for (const ix of ixs) tx.add(ix);
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = feePayerKey;
 
+    let signature: string;
+
+    if (facilitatorMode) {
+      // Partial-sign as the source ATA owner only. Facilitator finishes
+      // the signature as feePayer + broadcasts on its own gas.
+      try {
+        tx.partialSign(payer);
+      } catch (err) {
+        throw new ExecutionError(
+          `partial sign failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+      const signedBytes = tx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      } as never);
+      const txBase64 = Buffer.from(signedBytes).toString("base64");
+
+      const paymentPayload = {
+        x402Version: 2,
+        scheme: "exact",
+        // Echo CAIP form back — facilitator's validator matches the original
+        // network string from the 402 response, not our normalized name.
+        network: toCaipNetwork(detection.network),
+        payload: { transaction: txBase64 },
+      };
+      const xPaymentHeader = Buffer.from(JSON.stringify(paymentPayload), "utf-8").toString(
+        "base64",
+      );
+
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: options.method ?? "GET",
+          headers: {
+            ...(options.headers ?? {}),
+            "X-Payment": xPaymentHeader,
+          },
+          body: options.body ? JSON.stringify(options.body) : undefined,
+        });
+      } catch (err) {
+        throw new ExecutionError(
+          `Resource retry (facilitator mode) failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+
+      if (!response.ok) {
+        throw new ExecutionError(
+          `Resource rejected facilitator-mode payment: ${response.status} ${response.statusText}. ` +
+            `Tx was partial-signed for facilitator ${detection.feePayer} but NOT broadcast — funds DID NOT move on-chain.`,
+          response.status,
+        );
+      }
+
+      signature =
+        extractSettlementSignature(response) ??
+        "(facilitator broadcast; no signature surfaced in x-payment-response header)";
+
+      const contentType = response.headers.get("content-type") ?? "";
+      const data = contentType.includes("json") ? await response.json() : await response.text();
+      return {
+        success: true,
+        data,
+        txHash: signature,
+        protocolReceipt: signature,
+        response,
+      };
+    }
+
+    // Self-broadcast mode — original code path for resources that don't run
+    // a facilitator (our local test-402 server, simple direct-pay endpoints).
+    try {
+      tx.sign(payer);
       const rawTx = tx.serialize();
       signature = await connection.sendRawTransaction(rawTx);
       const conf = await connection.confirmTransaction(
@@ -224,10 +309,6 @@ export const x402SolanaTransferExecutor: PaymentExecutor = {
       );
     }
 
-    // x402-spec payload — same shape as the memo executor's header so any
-    // facilitator that parses one parses both. The `payload.transaction`
-    // string is the on-chain signature of the USDC transfer (settlement),
-    // not a memo intent.
     const paymentPayload = {
       x402Version: 2,
       scheme: "exact",
@@ -301,12 +382,46 @@ function resolveUsdcMint(network: string): string {
 }
 
 function isValidPayToForTransfer(payTo: string): boolean {
-  // Reject the well-known placeholders the test 402 server uses when
-  // RECIPIENT_ADDRESS isn't configured. System Program can't hold SPL
-  // tokens, so attempting a transfer there would just burn the fee and
-  // skip the cascade fallback. Better to fail canExecute up front.
   if (!payTo || payTo === SYSTEM_PROGRAM_ID) return false;
-  // Base58 sanity check — Solana pubkeys are 32 bytes = 43-44 base58 chars.
   if (payTo.length < 32 || payTo.length > 44) return false;
   return true;
+}
+
+/** Reverse map our normalized network names back to CAIP form. */
+function toCaipNetwork(network: string): string {
+  switch (network) {
+    case "solana-mainnet":
+    case "solana":
+      return "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+    case "solana-devnet":
+      return "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1";
+    default:
+      return network;
+  }
+}
+
+/**
+ * Extract the on-chain signature the facilitator broadcast. Per the x402
+ * spec, settlement details come back in the `x-payment-response` header as
+ * base64(JSON). Different facilitators put the sig under different keys —
+ * try the common ones.
+ */
+function extractSettlementSignature(response: Response): string | null {
+  const raw =
+    response.headers.get("x-payment-response") ??
+    response.headers.get("payment-response") ??
+    response.headers.get("x-payment-receipt");
+  if (!raw) return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(raw, "base64").toString("utf-8"));
+    return (
+      decoded?.payload?.transaction ??
+      decoded?.transaction ??
+      decoded?.signature ??
+      decoded?.txHash ??
+      null
+    );
+  } catch {
+    return raw;
+  }
 }
