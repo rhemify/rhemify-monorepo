@@ -37,7 +37,15 @@ export async function pay(url: string) {
     if (result.receipt.txHash) {
       console.log(pc.dim(`  TxHash: ${result.receipt.txHash}`));
     }
+    // Layer-1 Memo anchor is queued by pay() but processed by a 2s background
+    // tick. Without awaiting close() the CLI exits before the tick fires and
+    // `payment_traces.anchor_tx_hash` stays null in Convex.
+    // See packages/sdk/src/anchor/queue.ts + sdk/src/client.ts close().
+    await rhemify.close();
   } catch (err) {
+    // Best-effort drain on error too — a partially-succeeded pay() may
+    // already have enqueued a Memo anchor that should still land.
+    await rhemify.close().catch(() => {});
     console.log(pc.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
   }
 }

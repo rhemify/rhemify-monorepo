@@ -54,6 +54,15 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       })
     : null;
 
+  // Track in-flight ingest promises so close() can await them. Ingest is
+  // fire-and-forget on the hot path (pay() returns the HTTP response without
+  // waiting for Convex to persist the trace), but if a caller drains and
+  // exits immediately the trace doc may not exist in Convex when the
+  // anchor-queue's updateTraceAnchor PATCH fires — Convex's traces:updateAnchor
+  // throws "Trace not found" and the anchor is silently lost. close() awaits
+  // these BEFORE draining the anchor queue so the ordering is durable.
+  const inflightIngests: Promise<void>[] = [];
+
   function emitTrace(trace: Trace): void {
     const snapshot = trace.toSnapshot();
     const traceRecord = trace.finalize();
@@ -140,8 +149,18 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       }),
     );
 
-    transport.ingestPayment({ event, trace: paymentTrace, policyDecisions }).catch((err) => {
-      config.onError?.(err instanceof Error ? err : new Error(String(err)));
+    const ingestPromise = transport
+      .ingestPayment({ event, trace: paymentTrace, policyDecisions })
+      .then(() => undefined)
+      .catch((err) => {
+        config.onError?.(err instanceof Error ? err : new Error(String(err)));
+      });
+    inflightIngests.push(ingestPromise);
+    // Self-clean: drop from the tracker once it settles so close() doesn't
+    // accumulate references across long-running session use.
+    ingestPromise.finally(() => {
+      const idx = inflightIngests.indexOf(ingestPromise);
+      if (idx >= 0) inflightIngests.splice(idx, 1);
     });
 
     // Layer 1: Enqueue Memo anchoring (async, non-blocking)
@@ -334,7 +353,20 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     return discoverServices(intent, options);
   }
 
-  return { pay, probe, session, discover, setPolicy, status };
+  async function close(): Promise<void> {
+    // Order matters: drain pending ingests FIRST so every trace document
+    // exists in Convex before the anchor queue's updateTraceAnchor PATCH
+    // tries to patch it. Reversing this order races and silently drops
+    // anchors (see inflightIngests doc above).
+    if (inflightIngests.length > 0) {
+      await Promise.allSettled(inflightIngests.slice());
+    }
+    if (anchorQueue) {
+      await anchorQueue.drain();
+    }
+  }
+
+  return { pay, probe, session, discover, setPolicy, status, close };
 }
 
 // --- Helpers ---

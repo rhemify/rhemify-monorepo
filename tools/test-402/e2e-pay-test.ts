@@ -3,33 +3,70 @@
  * Makes ONE real payment to x402.org/protected (0.01 USDC devnet).
  * All other tests use dry runs (no payment).
  *
+ * Loads the same fleet credentials + Solana wallet the production CLI uses
+ * (`~/.rhemify/config.json` + `~/.rhemify/wallet.json`). The previous
+ * hardcoded `test-fleet-key` / `fleet-e2e-test` values did not resolve in
+ * Convex's `fleets` table, so every ingest + anchor PATCH 401'd silently and
+ * Test 3's anchor never appeared in `payment_traces.anchor_tx_hash`. Reusing
+ * the onboarded fleet means this harness exercises the same auth path
+ * production traffic does.
+ *
  * Prerequisites:
- *   - Funded Solana devnet wallet at .test-wallet.json
+ *   - `rhemify onboard` has been run (writes `~/.rhemify/config.json` +
+ *     `~/.rhemify/wallet.json`)
+ *   - Onboarded wallet funded with devnet SOL + USDC (faucet.circle.com)
+ *   - Go server (`apps/server`) running on the port in config.serverUrl
+ *   - `bunx convex dev` running in `packages/backend`
  *
  * Usage: bun run tools/test-402/e2e-pay-test.ts
  */
 
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { createRhemify } from "../../packages/sdk/src/index.js";
 
-const WALLET_PATH = resolve(import.meta.dirname, "../../.test-wallet.json");
+const CONFIG_PATH = join(homedir(), ".rhemify", "config.json");
+const WALLET_PATH = join(homedir(), ".rhemify", "wallet.json");
 
-// Load wallet keypair (JSON array format from solana-keygen)
+interface RhemifyCliConfig {
+  fleetId: string;
+  fleetName: string;
+  agentIds: string[];
+  serverUrl: string;
+  convexUrl?: string;
+  fleetApiKey?: string;
+}
+
+let cliConfig: RhemifyCliConfig;
+try {
+  cliConfig = JSON.parse(readFileSync(CONFIG_PATH, "utf-8")) as RhemifyCliConfig;
+} catch {
+  console.error(`❌ Missing ${CONFIG_PATH}. Run: bun run packages/cli/src/index.ts onboard`);
+  process.exit(1);
+}
+if (!cliConfig.fleetApiKey) {
+  console.error(`❌ ${CONFIG_PATH} missing fleetApiKey. Re-run onboard or set the key manually.`);
+  process.exit(1);
+}
+if (!cliConfig.agentIds[0]) {
+  console.error(`❌ ${CONFIG_PATH} has no agentIds. Re-run onboard.`);
+  process.exit(1);
+}
+
 let solanaPrivateKey: string;
 try {
-  const raw = readFileSync(WALLET_PATH, "utf-8");
-  solanaPrivateKey = raw.trim(); // JSON array string
+  solanaPrivateKey = readFileSync(WALLET_PATH, "utf-8").trim();
 } catch {
-  console.error("❌ No wallet found at .test-wallet.json. Run solana-keygen first.");
+  console.error(`❌ Missing ${WALLET_PATH}. Run: bun run packages/cli/src/index.ts onboard`);
   process.exit(1);
 }
 
 const rhemify = createRhemify({
-  serverUrl: "http://localhost:8080", // Go server (optional — falls back gracefully)
-  fleetApiKey: "test-fleet-key",
-  agentId: "agent-e2e-test",
-  fleetId: "fleet-e2e-test",
+  serverUrl: cliConfig.serverUrl,
+  fleetApiKey: cliConfig.fleetApiKey,
+  agentId: cliConfig.agentIds[0],
+  fleetId: cliConfig.fleetId,
   wallet: { solanaPrivateKey },
   solanaRpcUrl: "https://api.devnet.solana.com",
   defaultMaxBudget: "$0.05", // Safety cap: max $0.05 per payment
@@ -65,6 +102,10 @@ async function main() {
 
     const result = await rhemify.pay("http://localhost:3402/stock-data", {
       dryRun: true,
+      // Local test server's /stock-data advertises $0.50 to exercise the
+      // budget cap path; raise the per-call cap for this dry-run so the
+      // pipeline runs end-to-end. Test 3's safety cap ($0.02) stays explicit.
+      maxBudget: "$1.00",
       taskContext: "E2E test — dry run x402 Solana",
     });
     if (!result.success) throw new Error("Expected success");
@@ -79,7 +120,9 @@ async function main() {
       throw new Error(`Expected x402, got ${result.detection.protocol}`);
     }
     console.log(`       Protocol: ${result.detection.protocol}, Price: ${result.detection.price}`);
-    console.log(`       Paths available: ${result.estimatedPaths.filter(p => p.available).length}`);
+    console.log(
+      `       Paths available: ${result.estimatedPaths.filter((p) => p.available).length}`,
+    );
   });
 
   // --- Test 3: ONE real payment to x402.org (0.01 USDC) ---
@@ -100,10 +143,20 @@ async function main() {
   });
 
   console.log(`\n🏁 E2E test complete. ${passed} passed, ${failed} failed.\n`);
-  if (failed > 0) process.exit(1);
+  // Drain Layer-1 Memo anchors + ingest backlog BEFORE setting exit code.
+  // `process.exit()` would terminate Node before the AnchorQueue's flush
+  // completes, dropping the on-chain Memo tx and leaving
+  // `payment_traces.anchor_tx_hash` null in Convex. Use `process.exitCode`
+  // so Node drains the event loop first. See packages/sdk/src/anchor/queue.ts
+  // and packages/sdk/src/client.ts:close().
+  await rhemify.close();
+  if (failed > 0) process.exitCode = 1;
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error("Fatal:", err);
-  process.exit(1);
+  // Even on fatal error, drain any pending anchor work — the partial pay()
+  // may have already enqueued a Memo for a successful test.
+  await rhemify.close().catch(() => {});
+  process.exitCode = 1;
 });

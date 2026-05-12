@@ -41,7 +41,17 @@ const RETRY_BACKOFF_BASE_MS = 1000;
  */
 export class AnchorQueue {
   private queue: Array<QueueItem> = [];
-  private processing = false;
+  /**
+   * Tracks the in-flight flush() promise so drain() can await it. Without
+   * this, the 2s background timer can be mid-`processBatch` when the CLI
+   * calls drain(); a naive "if processing return" guard would let drain bail
+   * while items are still being processed off-thread, the CLI exits, and the
+   * in-flight Solana RPC + Convex patch get aborted mid-await. Net effect:
+   * pending=0 (item already spliced out), but the Memo tx never lands and
+   * `payment_traces.anchor_tx_hash` stays null. Sharing the promise lets
+   * re-entrant flush() calls join the existing work instead of racing it.
+   */
+  private inflight: Promise<void> | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private stopped = false;
   private config: Required<
@@ -98,35 +108,46 @@ export class AnchorQueue {
   }
 
   async flush(): Promise<void> {
-    if (this.processing || this.queue.length === 0) return;
-    this.processing = true;
+    // If a flush is already in-flight, await it instead of bailing — drain()
+    // depends on this so it can guarantee all enqueued items have been
+    // attempted (and persisted) before returning. Re-entrant callers (e.g.
+    // the 2s background timer firing concurrently with drain) cooperate via
+    // the same promise rather than racing.
+    if (this.inflight) {
+      await this.inflight;
+      if (this.queue.length === 0) return;
+    }
+    if (this.queue.length === 0) return;
 
+    const work = this.flushLoop();
+    this.inflight = work;
     try {
-      while (this.queue.length > 0) {
-        // Take a batch of items
-        const batch = this.queue.splice(0, this.config.batchSize);
-        const success = await this.processBatch(batch);
-
-        if (!success) {
-          // Check retries for each item
-          for (const item of batch) {
-            if (item.retries >= this.config.maxRetries) {
-              this.config.onError?.(
-                item.traceId,
-                new Error(`Memo anchoring failed after ${item.retries} retries`),
-              );
-            } else {
-              item.retries++;
-              this.queue.push(item);
-            }
-          }
-          // Backoff before retry
-          const maxRetryCount = Math.max(...batch.map((i) => i.retries));
-          await sleep(RETRY_BACKOFF_BASE_MS * Math.pow(2, maxRetryCount - 1));
-        }
-      }
+      await work;
     } finally {
-      this.processing = false;
+      if (this.inflight === work) this.inflight = null;
+    }
+  }
+
+  private async flushLoop(): Promise<void> {
+    while (this.queue.length > 0) {
+      const batch = this.queue.splice(0, this.config.batchSize);
+      const success = await this.processBatch(batch);
+
+      if (!success) {
+        for (const item of batch) {
+          if (item.retries >= this.config.maxRetries) {
+            this.config.onError?.(
+              item.traceId,
+              new Error(`Memo anchoring failed after ${item.retries} retries`),
+            );
+          } else {
+            item.retries++;
+            this.queue.push(item);
+          }
+        }
+        const maxRetryCount = Math.max(...batch.map((i) => i.retries));
+        await sleep(RETRY_BACKOFF_BASE_MS * Math.pow(2, maxRetryCount - 1));
+      }
     }
   }
 
@@ -166,8 +187,22 @@ export class AnchorQueue {
         this.config.rpcUrl,
       );
 
+      // Awaited so drain() can guarantee the trace document's anchor_tx_hash
+      // is patched in Convex before returning. Fire-and-forget lost the update
+      // in short-lived processes (CLI exits before promise resolves).
+      // Persistence failures are logged via onError but do not fail the batch:
+      // the Memo tx itself succeeded and can be re-attached out-of-band.
       for (const item of batch) {
-        this.config.transport?.updateTraceAnchor(item.traceId, txSignature).catch(() => {});
+        if (this.config.transport) {
+          try {
+            await this.config.transport.updateTraceAnchor(item.traceId, txSignature);
+          } catch (err) {
+            this.config.onError?.(
+              item.traceId,
+              err instanceof Error ? err : new Error(String(err)),
+            );
+          }
+        }
         this.config.onAnchored?.(item.traceId, txSignature);
       }
       return true;
@@ -188,7 +223,17 @@ export class AnchorQueue {
         rpcUrl: this.config.rpcUrl,
       });
 
-      this.config.transport?.updateTraceAnchor(item.traceId, txSignature).catch(() => {});
+      // Awaited — see processBatch for the same rationale.
+      if (this.config.transport) {
+        try {
+          await this.config.transport.updateTraceAnchor(item.traceId, txSignature);
+        } catch (err) {
+          this.config.onError?.(
+            item.traceId,
+            err instanceof Error ? err : new Error(String(err)),
+          );
+        }
+      }
       this.config.onAnchored?.(item.traceId, txSignature);
       return true;
     } catch {
