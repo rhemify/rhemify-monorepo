@@ -146,7 +146,6 @@ rhemify-monorepo/
 ├── apps/
 │   ├── web/              # TanStack Start fullstack — marketing, onboarding, dashboard
 │   ├── server/           # Go intelligence server (rules, replay, anchoring, ingestion)
-│   ├── tui/              # OpenTUI terminal dashboard streaming Convex
 │   └── ika-sidecar/      # Ika dWallet 2PC-MPC sidecar (out of v1 demo scope)
 ├── packages/
 │   ├── sdk/              # @rhemify-monorepo/sdk — the 6-stage payment pipeline

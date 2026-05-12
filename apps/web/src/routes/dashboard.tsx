@@ -9,6 +9,7 @@ const TITLE_MAP: Record<string, string> = {
   "/dashboard/policies": "Policies",
   "/dashboard/wallets": "Wallets",
   "/dashboard/approvals": "Approvals",
+  "/dashboard/traces": "Decision traces",
 };
 
 export const Route = createFileRoute("/dashboard")({
@@ -22,7 +23,9 @@ function DashboardLayout() {
   const routeId = lastMatch?.routeId ?? "";
   const title = routeId.includes("agent.")
     ? "Agent detail"
-    : (TITLE_MAP[routeId] ?? "Fleet overview");
+    : routeId.includes("traces.$traceId") || routeId.includes("traces/$traceId")
+      ? "Trace detail"
+      : (TITLE_MAP[routeId] ?? "Fleet overview");
 
   useEffect(() => {
     setTheme("dark");
