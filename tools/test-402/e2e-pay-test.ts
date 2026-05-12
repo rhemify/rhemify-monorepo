@@ -102,6 +102,10 @@ async function main() {
 
     const result = await rhemify.pay("http://localhost:3402/stock-data", {
       dryRun: true,
+      // Local test server's /stock-data advertises $0.50 to exercise the
+      // budget cap path; raise the per-call cap for this dry-run so the
+      // pipeline runs end-to-end. Test 3's safety cap ($0.02) stays explicit.
+      maxBudget: "$1.00",
       taskContext: "E2E test — dry run x402 Solana",
     });
     if (!result.success) throw new Error("Expected success");
@@ -116,7 +120,9 @@ async function main() {
       throw new Error(`Expected x402, got ${result.detection.protocol}`);
     }
     console.log(`       Protocol: ${result.detection.protocol}, Price: ${result.detection.price}`);
-    console.log(`       Paths available: ${result.estimatedPaths.filter(p => p.available).length}`);
+    console.log(
+      `       Paths available: ${result.estimatedPaths.filter((p) => p.available).length}`,
+    );
   });
 
   // --- Test 3: ONE real payment to x402.org (0.01 USDC) ---
