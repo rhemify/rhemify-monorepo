@@ -13,6 +13,7 @@
   "dependencies": {
     "@rhemify-monorepo/sdk": "workspace:*",
     "@solana/web3.js": "^1.98.4",
+    "convex": "^1.34.1",
     "picocolors": "^1.1.0"
   },
   "devDependencies": {

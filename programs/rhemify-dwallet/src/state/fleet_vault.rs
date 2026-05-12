@@ -15,6 +15,10 @@ pub struct FleetVault {
 
     pub daily_cap: u64,
 
+    pub daily_spent: u64,
+
+    pub last_reset_day: i64,
+
     pub is_frozen: bool,
 
     pub created_at: i64,

@@ -8,20 +8,20 @@ const tabs = [
   {
     id: "founders",
     label: "Founders",
-    headline: "Ship agents that execute on Ethereum — safely, out of the box.",
-    body: "The SDK handles scoped contexts, policy enforcement, and payment rails. You define the intents and risk tiers. Agents do the rest with guardrails built in.",
+    headline: "Ship agents that pay on Solana — verifiably, out of the box.",
+    body: "The SDK handles 402 detection, fleet policy, path selection, and memo-anchored execution. You define the limits and allowlists. Every payment leaves a replayable trace.",
   },
   {
     id: "web3",
     label: "Web3 teams",
-    headline: "x402, MPP, and onchain gas — one SDK primitive.",
-    body: "npm install @zhgg/sdk — ExecutionContext, OPA policy engine, Uniswap v3/v4 templates, and ENS identity wired together. Ethereum-native, TypeScript-first.",
+    headline: "x402 + MPP detection. Solana execution. Trace anchoring.",
+    body: "One SDK primitive (rhemify.pay) for both x402 and MPP-flavored HTTP 402 responses on Solana. Decision traces hashed, optionally anchored to a devnet Anchor program. TypeScript-first, no facilitator service required.",
   },
   {
     id: "enterprise",
     label: "Enterprise",
-    headline: "Signed audit trail. Attenuation guarantee. SOC 2 story.",
-    body: "Every action is logged and signed forensically. Sub-agents can only narrow scope — never expand it. Role-based approval queues for HIGH and CRITICAL risk actions at scale.",
+    headline: "Cryptographically signed decision trail. Counterfactual replay.",
+    body: "Every payment captures detection raw body, every alternative path scored, every policy rule fired. Ask 'what if our daily limit was $1?' against any past payment and the replay engine gives a per-rule diff. Real artifact, not a marketing claim.",
   },
 ];
 

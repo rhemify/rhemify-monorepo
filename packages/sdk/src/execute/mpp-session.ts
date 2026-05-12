@@ -17,10 +17,18 @@ export const mppSessionExecutor: PaymentExecutor = {
   protocol: "mpp",
   networks: ["solana-mainnet", "solana-devnet", "devnet", "localnet", "mainnet-beta"],
 
-  canExecute(detection: DetectionResult, wallet: WalletConfig): boolean {
-    // Session executor is only used when explicitly selected by session() wrapper
-    // For regular pay() calls, mppChargeExecutor handles MPP
-    return false && detection.protocol === "mpp" && !!wallet.solanaPrivateKey;
+  canExecute(_detection: DetectionResult, _wallet: WalletConfig): boolean {
+    // Intentionally inert in the cascade. The session() wrapper in
+    // src/session/index.ts calls this executor directly when an explicit
+    // session is requested; for regular pay() calls, mppChargeExecutor
+    // handles MPP. Returning false here ensures cascade never picks this
+    // up implicitly — it must be selected explicitly by session().
+    //
+    // Phase B note: openMppSession was rewritten to call mppClient.solana()
+    // directly under @solana/mpp@0.5.x, which dropped the session()
+    // method. This executor is kept registered for future re-introduction
+    // of session-flow MPP (e.g. via tempo.session() — see Phase B.5).
+    return false;
   },
 
   async execute(

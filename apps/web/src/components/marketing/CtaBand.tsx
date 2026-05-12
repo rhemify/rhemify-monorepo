@@ -40,7 +40,7 @@ export function CtaBand() {
 
                 <h2 className="mt-5 text-4xl font-bold tracking-tight text-text drop-shadow-[0_1px_24px_rgba(6,6,7,0.72)]">
                   <span className="text-accent">Build</span>{" "}
-                  <span>agents that act on Ethereum — with verifiable execution and unified payment rails.</span>
+                  <span>agents that pay on Solana — with verifiable decisions and unified x402 + MPP rails.</span>
                 </h2>
 
                 {/* <p className="mt-4 text-[clamp(0.95rem,1.35vw,1.1rem)] leading-relaxed text-zinc-200/95 drop-shadow-[0_1px_16px_rgba(0,0,0,0.5)]">

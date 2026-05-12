@@ -36,8 +36,11 @@ export const agentcardMppExecutor: PaymentExecutor = {
   networks: ["*"],
 
   canExecute(_detection: DetectionResult, _wallet: WalletConfig): boolean {
-    // Disabled — agentcard.ai integration not yet implemented (see comments above)
-    return false && _detection.protocol === "mpp" && !!agentcardApiKey;
+    // STUB: agentcard.ai integration not implemented (see file-header STATUS).
+    // To re-enable once a real card-provisioning path lands, replace the
+    // body with:
+    //   return _detection.protocol === "mpp" && !!agentcardApiKey;
+    return false;
   },
 
   async execute(

@@ -27,12 +27,18 @@ export class PolicyEngine {
   /**
    * Evaluate all policy rules against a detection result.
    * Fetches current policy from Go server (cached for cacheTtl ms).
-   * Returns the aggregate decision: block if any rule blocks,
-   * flag if any rule flags, allow otherwise.
+   * Returns the aggregate decision AND the context the decision was made
+   * against. The caller is expected to snapshot the context into the trace's
+   * replay_snapshot.policy_state so the Go replay engine has real values to
+   * work with — without that, every counterfactual replay runs against an
+   * empty policy and produces meaningless output.
    */
-  async evaluate(detection: DetectionResult, domain: string): Promise<PolicyDecision> {
+  async evaluate(
+    detection: DetectionResult,
+    domain: string,
+  ): Promise<{ decision: PolicyDecision; context: PolicyContext }> {
     const context = await this.getContext();
-    return this.evaluateWithContext(detection, domain, context);
+    return { decision: this.evaluateWithContext(detection, domain, context), context };
   }
 
   /**
@@ -108,13 +114,13 @@ function getSuggestion(rule: string): string | undefined {
   switch (rule) {
     case "daily_limit":
       return "Wait until tomorrow or request a limit increase.";
-    case "max_per_tx":
+    case "max_per_transaction":
       return "This payment exceeds the per-transaction limit.";
     case "domain_allowlist":
       return "This domain is not in the allowed list. Contact your fleet operator.";
-    case "allowed_standards":
+    case "standard_allowlist":
       return "This payment standard is not allowed by policy.";
-    case "domain_blocked":
+    case "vendor_blocked":
       return "This vendor was auto-blocked by intelligence due to poor reliability. Contact your fleet operator to unblock.";
     default:
       return undefined;

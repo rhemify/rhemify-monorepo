@@ -81,10 +81,13 @@ const owsEvm: InstrumentEvaluator = {
 
 const privySolana: InstrumentEvaluator = {
   instrument: "privy",
-  isAvailable(_wallet, detection) {
-    // Privy is cloud-hosted — available if Solana network
-    // In practice, requires privy session key (not yet implemented)
-    return false && isSolanaNetwork(detection.network);
+  isAvailable(_wallet, _detection) {
+    // STUB: Privy TEE wallet integration not implemented. Restore the
+    // legacy availability check by replacing this body with:
+    //   return isSolanaNetwork(_detection.network);
+    // (also requires Privy session key plumbing in WalletConfig — not
+    // present in the current types.)
+    return false;
   },
   estimateCost(detection) {
     return basePrice(detection) + 0.002; // slightly more than OWS (API call overhead)
@@ -125,10 +128,12 @@ const agentcard: InstrumentEvaluator = {
 
 const squads: InstrumentEvaluator = {
   instrument: "squads",
-  isAvailable(_wallet, detection) {
-    // Squads sessions for recurring on-chain Solana vendors
-    // Not yet implemented — requires Squads Smart Account setup
-    return false && isSolanaNetwork(detection.network);
+  isAvailable(_wallet, _detection) {
+    // STUB: Squads Smart Account session integration not implemented.
+    // Restore the legacy availability check by replacing this body with:
+    //   return isSolanaNetwork(_detection.network);
+    // (also requires Squads multisig signer plumbing — not in WalletConfig.)
+    return false;
   },
   estimateCost(detection) {
     return basePrice(detection) + 0.0005; // near-zero per-call (session amortized)
@@ -174,16 +179,29 @@ const jupiter: InstrumentEvaluator = {
 
 const cctp: InstrumentEvaluator = {
   instrument: "cctp",
-  isAvailable(wallet, detection) {
-    // CCTP: agent has Solana USDC but vendor is on EVM (or vice versa)
-    const hasSolana = !!wallet.solanaPrivateKey;
-    const hasEvm = !!wallet.evmPrivateKey;
-    const vendorOnEvm = isEvmNetwork(detection.network);
-    const vendorOnSolana = isSolanaNetwork(detection.network);
-    return (hasSolana && vendorOnEvm) || (hasEvm && vendorOnSolana);
+  isAvailable(_wallet, _detection) {
+    // Audit #10: CCTP evaluator was speculative — there is no cctpExecutor
+    // in execute/ to bridge USDC and pay. Until that executor lands,
+    // PathResolver must NOT suggest CCTP as a winning path or the cascade
+    // would fall through to the next available executor (or fail) and
+    // confuse callers about which path was actually used.
+    //
+    // TODO(cctp): once a CrossChainBridge executor exists that:
+    //   1. Quotes CCTP fast-transfer fees
+    //   2. Burns USDC on source chain
+    //   3. Mints USDC on destination chain
+    //   4. Submits the original protocol payment from destination
+    // re-enable this by restoring the legacy availability check:
+    //   const hasSolana = !!wallet.solanaPrivateKey;
+    //   const hasEvm = !!wallet.evmPrivateKey;
+    //   const vendorOnEvm = isEvmNetwork(detection.network);
+    //   const vendorOnSolana = isSolanaNetwork(detection.network);
+    //   return (hasSolana && vendorOnEvm) || (hasEvm && vendorOnSolana);
+    return false;
   },
   estimateCost(detection) {
-    // Bridge: payment amount + ~$0.05 bridge fee + gas on both chains
+    // Kept current so cost panels still render this option's hypothetical
+    // price when isAvailable becomes true again.
     return basePrice(detection) + 0.1;
   },
   estimateLatency() {
@@ -192,11 +210,8 @@ const cctp: InstrumentEvaluator = {
   risk() {
     return "medium";
   },
-  unavailableReason(wallet, detection) {
-    if (!wallet.solanaPrivateKey && !wallet.evmPrivateKey) {
-      return "No wallet configured for cross-chain bridge";
-    }
-    return `Cannot bridge to ${detection.network} with current wallet setup`;
+  unavailableReason(_wallet, _detection) {
+    return "CCTP executor not implemented — see TODO(cctp) in src/resolve/index.ts";
   },
 };
 

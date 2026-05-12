@@ -16,6 +16,30 @@ export interface DetectionResult {
   priceRaw: bigint | number;
   currency: string;
   payTo: string;
+  /**
+   * Facilitator's pubkey, when the resource's 402 response specifies a third
+   * party that must broadcast the payment tx and verify it on-chain. For x402
+   * Solana, x402.org-style responses include extra.feePayer — the canonical
+   * client flow is sign-but-don't-broadcast with feePayer = this address, then
+   * the facilitator picks up the signed bytes from the X-Payment header and
+   * settles. Absent when the resource doesn't use a facilitator (clients
+   * broadcast their own tx — e.g. our local test-402 server).
+   */
+  feePayer?: string;
+  /**
+   * Asset contract address from the 402 response's `asset` field (x402
+   * canonical) — the SPL mint pubkey on Solana, the ERC-20 contract on EVM.
+   * Lets executors target the exact asset the facilitator wants rather than
+   * deriving from network defaults.
+   */
+  asset?: string;
+  /**
+   * Seller-supplied memo from `extra.memo`. When present on x402 Solana, the
+   * canonical SVM scheme uses these bytes (≤256) verbatim as the Memo-program
+   * ix payload instead of a random nonce — gives the seller a stable handle to
+   * correlate the on-chain tx with the off-chain order.
+   */
+  memo?: string;
   raw: {
     headers: Record<string, string>;
     body?: unknown;
@@ -246,4 +270,16 @@ export interface Rhemify {
   discover: (intent: string, options?: DiscoverOptions) => Promise<import("./discovery/index.js").ServiceCandidate[]>;
   setPolicy: (policy: Partial<PolicyConfig>) => Promise<void>;
   status: () => Promise<FleetStatus>;
+  /**
+   * Drain pending Layer-1 Memo anchors and release internal timers.
+   *
+   * Per `docs/stack/02-convex.md`, each trace hash is anchored as a Solana
+   * Memo tx and the resulting signature is patched into
+   * `payment_traces.anchor_tx_hash`. The `AnchorQueue` does this on a 2s
+   * background tick — which never fires in short-lived processes (CLIs,
+   * one-shot scripts) because they exit before the next interval. Callers
+   * that need Layer-1 anchoring to land in Convex MUST await this before
+   * `process.exit`. Long-running services (servers, daemons) can ignore it.
+   */
+  close: () => Promise<void>;
 }

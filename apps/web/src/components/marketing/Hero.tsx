@@ -6,8 +6,7 @@ import { Button } from "@/components/marketing/Button";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { TrustStrip } from "@/components/marketing/TrustStrip";
 
-/** Public file name includes a space and parentheses — encode for a valid URL. */
-const ASCII_VIDEO_SRC = "/ascii-animation%20(1).mp4";
+const ASCII_VIDEO_SRC = "/ascii-animation.mp4";
 
 /**
  * Parallax speed factor for the hero.
@@ -105,13 +104,16 @@ export function Hero() {
             >
               <h1 className="w-full max-w-full text-3xl font-bold leading-[1.02] tracking-tight text-white md:text-5xl lg:text-6xl text-center md:text-left">
                 Scoped permissions,{" "}
-                <span className="text-[#52c390]">enforced policies, and unified payment rails</span>{" "}
-                for Ethereum agents.
+                <span className="text-[#52c390]">
+                  enforced policies, and verifiable payment rails
+                </span>{" "}
+                for Solana agents.
               </h1>
             </ScrollReveal>
             <ScrollReveal y={14} durationMs={1420} delayMs={420} revealOnMount className="block">
               <p className="text-sm leading-relaxed text-zinc-300 md:leading-relaxed lg:text-[17px]">
-                ExecutionContext, policy engine at the tool layer, and a unified x402 + MPP payment rail — packaged as a TypeScript SDK.
+                One SDK call detects x402 or MPP, runs your fleet policy, signs a memo on Solana,
+                and captures the full decision trace — replayable forever.
               </p>
             </ScrollReveal>
             <ScrollReveal y={12} durationMs={1280} delayMs={580} revealOnMount className="block">

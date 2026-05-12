@@ -16,12 +16,14 @@ import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as DashboardWalletsRouteImport } from './routes/dashboard/wallets'
+import { Route as DashboardTracesRouteImport } from './routes/dashboard/traces'
 import { Route as DashboardPoliciesRouteImport } from './routes/dashboard/policies'
 import { Route as DashboardApprovalsRouteImport } from './routes/dashboard/approvals'
 import { Route as OnboardingSignupRouteImport } from './routes/_onboarding/signup'
 import { Route as OnboardingFundRouteImport } from './routes/_onboarding/fund'
 import { Route as OnboardingDeployRouteImport } from './routes/_onboarding/deploy'
 import { Route as OnboardingBuildRouteImport } from './routes/_onboarding/build'
+import { Route as DashboardTracesTraceIdRouteImport } from './routes/dashboard/traces.$traceId'
 import { Route as DashboardAgentAgentIdRouteImport } from './routes/dashboard/agent.$agentId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as MarketingDemoKeyRouteImport } from './routes/_marketing/demo.$key'
@@ -59,6 +61,11 @@ const DashboardWalletsRoute = DashboardWalletsRouteImport.update({
   path: '/wallets',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardTracesRoute = DashboardTracesRouteImport.update({
+  id: '/traces',
+  path: '/traces',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardPoliciesRoute = DashboardPoliciesRouteImport.update({
   id: '/policies',
   path: '/policies',
@@ -89,6 +96,11 @@ const OnboardingBuildRoute = OnboardingBuildRouteImport.update({
   path: '/build',
   getParentRoute: () => OnboardingRoute,
 } as any)
+const DashboardTracesTraceIdRoute = DashboardTracesTraceIdRouteImport.update({
+  id: '/$traceId',
+  path: '/$traceId',
+  getParentRoute: () => DashboardTracesRoute,
+} as any)
 const DashboardAgentAgentIdRoute = DashboardAgentAgentIdRouteImport.update({
   id: '/agent/$agentId',
   path: '/agent/$agentId',
@@ -115,11 +127,13 @@ export interface FileRoutesByFullPath {
   '/signup': typeof OnboardingSignupRoute
   '/dashboard/approvals': typeof DashboardApprovalsRoute
   '/dashboard/policies': typeof DashboardPoliciesRoute
+  '/dashboard/traces': typeof DashboardTracesRouteWithChildren
   '/dashboard/wallets': typeof DashboardWalletsRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/demo/$key': typeof MarketingDemoKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/agent/$agentId': typeof DashboardAgentAgentIdRoute
+  '/dashboard/traces/$traceId': typeof DashboardTracesTraceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof MarketingIndexRoute
@@ -130,11 +144,13 @@ export interface FileRoutesByTo {
   '/signup': typeof OnboardingSignupRoute
   '/dashboard/approvals': typeof DashboardApprovalsRoute
   '/dashboard/policies': typeof DashboardPoliciesRoute
+  '/dashboard/traces': typeof DashboardTracesRouteWithChildren
   '/dashboard/wallets': typeof DashboardWalletsRoute
   '/dashboard': typeof DashboardIndexRoute
   '/demo/$key': typeof MarketingDemoKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/agent/$agentId': typeof DashboardAgentAgentIdRoute
+  '/dashboard/traces/$traceId': typeof DashboardTracesTraceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -148,12 +164,14 @@ export interface FileRoutesById {
   '/_onboarding/signup': typeof OnboardingSignupRoute
   '/dashboard/approvals': typeof DashboardApprovalsRoute
   '/dashboard/policies': typeof DashboardPoliciesRoute
+  '/dashboard/traces': typeof DashboardTracesRouteWithChildren
   '/dashboard/wallets': typeof DashboardWalletsRoute
   '/_marketing/': typeof MarketingIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/_marketing/demo/$key': typeof MarketingDemoKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/dashboard/agent/$agentId': typeof DashboardAgentAgentIdRoute
+  '/dashboard/traces/$traceId': typeof DashboardTracesTraceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,11 +185,13 @@ export interface FileRouteTypes {
     | '/signup'
     | '/dashboard/approvals'
     | '/dashboard/policies'
+    | '/dashboard/traces'
     | '/dashboard/wallets'
     | '/dashboard/'
     | '/demo/$key'
     | '/api/auth/$'
     | '/dashboard/agent/$agentId'
+    | '/dashboard/traces/$traceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -182,11 +202,13 @@ export interface FileRouteTypes {
     | '/signup'
     | '/dashboard/approvals'
     | '/dashboard/policies'
+    | '/dashboard/traces'
     | '/dashboard/wallets'
     | '/dashboard'
     | '/demo/$key'
     | '/api/auth/$'
     | '/dashboard/agent/$agentId'
+    | '/dashboard/traces/$traceId'
   id:
     | '__root__'
     | '/_marketing'
@@ -199,12 +221,14 @@ export interface FileRouteTypes {
     | '/_onboarding/signup'
     | '/dashboard/approvals'
     | '/dashboard/policies'
+    | '/dashboard/traces'
     | '/dashboard/wallets'
     | '/_marketing/'
     | '/dashboard/'
     | '/_marketing/demo/$key'
     | '/api/auth/$'
     | '/dashboard/agent/$agentId'
+    | '/dashboard/traces/$traceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -266,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardWalletsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/traces': {
+      id: '/dashboard/traces'
+      path: '/traces'
+      fullPath: '/dashboard/traces'
+      preLoaderRoute: typeof DashboardTracesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/policies': {
       id: '/dashboard/policies'
       path: '/policies'
@@ -307,6 +338,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/build'
       preLoaderRoute: typeof OnboardingBuildRouteImport
       parentRoute: typeof OnboardingRoute
+    }
+    '/dashboard/traces/$traceId': {
+      id: '/dashboard/traces/$traceId'
+      path: '/$traceId'
+      fullPath: '/dashboard/traces/$traceId'
+      preLoaderRoute: typeof DashboardTracesTraceIdRouteImport
+      parentRoute: typeof DashboardTracesRoute
     }
     '/dashboard/agent/$agentId': {
       id: '/dashboard/agent/$agentId'
@@ -364,9 +402,22 @@ const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
   OnboardingRouteChildren,
 )
 
+interface DashboardTracesRouteChildren {
+  DashboardTracesTraceIdRoute: typeof DashboardTracesTraceIdRoute
+}
+
+const DashboardTracesRouteChildren: DashboardTracesRouteChildren = {
+  DashboardTracesTraceIdRoute: DashboardTracesTraceIdRoute,
+}
+
+const DashboardTracesRouteWithChildren = DashboardTracesRoute._addFileChildren(
+  DashboardTracesRouteChildren,
+)
+
 interface DashboardRouteChildren {
   DashboardApprovalsRoute: typeof DashboardApprovalsRoute
   DashboardPoliciesRoute: typeof DashboardPoliciesRoute
+  DashboardTracesRoute: typeof DashboardTracesRouteWithChildren
   DashboardWalletsRoute: typeof DashboardWalletsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardAgentAgentIdRoute: typeof DashboardAgentAgentIdRoute
@@ -375,6 +426,7 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardApprovalsRoute: DashboardApprovalsRoute,
   DashboardPoliciesRoute: DashboardPoliciesRoute,
+  DashboardTracesRoute: DashboardTracesRouteWithChildren,
   DashboardWalletsRoute: DashboardWalletsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardAgentAgentIdRoute: DashboardAgentAgentIdRoute,

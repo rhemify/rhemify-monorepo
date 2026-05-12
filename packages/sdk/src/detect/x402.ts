@@ -9,7 +9,14 @@ interface X402Requirement {
   price?: string | number;
   resource?: string;
   payTo?: string;
-  extra?: { name?: string; currency?: string };
+  /** Asset contract — SPL mint pubkey (Solana) or ERC-20 contract (EVM) */
+  asset?: string;
+  /**
+   * Per-network extras. x402.org's Solana responses use `extra.feePayer` to
+   * tell the client which pubkey must be the tx feePayer (facilitator broadcasts).
+   * EVM responses use `extra.name` / `extra.version` for EIP-712 domain.
+   */
+  extra?: { name?: string; currency?: string; version?: string; feePayer?: string; memo?: string };
 }
 
 /**
@@ -66,6 +73,11 @@ export const x402Detector: ProtocolDetector = {
       priceRaw: parsePriceRaw(amount),
       currency,
       payTo: req.payTo ?? "",
+      // Surface the spec-canonical extras so executors can route through a
+      // facilitator-broadcast flow when the resource demands one.
+      feePayer: req.extra?.feePayer,
+      asset: req.asset,
+      memo: req.extra?.memo,
       raw: { headers: _headers, body },
     };
   },
@@ -105,7 +117,12 @@ function pickPreferred(reqs: X402Requirement[]): X402Requirement {
   const solana = reqs.find(
     (r) => r.network?.startsWith("solana") || normalizeNetwork(r.network ?? "").startsWith("solana"),
   );
-  return solana ?? reqs[0];
+  if (solana) return solana;
+  const fallback = reqs[0];
+  if (!fallback) {
+    throw new Error("x402.pickPreferred: callers must pass a non-empty array");
+  }
+  return fallback;
 }
 
 /** Map CAIP-2 network identifiers to our short names */

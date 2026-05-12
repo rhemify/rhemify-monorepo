@@ -8,7 +8,7 @@ pub struct WriteDailyRootAccountConstraints<'info> {
         init_if_needed,
         payer = authority,
         space = DailyRoot::DISCRIMINATOR.len() + DailyRoot::INIT_SPACE,
-        seeds = [b"rhemify-daily", fleet_id.as_bytes(), date.as_bytes()],
+        seeds = [b"rhemify-daily", authority.key().as_ref(), fleet_id.as_bytes(), date.as_bytes()],
         bump,
     )]
     pub daily_root: Account<'info, DailyRoot>,

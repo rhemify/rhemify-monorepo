@@ -5,18 +5,20 @@ interface StandardChipsProps {
   onToggle: (standard: PaymentStandard) => void;
 }
 
+// Only standards the SDK actually executes — see
+// packages/sdk/src/execute/index.ts:SUPPORTED_PROTOCOLS. L402 / AP2 detect
+// but throw ProtocolNotImplementedError on execute, so letting a fleet
+// operator toggle them on in the policy UI would create a policy that
+// passes their allowlist rule and then blows up at the executor cascade.
+// Reintroduce a chip per standard once its executor lands.
 const standards: { id: PaymentStandard; label: string }[] = [
   { id: "x402", label: "x402" },
   { id: "mpp", label: "MPP" },
-  { id: "l402", label: "L402" },
-  { id: "ap2", label: "AP2" },
 ];
 
-const activeColors: Record<PaymentStandard, string> = {
+const activeColors: Partial<Record<PaymentStandard, string>> = {
   x402: "border-[#47c8ff] bg-[#47c8ff]/[0.08] text-[#47c8ff]",
   mpp: "border-rhm-accent bg-rhm-accent/[0.08] text-rhm-accent",
-  l402: "border-rhm-warning bg-rhm-warning/[0.08] text-rhm-warning",
-  ap2: "border-[#47c8ff] bg-[#47c8ff]/[0.08] text-[#47c8ff]",
 };
 
 export function StandardChips({ allowedStandards, onToggle }: StandardChipsProps) {

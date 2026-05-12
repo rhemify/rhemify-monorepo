@@ -5,7 +5,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("GcGz6uD7FxF6rSjCAU1xBV4ZW1E9EFDa4JA5yPKv1cdL");
+declare_id!("GPgdzfwQ4qG1QcqePY3uR6Uo8SvCwqxRYg7oDsXd5opc");
 
 #[program]
 pub mod rhemify_dwallet {

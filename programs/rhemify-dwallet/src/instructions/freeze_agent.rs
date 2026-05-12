@@ -5,7 +5,7 @@ use crate::state::{FleetVault, AgentWallet};
 #[instruction(fleet_id: String, agent_key: String)]
 pub struct FreezeAgentAccounts<'info> {
     #[account(
-        seeds = [b"fleet-vault", fleet_id.as_bytes()],
+        seeds = [b"fleet-vault", authority.key().as_ref(), fleet_id.as_bytes()],
         bump = fleet_vault.bump,
         has_one = authority,
     )]
@@ -13,7 +13,7 @@ pub struct FreezeAgentAccounts<'info> {
 
     #[account(
         mut,
-        seeds = [b"agent-wallet", fleet_id.as_bytes(), agent_key.as_bytes()],
+        seeds = [b"agent-wallet", authority.key().as_ref(), fleet_id.as_bytes(), agent_key.as_bytes()],
         bump = agent_wallet.bump,
     )]
     pub agent_wallet: Account<'info, AgentWallet>,

@@ -100,7 +100,17 @@ func Replay(
 }
 
 // buildOriginalOutcome converts the trace's policy_rules_fired array into a PolicyOutcome.
-// Each entry is expected to be: { "rule": "...", "value": "...", "result": "pass"|"block"|"flag" }
+//
+// Two shapes are accepted because traces emitted by different versions of
+// the SDK + the deprecated seed used different field names:
+//
+//	Seed (deprecated):  { rule, result: "pass"|"block"|"flag", value, threshold }
+//	SDK live emit:      { rule, decision: "allow"|"block"|"flag", actual, threshold }
+//
+// Read whichever is present so the original column in the replay diff is
+// populated for traces produced by the actual pipeline, not just the seeded
+// ones. SDK's "allow" is normalized to "pass" so downstream diff
+// comparisons against the live engine's outcome line up.
 func buildOriginalOutcome(policyRulesFired []interface{}) PolicyOutcome {
 	var results []RuleResult
 	blocked := false
@@ -112,7 +122,19 @@ func buildOriginalOutcome(policyRulesFired []interface{}) PolicyOutcome {
 		}
 		rule, _ := m["rule"].(string)
 		result, _ := m["result"].(string)
+		if result == "" {
+			if d, ok := m["decision"].(string); ok {
+				if d == "allow" {
+					result = "pass"
+				} else {
+					result = d
+				}
+			}
+		}
 		value, _ := m["value"].(string)
+		if value == "" {
+			value, _ = m["actual"].(string)
+		}
 		threshold, _ := m["threshold"].(string)
 
 		if result == "block" {

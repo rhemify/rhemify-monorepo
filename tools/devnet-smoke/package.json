@@ -1,0 +1,13 @@
+{
+  "name": "devnet-smoke",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke": "bun run initialize-fleet-vault.ts",
+    "squat": "bun run squat-defeated.ts",
+    "daily-cap": "bun run daily-cap-enforced.ts"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4"
+  }
+}

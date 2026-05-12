@@ -5,13 +5,50 @@ import { join } from "node:path";
 const CONFIG_DIR = join(homedir(), ".rhemify");
 const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 const WALLET_FILE = join(CONFIG_DIR, "wallet.json");
+const EVM_WALLET_FILE = join(CONFIG_DIR, "wallet-evm.json");
+
+export interface EvmWallet {
+  privateKey: `0x${string}`;
+  address: `0x${string}`;
+}
 
 export interface RhemifyConfig {
   fleetId: string;
   fleetName: string;
   agentIds: string[];
   serverUrl: string;
+  /**
+   * Convex deployment URL — used by read-mostly commands that talk to
+   * Convex directly (`traces list`, future `agents list`, etc.).
+   * Optional in config because pre-Phase-N onboards didn't set it; falls
+   * back to env var CONVEX_URL or DEFAULT_CONVEX_URL.
+   */
+  convexUrl?: string;
+  /**
+   * Fleet API key — Bearer token the SDK transport sends to the Go server's
+   * FleetAPIKeyAuth middleware. The middleware resolves it to fleet_id via
+   * fleets:getByApiKey. Optional in config so legacy onboards still load;
+   * commands that hit the Go server should default to "cli-user" only as a
+   * last resort, since auth will fail without a real key.
+   */
+  fleetApiKey?: string;
   createdAt: string;
+}
+
+/** Default local anonymous Convex deployment (`bunx convex dev` in packages/backend). */
+export const DEFAULT_CONVEX_URL = "http://127.0.0.1:3210";
+
+/**
+ * Resolves the Convex URL using the priority: explicit override > config > env > default.
+ * Used by every command that talks to Convex directly. Single source of truth.
+ */
+export function resolveConvexUrl(override?: string): string {
+  if (override) return override;
+  const cfg = loadConfig();
+  if (cfg?.convexUrl) return cfg.convexUrl;
+  const env = process.env.CONVEX_URL;
+  if (env) return env;
+  return DEFAULT_CONVEX_URL;
 }
 
 function ensureDir() {
@@ -52,8 +89,26 @@ export function walletExists(): boolean {
   return existsSync(WALLET_FILE);
 }
 
+/**
+ * Optional EVM wallet, used by x402EvmTransferExecutor for Base/Sepolia/etc.
+ * Separate file from the Solana keypair to keep their loading independent —
+ * a Solana-only demo doesn't need an EVM wallet and vice versa. Returns
+ * null if no EVM wallet has been generated (the demo runs Solana-only by
+ * default; EVM is opt-in via `bun -e generatePrivateKey` or similar).
+ */
+export function loadEvmWallet(): EvmWallet | null {
+  try {
+    const raw = readFileSync(EVM_WALLET_FILE, "utf-8");
+    const parsed = JSON.parse(raw) as Partial<EvmWallet>;
+    if (!parsed.privateKey || !parsed.address) return null;
+    return { privateKey: parsed.privateKey, address: parsed.address };
+  } catch {
+    return null;
+  }
+}
+
 export function configExists(): boolean {
   return existsSync(CONFIG_FILE);
 }
 
-export { CONFIG_DIR, CONFIG_FILE, WALLET_FILE };
+export { CONFIG_DIR, CONFIG_FILE, WALLET_FILE, EVM_WALLET_FILE };

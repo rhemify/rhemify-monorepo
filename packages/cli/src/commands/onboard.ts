@@ -72,7 +72,7 @@ export async function onboard() {
 
   // Step 5: Create agents
   for (let i = 0; i < AGENT_TEMPLATES.length; i++) {
-    const tmpl = AGENT_TEMPLATES[i];
+    const tmpl = AGENT_TEMPLATES[i]!;
     console.log(
       `  ${pc.green("+")} ${tmpl.name} ${pc.dim(`(${agentIds[i]})`)} — ${tmpl.skills.join(", ")}`,
     );
@@ -94,7 +94,7 @@ export async function onboard() {
     const rhemify = createRhemify({
       serverUrl: DEFAULT_SERVER_URL,
       fleetApiKey: "onboard-test",
-      agentId: agentIds[0],
+      agentId: agentIds[0]!,
       fleetId,
       wallet: { solanaPrivateKey: JSON.stringify(Array.from(keypair.secretKey)) },
       solanaRpcUrl: SOLANA_RPC,
@@ -149,7 +149,10 @@ function randomId(): string {
 
 async function prompt(message: string): Promise<string> {
   process.stdout.write(message);
-  for await (const line of console) {
+  // Bun exposes `console` as an async iterable of stdin lines; standard TS
+  // lib doesn't model this. Cast so the build doesn't choke under strict
+  // mode without giving up the bun-only one-liner.
+  for await (const line of console as unknown as AsyncIterable<string>) {
     return line.trim();
   }
   return "";

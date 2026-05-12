@@ -8,7 +8,7 @@ pub struct InitializeFleetVaultAccounts<'info> {
         init,
         payer = authority,
         space = FleetVault::DISCRIMINATOR.len() + FleetVault::INIT_SPACE,
-        seeds = [b"fleet-vault", fleet_id.as_bytes()],
+        seeds = [b"fleet-vault", authority.key().as_ref(), fleet_id.as_bytes()],
         bump,
     )]
     pub fleet_vault: Account<'info, FleetVault>,
@@ -32,6 +32,8 @@ pub fn initialize_fleet_vault(
     vault.authority = ctx.accounts.authority.key();
     vault.co_signer = co_signer;
     vault.daily_cap = daily_cap;
+    vault.daily_spent = 0;
+    vault.last_reset_day = 0;
     vault.is_frozen = false;
     vault.created_at = Clock::get()?.unix_timestamp;
     vault.bump = ctx.bumps.fleet_vault;

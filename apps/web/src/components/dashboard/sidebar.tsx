@@ -7,6 +7,7 @@ const navItems = [
   { label: "Policies", path: "/dashboard/policies", icon: "◈" },
   { label: "Wallets", path: "/dashboard/wallets", icon: "▤" },
   { label: "Approvals", path: "/dashboard/approvals", icon: "✓" },
+  { label: "Traces", path: "/dashboard/traces", icon: "≡" },
 ];
 
 export function Sidebar() {

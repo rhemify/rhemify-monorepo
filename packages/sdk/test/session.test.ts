@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { Keypair } from "@solana/web3.js";
 import { createRhemify } from "../src/index.js";
 import { PolicyBlockedError, ExecutionError } from "../src/errors.js";
+
+// Real ed25519 keypair (64 bytes) so decodeSolanaKey + @solana/kit
+// createKeyPairFromBytes both succeed. Generated once per test run.
+const FIXTURE_SOLANA_KEY = JSON.stringify(Array.from(Keypair.generate().secretKey));
 
 // Track fetch calls
 let fetchCalls: { url: string; method: string; body?: unknown }[] = [];
@@ -70,7 +75,7 @@ function makeRhemify(overrides?: Record<string, unknown>) {
     fleetApiKey: "test-fleet-key",
     agentId: "agent-1",
     fleetId: "fleet-1",
-    wallet: { solanaPrivateKey: "fake-solana-key" },
+    wallet: { solanaPrivateKey: FIXTURE_SOLANA_KEY },
     ...overrides,
   });
 }

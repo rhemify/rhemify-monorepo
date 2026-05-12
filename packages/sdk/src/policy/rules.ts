@@ -34,21 +34,21 @@ export const dailyLimitRule: PolicyRule = {
 };
 
 export const maxPerTransactionRule: PolicyRule = {
-  name: "max_per_tx",
+  name: "max_per_transaction",
   evaluate(detection, _domain, context) {
     const price = Number(detection.priceRaw) / 1_000_000;
     const limit = context.policy.maxPerTransaction;
 
     if (price > limit) {
       return {
-        rule: "max_per_tx",
+        rule: "max_per_transaction",
         decision: "block",
         threshold: `$${limit}`,
         actual: `$${price.toFixed(2)}`,
       };
     }
     return {
-      rule: "max_per_tx",
+      rule: "max_per_transaction",
       decision: "allow",
       threshold: `$${limit}`,
       actual: `$${price.toFixed(2)}`,
@@ -90,14 +90,14 @@ export const allowedDomainsRule: PolicyRule = {
 };
 
 export const allowedStandardsRule: PolicyRule = {
-  name: "allowed_standards",
+  name: "standard_allowlist",
   evaluate(detection, _domain, context) {
     const allowed = context.policy.allowedStandards;
 
     // Empty = allow all
     if (allowed.length === 0) {
       return {
-        rule: "allowed_standards",
+        rule: "standard_allowlist",
         decision: "allow",
         threshold: "any",
         actual: detection.protocol,
@@ -106,7 +106,7 @@ export const allowedStandardsRule: PolicyRule = {
 
     if (allowed.includes(detection.protocol)) {
       return {
-        rule: "allowed_standards",
+        rule: "standard_allowlist",
         decision: "allow",
         threshold: allowed.join(", "),
         actual: detection.protocol,
@@ -114,7 +114,7 @@ export const allowedStandardsRule: PolicyRule = {
     }
 
     return {
-      rule: "allowed_standards",
+      rule: "standard_allowlist",
       decision: "block",
       threshold: allowed.join(", "),
       actual: detection.protocol,
@@ -123,18 +123,18 @@ export const allowedStandardsRule: PolicyRule = {
 };
 
 export const blockedDomainRule: PolicyRule = {
-  name: "domain_blocked",
+  name: "vendor_blocked",
   evaluate(_detection, domain, context) {
     if (context.blockedDomains.includes(domain)) {
       return {
-        rule: "domain_blocked",
+        rule: "vendor_blocked",
         decision: "block",
         threshold: "not in blocked list",
         actual: `${domain} (auto-blocked by intelligence)`,
       };
     }
     return {
-      rule: "domain_blocked",
+      rule: "vendor_blocked",
       decision: "allow",
       threshold: "not in blocked list",
       actual: domain,

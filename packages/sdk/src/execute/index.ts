@@ -1,13 +1,21 @@
 import type { DetectionResult, ExecutionResult, PayOptions, WalletConfig } from "../types.js";
-import { ExecutionError } from "../errors.js";
+import { ExecutionError, ProtocolNotImplementedError } from "../errors.js";
 import type { PaymentExecutor } from "./types.js";
+import { x402SolanaTransferExecutor } from "./x402-solana-transfer.js";
 import { x402SolanaExecutor } from "./x402-solana.js";
+import { x402EvmTransferExecutor } from "./x402-evm-transfer.js";
 import { x402EvmExecutor } from "./x402-evm.js";
+import { mppChargeTransferExecutor } from "./mpp-charge-transfer.js";
 import { mppChargeExecutor } from "./mpp-charge.js";
 import { mppSessionExecutor } from "./mpp-session.js";
 import { agentcardMppExecutor } from "./agentcard-mpp.js";
 import { jupiterSwapExecutor } from "./jupiter-swap.js";
 import { creditPayExecutor } from "./credit-pay.js";
+import {
+  l402UnsupportedExecutor,
+  ap2UnsupportedExecutor,
+  acpUnsupportedExecutor,
+} from "./unsupported-protocol.js";
 
 export type { PaymentExecutor } from "./types.js";
 export { setAgentCardApiKey } from "./agentcard-mpp.js";
@@ -15,19 +23,49 @@ export { setJupiterApiKey } from "./jupiter-swap.js";
 export { setCreditConfig } from "./credit-pay.js";
 
 /**
+ * Protocols the SDK has REAL executors for (canExecute returns true and
+ * execute() actually performs a payment). Detection of any other protocol
+ * still succeeds for diagnostics, but execution throws
+ * ProtocolNotImplementedError so callers can render a clear message.
+ */
+export const SUPPORTED_PROTOCOLS = ["x402", "mpp"] as const;
+export type SupportedProtocol = (typeof SUPPORTED_PROTOCOLS)[number];
+
+/**
  * Default executor registry, ordered by preference.
  * selectExecutor() returns the first executor that can handle the detection.
  *
- * Order: credit (cheapest) → direct → fiat → swap → session
+ * Order: credit (cheapest) → direct → fiat → swap → session →
+ *        unsupported-protocol stubs (always last so real executors win
+ *        whenever they apply).
  */
 const defaultExecutors: PaymentExecutor[] = [
   creditPayExecutor,
+  // Real USDC settlement first (phase R). Falls through to the memo executor
+  // below if canExecute returns false (no Solana wallet, System-Program
+  // recipient, etc.) or if execute() throws (no USDC ATA, insufficient
+  // balance, etc.). Both x402-Solana executors stay registered; the cascade
+  // picks whichever can actually deliver.
+  x402SolanaTransferExecutor,
   x402SolanaExecutor,
+  // Real EVM ERC-20 USDC transfer first (phase E), legacy peer-dep
+  // executor second. Same canExecute fall-through pattern as the
+  // Solana pair: declines the test server's 0x0000...0001 placeholder
+  // so the cascade can route past it.
+  x402EvmTransferExecutor,
   x402EvmExecutor,
   agentcardMppExecutor,
+  // Same pattern as the x402 pair above: real USDC settlement first,
+  // memo intent fallback second. mppChargeTransferExecutor.canExecute
+  // declines the System-Program placeholder recipient so the demo
+  // gracefully falls through to mppChargeExecutor.
+  mppChargeTransferExecutor,
   mppChargeExecutor,
   jupiterSwapExecutor,
   mppSessionExecutor,
+  l402UnsupportedExecutor,
+  ap2UnsupportedExecutor,
+  acpUnsupportedExecutor,
 ];
 
 /**
@@ -67,6 +105,10 @@ export async function executeWithCascade(
       const result = await executor.execute(url, detection, wallet, options);
       return { ...result, executor };
     } catch (err) {
+      // ProtocolNotImplementedError is terminal — no other executor will
+      // implement a protocol the SDK doesn't support. Re-throw so callers
+      // can switch on the typed error code.
+      if (err instanceof ProtocolNotImplementedError) throw err;
       lastError = err instanceof Error ? err : new Error(String(err));
       // Continue to next executor
     }

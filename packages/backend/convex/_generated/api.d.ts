@@ -20,6 +20,7 @@ import type * as fleets from "../fleets.js";
 import type * as http from "../http.js";
 import type * as intelligence from "../intelligence.js";
 import type * as policies from "../policies.js";
+import type * as seed from "../seed.js";
 import type * as signingRequests from "../signingRequests.js";
 import type * as traces from "../traces.js";
 import type * as transactions from "../transactions.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   intelligence: typeof intelligence;
   policies: typeof policies;
+  seed: typeof seed;
   signingRequests: typeof signingRequests;
   traces: typeof traces;
   transactions: typeof transactions;

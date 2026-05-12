@@ -5,7 +5,12 @@ export { detectProtocol, detectFromResponse } from "./detect/index.js";
 export type { ProtocolDetector } from "./detect/types.js";
 export { PolicyEngine } from "./policy/index.js";
 export { PathResolver } from "./resolve/index.js";
-export { selectExecutor, executeWithCascade } from "./execute/index.js";
+export {
+  selectExecutor,
+  executeWithCascade,
+  SUPPORTED_PROTOCOLS,
+} from "./execute/index.js";
+export type { SupportedProtocol } from "./execute/index.js";
 export { Trace } from "./trace/index.js";
 export {
   AnchorQueue,
@@ -68,4 +73,5 @@ export {
   BudgetExceededError,
   NoWalletError,
   ExecutionError,
+  ProtocolNotImplementedError,
 } from "./errors.js";

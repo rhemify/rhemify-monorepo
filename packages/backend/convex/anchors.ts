@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { AnchorBatchStatus } from "./schema";
 
 // GET /api/anchor/:fleetId/:date — daily Merkle root info
 export const getDailyRoot = query({
@@ -82,7 +83,7 @@ export const upsertBatch = mutation({
     trace_count: v.float64(),
     pda_address: v.optional(v.string()),
     tx_hash: v.optional(v.string()),
-    status: v.string(),
+    status: AnchorBatchStatus,
     tree_data: v.optional(v.any()),
   },
   handler: async (ctx, args) => {

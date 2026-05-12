@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { AgentStatus } from "./schema";
 
 const DEFAULT_DOMAINS: Record<string, string[]> = {
   ceo: ["notion.so", "slack.com"],
@@ -10,7 +11,7 @@ const DEFAULT_DOMAINS: Record<string, string[]> = {
   finance: ["stripe.com", "quickbooks.com", "plaid.com"],
 };
 
-const DEFAULT_STANDARDS: Record<string, string> = {
+const DEFAULT_STANDARDS: Record<string, "mpp" | "x402" | "l402" | "ap2"> = {
   ceo: "mpp",
   research: "x402",
   marketing: "mpp",
@@ -35,6 +36,17 @@ export const list = query({
       .query("agents")
       .withIndex("by_fleet", (q) => q.eq("fleet_id", args.fleet_id))
       .collect();
+  },
+});
+
+// Read-all helper consumed by the TUI dashboard (apps/tui/). Scoped to
+// observability surfaces — not for app-tier paths that should always
+// be fleet-scoped.
+export const listAll = query({
+  args: { limit: v.optional(v.float64()) },
+  handler: async (ctx, args) => {
+    const all = await ctx.db.query("agents").collect();
+    return args.limit ? all.slice(0, args.limit) : all;
   },
 });
 
@@ -107,7 +119,7 @@ export const deploy = mutation({
 export const updateStatus = mutation({
   args: {
     id: v.id("agents"),
-    status: v.string(),
+    status: AgentStatus,
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, { status: args.status });

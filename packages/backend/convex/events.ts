@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { PaymentStandard, PaymentOutcome } from "./schema";
 
 // GET /api/events — paginated, filterable
 export const list = query({
@@ -45,12 +46,12 @@ export const insert = mutation({
   args: {
     agent_id: v.string(),
     fleet_id: v.string(),
-    standard: v.string(),
+    standard: PaymentStandard,
     amount: v.float64(),
     token: v.string(),
     chain: v.string(),
     domain: v.string(),
-    outcome: v.string(),
+    outcome: PaymentOutcome,
     instrument_type: v.string(),
     trace_id: v.string(),
     chain_from: v.optional(v.string()),

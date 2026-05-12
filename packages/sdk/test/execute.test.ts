@@ -47,7 +47,10 @@ describe("selectExecutor", () => {
   });
 
   it("returns null when no executor matches", () => {
-    const detection = makeDetection({ protocol: "l402", network: "lightning" });
+    // After Phase K, l402/ap2/acp resolve to ProtocolNotImplementedError
+    // stubs (so callers get a typed error). "unknown" is the truly
+    // unmatched case.
+    const detection = makeDetection({ protocol: "unknown", network: "unknown" });
     const wallet: WalletConfig = { solanaPrivateKey: "fake" };
 
     const executor = selectExecutor(detection, wallet);

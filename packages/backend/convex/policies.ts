@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { PolicyDecision, PaymentStandard } from "./schema";
 
 export const getByAgent = query({
   args: { agent_id: v.id("agents") },
@@ -174,11 +175,11 @@ export const insertDecision = mutation({
     payment_event_id: v.id("payment_events"),
     agent_id: v.optional(v.string()),
     rule_triggered: v.string(),
-    decision: v.string(),
+    decision: PolicyDecision,
     threshold: v.string(),
     actual_value: v.string(),
     domain: v.string(),
-    standard: v.string(),
+    standard: PaymentStandard,
   },
   handler: async (ctx, args) => {
     const eventId = args.payment_event_id;

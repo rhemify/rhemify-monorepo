@@ -54,6 +54,15 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       })
     : null;
 
+  // Track in-flight ingest promises so close() can await them. Ingest is
+  // fire-and-forget on the hot path (pay() returns the HTTP response without
+  // waiting for Convex to persist the trace), but if a caller drains and
+  // exits immediately the trace doc may not exist in Convex when the
+  // anchor-queue's updateTraceAnchor PATCH fires — Convex's traces:updateAnchor
+  // throws "Trace not found" and the anchor is silently lost. close() awaits
+  // these BEFORE draining the anchor queue so the ordering is durable.
+  const inflightIngests: Promise<void>[] = [];
+
   function emitTrace(trace: Trace): void {
     const snapshot = trace.toSnapshot();
     const traceRecord = trace.finalize();
@@ -99,28 +108,45 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       economic_rationality_check: null,
       task_outcome: null,
       task_outcome_linked_at: null,
+      // Replay snapshot — captured policy + agent + vendor state at decision
+      // time. Keys are snake_case to match Go replay engine expectations
+      // (apps/server/internal/replay/policy.go reads policy_state["daily_limit"]
+      // etc.). Without real values here, every counterfactual replay runs
+      // against an empty policy and the diff is meaningless.
       replay_snapshot: {
-        policy_state:
-          snapshot.policyDecision.rulesFired.length > 0
-            ? {
-                dailyLimit: 0,
-                maxPerTransaction: 0,
-                approvalThreshold: 0,
-                allowedStandards: [],
-                domainAllowlist: [],
-              }
-            : {
-                dailyLimit: 0,
-                maxPerTransaction: 0,
-                approvalThreshold: 0,
-                allowedStandards: [],
-                domainAllowlist: [],
+        policy_state: snapshot.policyContext
+          ? {
+              daily_limit: snapshot.policyContext.policy.dailyLimit,
+              max_per_transaction: snapshot.policyContext.policy.maxPerTransaction,
+              approval_threshold: snapshot.policyContext.policy.approvalThreshold,
+              allowed_standards: snapshot.policyContext.policy.allowedStandards,
+              domain_allowlist: snapshot.policyContext.policy.domainAllowlist,
+            }
+          : {
+              daily_limit: 0,
+              max_per_transaction: 0,
+              approval_threshold: 0,
+              allowed_standards: [] as string[],
+              domain_allowlist: [] as string[],
+            },
+        vendor_registry_snapshot: snapshot.policyContext
+          ? snapshot.policyContext.blockedDomains.reduce<Record<string, { is_blocked: boolean }>>(
+              (acc, d) => {
+                acc[d] = { is_blocked: true };
+                return acc;
               },
+              {},
+            )
+          : {},
+        agent_context: {
+          spend_today: snapshot.policyContext?.spentToday ?? 0,
+        },
         detection: snapshot.detection,
         all_paths: snapshot.allPaths,
         policy_decision: snapshot.policyDecision,
       },
       trace_hash: traceRecord.traceHash,
+      payment_tx_hash: snapshot.executionTxHash ?? null,
       anchor_tx_hash: null,
       merkle_proof: null,
     };
@@ -140,8 +166,18 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
       }),
     );
 
-    transport.ingestPayment({ event, trace: paymentTrace, policyDecisions }).catch((err) => {
-      config.onError?.(err instanceof Error ? err : new Error(String(err)));
+    const ingestPromise = transport
+      .ingestPayment({ event, trace: paymentTrace, policyDecisions })
+      .then(() => undefined)
+      .catch((err) => {
+        config.onError?.(err instanceof Error ? err : new Error(String(err)));
+      });
+    inflightIngests.push(ingestPromise);
+    // Self-clean: drop from the tracker once it settles so close() doesn't
+    // accumulate references across long-running session use.
+    ingestPromise.finally(() => {
+      const idx = inflightIngests.indexOf(ingestPromise);
+      if (idx >= 0) inflightIngests.splice(idx, 1);
     });
 
     // Layer 1: Enqueue Memo anchoring (async, non-blocking)
@@ -208,8 +244,12 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
 
     // --- Stage 2: POLICY ---
     const domain = extractDomain(url);
-    const policyDecision = await policyEngine.evaluate(detection, domain);
+    const { decision: policyDecision, context: policyContext } = await policyEngine.evaluate(
+      detection,
+      domain,
+    );
     trace.recordPolicyDecision(policyDecision);
+    trace.recordPolicyContext(policyContext);
     emitStage("policy", {
       action: policyDecision.action,
       reason: policyDecision.reason ?? null,
@@ -304,7 +344,7 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     });
 
     const domain = extractDomain(url);
-    const policyDecision = await policyEngine.evaluate(detection, domain);
+    const { decision: policyDecision } = await policyEngine.evaluate(detection, domain);
     const allPaths = pathResolver.resolve(detection, config.wallet);
     const best = allPaths.find((p) => p.available) ?? null;
 
@@ -334,7 +374,20 @@ export function createRhemify(config: RhemifyConfig): Rhemify {
     return discoverServices(intent, options);
   }
 
-  return { pay, probe, session, discover, setPolicy, status };
+  async function close(): Promise<void> {
+    // Order matters: drain pending ingests FIRST so every trace document
+    // exists in Convex before the anchor queue's updateTraceAnchor PATCH
+    // tries to patch it. Reversing this order races and silently drops
+    // anchors (see inflightIngests doc above).
+    if (inflightIngests.length > 0) {
+      await Promise.allSettled(inflightIngests.slice());
+    }
+    if (anchorQueue) {
+      await anchorQueue.drain();
+    }
+  }
+
+  return { pay, probe, session, discover, setPolicy, status, close };
 }
 
 // --- Helpers ---

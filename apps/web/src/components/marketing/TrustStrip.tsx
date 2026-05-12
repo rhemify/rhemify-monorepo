@@ -1,14 +1,14 @@
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 
+// Honest scope: only the standards we actually detect+execute against
+// (x402, MPP) and the chain we execute on (Solana). Base/L402/AgentCard/
+// Virtuals were in the previous version but are detected-only / stubbed —
+// putting them under an "Integrated with" line overclaims capability that
+// doesn't ship in v1. Superteam stays as a community/program partner.
 const LOGOS = [
-  { src: "/logo/base.svg", label: "Base" },
-  { src: "/logo/agentcard.svg", label: "AgentCard" },
-  { src: "/logo/circle.svg", label: "Circle" },
-  { src: "/logo/l402.svg", label: "L402" },
+  { src: "/logo/x402.svg", label: "x402" },
   { src: "/logo/mpp.svg", label: "MPP" },
   { src: "/logo/solana.svg", label: "Solana" },
-  { src: "/logo/virtual.svg", label: "Virtuals" },
-  { src: "/logo/x402.svg", label: "x402" },
   { src: "/logo/superteam.svg", label: "Superteam" },
 ] as const;
 

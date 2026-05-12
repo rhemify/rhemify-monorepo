@@ -90,7 +90,7 @@ describe("PolicyEngine", () => {
 
       const result = engine.evaluateWithContext(detection, "api.example.com", context);
       expect(result.action).toBe("block");
-      expect(result.reason).toContain("max_per_tx");
+      expect(result.reason).toContain("max_per_transaction");
     });
   });
 
@@ -182,7 +182,7 @@ describe("PolicyEngine", () => {
 
       const result = engine.evaluateWithContext(detection, "api.example.com", context);
       expect(result.action).toBe("block");
-      expect(result.reason).toContain("allowed_standards");
+      expect(result.reason).toContain("standard_allowlist");
     });
   });
 
@@ -205,7 +205,7 @@ describe("PolicyEngine", () => {
 
       const result = engine.evaluateWithContext(detection, "api.flaky.com", context);
       expect(result.action).toBe("block");
-      expect(result.reason).toContain("domain_blocked");
+      expect(result.reason).toContain("vendor_blocked");
       expect(result.suggestion).toContain("auto-blocked");
     });
   });
